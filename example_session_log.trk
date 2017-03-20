@@ -1,0 +1,18 @@
+20.3.2017, 11:05: [begin week] [command: trk begin week]
+20.3.2017, 11:05: [begin session] [command: trk begin session]
+20.3.2017, 11:06: [meta] "Thinking about what to display (Commits and Branches)." [command: trk meta "..."]
+20.3.2017, 11:10: [meta] "Thinking about format of text output."
+20.3.2017, 11:12: [meta] "There needs to be a post-commit hook that tells us the commit id. If author is us, a commit line is appended."
+20.3.2017, 11:13: [commit] git commit: "initial commit" on branch master
+20.3.2017, 11:18: [meta] "Breaks are important!"
+20.3.2017, 11:18: [break]
+20.3.2017, 11:24: [continue]
+20.3.2017, 11:25: [meta] "When any event such as a commit or a meta occur while the last event was a 'startbreak', the 'endbreak' is automatically appended before them. This means one has to know what to think about/work on before continuing to work."
+20.3.2017, 11:27: [meta] "trk status should show how much has been worked this day and this week"
+20.3.2017, 11:28: [meta] "trk end session will deser the session struct, tostring and tohtml it, and  
+20.3.2017, 11:30: [end session] 
+
+[...]
+
+27.3.2017, 13:00: [meta] "On end week, weekly report is written to the week's directory"
+27.3.2017, 13:00: [end week] [command: trk end week]
