@@ -1,3 +1,6 @@
+mod timesheet;
+
 fn main() {
-    println!("Hello, world!");
+    let ts = timesheet::Session::new();
+    println!("{:?}", ts);
 }
