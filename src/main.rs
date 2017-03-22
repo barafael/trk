@@ -95,10 +95,10 @@ fn main() {
         }
     }
 
-    if let Some(matches) = matches.subcommand_matches("pause") {
+    if matches.is_present("pause") {
         ts.append_event(timesheet::Event::Pause)
     }
-    if let Some(matches) = matches.subcommand_matches("proceed") {
+    if matches.is_present("proceed") {
         ts.append_event(timesheet::Event::Proceed)
     }
 
