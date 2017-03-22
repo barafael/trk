@@ -14,35 +14,25 @@ fn main() {
             (@arg CONFIG: -c --config +takes_value "[UNUSED] Sets a custom config file")
             (@arg debug: -d ... "[UNUSED] Sets the level of debugging information")
 
-            (@subcommand begin =>
-                (about: "Begin Session or Period")
+            (@subcommand beginperiod =>
+                (about: "Begin period")
                 (version: "0.1")
                 (author:  "Rafael B. <mediumendian@gmail.com>")
-                (@subcommand period =>
-                    (about: "Begin period")
-                    (version: "0.1")
-                    (author:  "Rafael B. <mediumendian@gmail.com>")
-                )
-                (@subcommand session =>
+            )
+            (@subcommand beginsession =>
                     (about: "Begin session")
                     (version: "0.1")
                     (author:  "Rafael B. <mediumendian@gmail.com>")
-                )
             )
-            (@subcommand end =>
-                (about: "End Session or Period")
+            (@subcommand endperiod =>
+                (about: "End period")
                 (version: "0.1")
                 (author:  "Rafael B. <mediumendian@gmail.com>")
-                (@subcommand period =>
-                    (about: "End period")
-                    (version: "0.1")
-                    (author:  "Rafael B. <mediumendian@gmail.com>")
-                )
-                (@subcommand session =>
-                    (about: "End session")
-                    (version: "0.1")
-                    (author:  "Rafael B. <mediumendian@gmail.com>")
-                )
+            )
+            (@subcommand endsession =>
+                (about: "End session")
+                (version: "0.1")
+                (author:  "Rafael B. <mediumendian@gmail.com>")
             )
             (@subcommand pause =>
                 (about: "Pause current session")
@@ -80,19 +70,17 @@ fn main() {
     println!("Value for config: {}", config);
 
     // You can handle information about subcommands by requesting their matches by name
-    if let Some(matches) = matches.subcommand_matches("begin") {
-        if matches.is_present("period") {
-            ts.append_event(timesheet::Event::PeriodBegin)
-        } else if matches.is_present("session") {
-            ts.append_event(timesheet::Event::SessionBegin)
-        }
+    if matches.is_present("beginperiod") {
+        ts.append_event(timesheet::Event::BeginPeriod)
     }
-    if let Some(matches) = matches.subcommand_matches("end") {
-        if matches.is_present("period") {
-            ts.append_event(timesheet::Event::PeriodEnd)
-        } else if matches.is_present("session") {
-            ts.append_event(timesheet::Event::SessionEnd)
-        }
+    if matches.is_present("beginsession") {
+        ts.append_event(timesheet::Event::BeginSession)
+    }
+    if matches.is_present("endperiod") {
+        ts.append_event(timesheet::Event::EndPeriod)
+    }
+    if matches.is_present("endsession") {
+        ts.append_event(timesheet::Event::EndSession)
     }
 
     if matches.is_present("pause") {
@@ -116,7 +104,7 @@ fn main() {
             let branch_name = sub_input.value_of("name").unwrap();
             ts.append_event(timesheet::Event::Branch { name: branch_name.to_string() });
         }
-        _ => {},
+        _ => {}
     }
     println!("{:?}", ts);
 }
