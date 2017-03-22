@@ -4,8 +4,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug)]
 pub enum Event {
-    WeekBegin,
-    WeekEnd,
+    PeriodBegin,
+    PeriodEnd,
     SessionBegin,
     SessionEnd,
     Pause,
@@ -34,8 +34,8 @@ impl Session {
     }
     pub fn append_event(&mut self, e: Event) {
         match e {
-            Event::WeekBegin => self.events.push(e),
-            Event::WeekEnd => self.events.push(e),
+            Event::PeriodBegin => self.events.push(e),
+            Event::PeriodEnd => self.events.push(e),
             Event::SessionBegin => self.events.push(e),
             Event::SessionEnd => self.events.push(e),
             Event::Pause => self.events.push(e),

@@ -15,11 +15,11 @@ fn main() {
             (@arg debug: -d ... "[UNUSED] Sets the level of debugging information")
 
             (@subcommand begin =>
-                (about: "Begin Session or Week")
+                (about: "Begin Session or Period")
                 (version: "0.1")
                 (author:  "Rafael B. <mediumendian@gmail.com>")
-                (@subcommand week =>
-                    (about: "Begin week")
+                (@subcommand period =>
+                    (about: "Begin period")
                     (version: "0.1")
                     (author:  "Rafael B. <mediumendian@gmail.com>")
                 )
@@ -30,11 +30,11 @@ fn main() {
                 )
             )
             (@subcommand end =>
-                (about: "End Session or Week")
+                (about: "End Session or Period")
                 (version: "0.1")
                 (author:  "Rafael B. <mediumendian@gmail.com>")
-                (@subcommand week =>
-                    (about: "End week")
+                (@subcommand period =>
+                    (about: "End period")
                     (version: "0.1")
                     (author:  "Rafael B. <mediumendian@gmail.com>")
                 )
@@ -81,15 +81,15 @@ fn main() {
 
     // You can handle information about subcommands by requesting their matches by name
     if let Some(matches) = matches.subcommand_matches("begin") {
-        if matches.is_present("week") {
-            ts.append_event(timesheet::Event::WeekBegin)
+        if matches.is_present("period") {
+            ts.append_event(timesheet::Event::PeriodBegin)
         } else if matches.is_present("session") {
             ts.append_event(timesheet::Event::SessionBegin)
         }
     }
     if let Some(matches) = matches.subcommand_matches("end") {
-        if matches.is_present("week") {
-            ts.append_event(timesheet::Event::WeekEnd)
+        if matches.is_present("period") {
+            ts.append_event(timesheet::Event::PeriodEnd)
         } else if matches.is_present("session") {
             ts.append_event(timesheet::Event::SessionEnd)
         }
