@@ -8,8 +8,8 @@ pub enum Event {
     WeekEnd,
     SessionBegin,
     SessionEnd,
-    Break,
-    Continue,
+    Pause,
+    Proceed,
     Meta { text: String },
     Commit { hash: u64 },
     Branch { name: String },
@@ -34,21 +34,15 @@ impl Session {
     }
     pub fn append_event(&mut self, e: Event) {
         match e {
-            Event::WeekBegin => {
-                println!("Week begin!");
-                self.events.push(e)
-            }
-            Event::WeekEnd => println!("Week end!"),
-
-            Event::SessionBegin => println!("Session begin!"),
-            Event::SessionEnd => println!("Session end!"),
-
-            Event::Break => println!("Break begin!"),
-            Event::Continue => println!("Continue work"),
-
-            Event::Meta { text } => println!("Meta: {}", text),
-            Event::Commit { hash } => println!("Commit hash: {}", hash),
-            Event::Branch { name } => println!("Change to branch {}", name),
+            Event::WeekBegin => self.events.push(e),
+            Event::WeekEnd => self.events.push(e),
+            Event::SessionBegin => self.events.push(e),
+            Event::SessionEnd => self.events.push(e),
+            Event::Pause => self.events.push(e),
+            Event::Proceed => self.events.push(e),
+            Event::Meta { .. } => self.events.push(e),
+            Event::Commit { .. } => self.events.push(e),
+            Event::Branch { .. } => self.events.push(e),
         }
     }
 }
