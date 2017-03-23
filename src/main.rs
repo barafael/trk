@@ -23,12 +23,12 @@ fn main() {
                 (version: "0.1")
                 (author:  "Rafael B. <mediumendian@gmail.com>")
             )
-            (@subcommand beginsession =>
+            (@subcommand begin =>
                 (about: "Begin session")
                 (version: "0.1")
                 (author:  "Rafael B. <mediumendian@gmail.com>")
             )
-            (@subcommand endsession =>
+            (@subcommand end =>
                 (about: "End session")
                 (version: "0.1")
                 (author:  "Rafael B. <mediumendian@gmail.com>")
@@ -82,8 +82,8 @@ fn main() {
         ("init", Some(..)) => if !timesheet::init() {
             println!("Already initialized!");
         },
-        ("beginsession", Some(..)) => session.push_event(timesheet::Event::BeginSession),
-        ("endsession", Some(..)) => session.push_event(timesheet::Event::EndSession),
+        ("begin", Some(..)) => session.push_event(timesheet::Event::Begin),
+        ("end", Some(..)) => session.push_event(timesheet::Event::End),
         ("pause", Some(..)) => session.push_event(timesheet::Event::Pause),
         ("proceed", Some(..)) => session.push_event(timesheet::Event::Proceed),
         ("meta", Some(sub_input)) => {

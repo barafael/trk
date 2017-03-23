@@ -9,9 +9,8 @@ use std::path::Path;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Event {
-    /* TODO: rename beginsession and endsession */
-    BeginSession,
-    EndSession,
+    Begin,
+    End,
     Pause,
     Proceed,
     Meta { text: String },
@@ -41,8 +40,8 @@ impl Session {
     pub fn push_event(&mut self, e: Event) {
         /* TODO: add logic */
         match e {
-            Event::BeginSession => self.events.push(e),
-            Event::EndSession => self.events.push(e),
+            Event::Begin => self.events.push(e),
+            Event::End => self.events.push(e),
             Event::Pause => self.events.push(e),
             Event::Proceed => self.events.push(e),
             Event::Meta { .. } => self.events.push(e),
@@ -107,6 +106,7 @@ pub fn init() -> bool {
             }
             Err(why) => println!("{}", why.description()),
         }
+        /* init was successful */
         true
     }
 }
