@@ -4,8 +4,6 @@ extern crate clap;
 #[macro_use]
 extern crate serde_derive;
 
-extern crate serde_json;
-
 mod timesheet;
 
 fn main() {
@@ -81,7 +79,9 @@ fn main() {
     println!("[UNUSED] Value for config: {}", config);
 
     match matches.subcommand() {
-        ("init", Some(..)) => timesheet::init(),
+        ("init", Some(..)) => if !timesheet::init() {
+            println!("Already initialized!");
+        },
         ("beginsession", Some(..)) => session.push_event(timesheet::Event::BeginSession),
         ("endsession", Some(..)) => session.push_event(timesheet::Event::EndSession),
         ("pause", Some(..)) => session.push_event(timesheet::Event::Pause),
@@ -104,20 +104,8 @@ fn main() {
         }
         ("clear", Some(..)) => {
             // TODO: really do it
-            println!("Clearing session and seq!");
+            println!("Clearing sessions!");
         }
         _ => {}
     }
-
-    // Convert the session to a JSON string.
-    let serialized = serde_json::to_string(&session).unwrap();
-
-    // Prints serialized session
-    println!("serialized = {}", serialized);
-
-    // Convert the JSON string back to a Session.
-    let deserialized: timesheet::Session = serde_json::from_str(&serialized).unwrap();
-
-    // Prints deserialized Session
-    println!("deserialized = {:?}", deserialized);
 }

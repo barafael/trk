@@ -1,11 +1,15 @@
 extern crate time;
+extern crate serde_json;
 
+use std::io::prelude::*;
 use std::time::{SystemTime, UNIX_EPOCH};
+use std::error::Error;
+use std::fs::OpenOptions;
+use std::path::Path;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Event {
-    BeginSessionSeq,
-    EndSessionSeq,
+    /* TODO: rename beginsession and endsession */
     BeginSession,
     EndSession,
     Pause,
@@ -18,7 +22,7 @@ pub enum Event {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Session {
     pub id: u64,
-    // is this field necessary?
+    /* is this field necessary? At least un-hardcode*/
     pub user: String,
     events: Vec<Event>,
 }
@@ -33,11 +37,10 @@ impl Session {
             events: Vec::<Event>::new(),
         }
     }
+
     pub fn push_event(&mut self, e: Event) {
-        // TODO: add logic
+        /* TODO: add logic */
         match e {
-            Event::BeginSessionSeq => self.events.push(e),
-            Event::EndSessionSeq => self.events.push(e),
             Event::BeginSession => self.events.push(e),
             Event::EndSession => self.events.push(e),
             Event::Pause => self.events.push(e),
@@ -47,26 +50,26 @@ impl Session {
             Event::Branch { .. } => self.events.push(e),
         }
     }
-    pub fn status(&self) { // return formatted string
+
+    /* TODO return formatted string instead */
+    pub fn status(&self) {
         println!("{:?}", self.events);
     }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct SessionSeq {
-    inited: bool,
+struct Timesheet {
     id: u64,
-    // unused field is pointless
+    /* is this field necessary? At least un-hardcode*/
     user: String,
     sessions: Vec<Session>,
 }
 
-impl SessionSeq {
-    pub fn new() -> SessionSeq {
+impl Timesheet {
+    pub fn new() -> Timesheet {
         let now = SystemTime::now();
         let seconds = now.duration_since(UNIX_EPOCH).unwrap().as_secs();
-        SessionSeq {
-            inited: true,
+        Timesheet {
             id: seconds,
             user: "Rafael".to_string(),
             sessions: Vec::<Session>::new(),
@@ -74,17 +77,55 @@ impl SessionSeq {
     }
 
     pub fn push_session(&mut self, s: Session) {
-        // Checking for valid session here
+        /* TODO: check for valid session logic here */
         self.sessions.push(s);
     }
-pub fn is_init(&self) -> bool {
-    self.inited
 }
 
+/* Initializes the .trk/sessions.trk file which holds the serialized timesheet */
+pub fn init() -> bool {
+    /* Check if file already exists(no init permitted) */
+    if is_init() {
+        false
+    } else {
+        /* file does not exist, create it */
+        let path = Path::new("./.trk/sessions.trk");
+        /* let display = path.display(); */
+        let file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .open(&path);
+
+        match file {
+            Ok(mut f) => {
+                let sheet = Timesheet::new();
+                /* Convert the sheet to a JSON string. */
+                let serialized = serde_json::to_string(&sheet).unwrap();
+                f.write_all(serialized.as_bytes()).unwrap();
+            }
+            Err(why) => println!("{}", why.description()),
+        }
+        /*
+
+
+        // Prints serialized session
+        println!("serialized = {}", serialized);
+
+        // Convert the JSON string back to a Session.
+        let deserialized: Timesheet = serde_json::from_str(&serialized).unwrap();
+
+        // Prints deserialized Session
+        println!("deserialized = {:?}", deserialized);
+        */
+        true
+    }
 }
 
-
-pub fn init() {
-    // TODO check if inited
-    let seq = SessionSeq::new();
+pub fn is_init() -> bool {
+    /* let p = env::current_dir().unwrap();
+    println!("The current directory is {}", p.display());
+    */
+    let path = Path::new("./.trk/sessions.trk");
+    path.exists()
 }
