@@ -4,6 +4,7 @@ extern crate serde_json;
 use std::io::prelude::*;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::error::Error;
+use std::fs;
 use std::fs::OpenOptions;
 use std::path::Path;
 
@@ -113,4 +114,10 @@ pub fn init() -> bool {
 
 pub fn is_init() -> bool {
     Path::new("./.trk/sessions.trk").exists()
+}
+
+pub fn clear() {
+    let path = Path::new("./.trk/sessions.trk");
+    fs::remove_file(&path).expect("Could not remove file at!");
+    init();
 }

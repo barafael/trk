@@ -79,9 +79,11 @@ fn main() {
     println!("[UNUSED] Value for config: {}", config);
 
     match matches.subcommand() {
-        ("init", Some(..)) => if !timesheet::init() {
-            println!("Already initialized!");
-        },
+        ("init", Some(..)) => {
+            if !timesheet::init() {
+                println!("Already initialized!");
+            }
+        }
         ("begin", Some(..)) => session.push_event(timesheet::Event::Begin),
         ("end", Some(..)) => session.push_event(timesheet::Event::End),
         ("pause", Some(..)) => session.push_event(timesheet::Event::Pause),
@@ -105,6 +107,7 @@ fn main() {
         ("clear", Some(..)) => {
             // TODO: really do it
             println!("Clearing sessions!");
+            timesheet::clear();
         }
         _ => {}
     }
