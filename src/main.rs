@@ -19,6 +19,12 @@ fn main() {
             (@arg CONFIG: -c --config +takes_value "[UNUSED] Sets a custom config file")
             (@arg debug: -d ... "[UNUSED] Sets the level of debugging information")
 
+
+            (@subcommand init =>
+                (about: "Initialise trk in this directory")
+                (version: "0.1")
+                (author:  "Rafael B. <mediumendian@gmail.com>")
+            )
             (@subcommand beginperiod =>
                 (about: "Begin period")
                 (version: "0.1")
@@ -84,7 +90,8 @@ fn main() {
     let config = matches.value_of("config").unwrap_or("default.conf");
     println!("[UNUSED] Value for config: {}", config);
 
-    match matches.subcommand() { 
+    match matches.subcommand() {
+        ("init", Some(..)) => timesheet::init(),
         ("beginperiod", Some(..)) => session.push_event(timesheet::Event::BeginPeriod),
         ("endperiod", Some(..)) => session.push_event(timesheet::Event::EndPeriod),
         ("beginsession", Some(..)) => session.push_event(timesheet::Event::BeginSession),
