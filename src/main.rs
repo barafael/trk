@@ -107,7 +107,7 @@ fn main() {
             session.push_event(timesheet::Event::Branch { name: branch_name.to_string() });
         }
         ("status", Some(..)) => {
-            session.status();
+            println!("{}", session.status());
         }
         ("clear", Some(..)) => {
             println!("Clearing sessions!");

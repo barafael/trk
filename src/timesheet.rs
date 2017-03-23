@@ -48,9 +48,8 @@ impl Session {
         }
     }
 
-    /* TODO return formatted string instead */
-    pub fn status(&self) {
-        println!("{:?}", self.events);
+    pub fn status(&self) -> String {
+        format!("{:?}", self.events)
     }
 }
 
