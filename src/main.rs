@@ -25,18 +25,8 @@ fn main() {
                 (version: "0.1")
                 (author:  "Rafael B. <mediumendian@gmail.com>")
             )
-            (@subcommand beginperiod =>
-                (about: "Begin period")
-                (version: "0.1")
-                (author:  "Rafael B. <mediumendian@gmail.com>")
-            )
             (@subcommand beginsession =>
                 (about: "Begin session")
-                (version: "0.1")
-                (author:  "Rafael B. <mediumendian@gmail.com>")
-            )
-            (@subcommand endperiod =>
-                (about: "End period")
                 (version: "0.1")
                 (author:  "Rafael B. <mediumendian@gmail.com>")
             )
@@ -92,8 +82,6 @@ fn main() {
 
     match matches.subcommand() {
         ("init", Some(..)) => timesheet::init(),
-        ("beginperiod", Some(..)) => session.push_event(timesheet::Event::BeginPeriod),
-        ("endperiod", Some(..)) => session.push_event(timesheet::Event::EndPeriod),
         ("beginsession", Some(..)) => session.push_event(timesheet::Event::BeginSession),
         ("endsession", Some(..)) => session.push_event(timesheet::Event::EndSession),
         ("pause", Some(..)) => session.push_event(timesheet::Event::Pause),
@@ -116,7 +104,7 @@ fn main() {
         }
         ("clear", Some(..)) => {
             // TODO: really do it
-            println!("Clearing session and period!");
+            println!("Clearing session and seq!");
         }
         _ => {}
     }

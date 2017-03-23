@@ -4,8 +4,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Event {
-    BeginPeriod,
-    EndPeriod,
+    BeginSessionSeq,
+    EndSessionSeq,
     BeginSession,
     EndSession,
     Pause,
@@ -36,8 +36,8 @@ impl Session {
     pub fn push_event(&mut self, e: Event) {
         // TODO: add logic
         match e {
-            Event::BeginPeriod => self.events.push(e),
-            Event::EndPeriod => self.events.push(e),
+            Event::BeginSessionSeq => self.events.push(e),
+            Event::EndSessionSeq => self.events.push(e),
             Event::BeginSession => self.events.push(e),
             Event::EndSession => self.events.push(e),
             Event::Pause => self.events.push(e),
@@ -53,18 +53,20 @@ impl Session {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct Period {
+struct SessionSeq {
+    inited: bool,
     id: u64,
     // unused field is pointless
     user: String,
     sessions: Vec<Session>,
 }
 
-impl Period {
-    pub fn new() -> Period {
+impl SessionSeq {
+    pub fn new() -> SessionSeq {
         let now = SystemTime::now();
         let seconds = now.duration_since(UNIX_EPOCH).unwrap().as_secs();
-        Period {
+        SessionSeq {
+            inited: true,
             id: seconds,
             user: "Rafael".to_string(),
             sessions: Vec::<Session>::new(),
@@ -75,4 +77,14 @@ impl Period {
         // Checking for valid session here
         self.sessions.push(s);
     }
+pub fn is_init(&self) -> bool {
+    self.inited
+}
+
+}
+
+
+pub fn init() {
+    // TODO check if inited
+    let seq = SessionSeq::new();
 }
