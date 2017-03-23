@@ -72,31 +72,27 @@ fn main() {
 
     // Gets a value for config if supplied by user, or defaults to "default.conf"
     let config = matches.value_of("config").unwrap_or("default.conf");
-    println!("Value for config: {}", config);
-
-    // You can handle information about subcommands by requesting their matches by name
-    // TODO: Find a way to do this in a better way than an if sequence
-    if matches.is_present("beginperiod") {
-        session.push_event(timesheet::Event::BeginPeriod)
-    }
-    if matches.is_present("beginsession") {
-        session.push_event(timesheet::Event::BeginSession)
-    }
-    if matches.is_present("endperiod") {
-        session.push_event(timesheet::Event::EndPeriod)
-    }
-    if matches.is_present("endsession") {
-        session.push_event(timesheet::Event::EndSession)
-    }
-
-    if matches.is_present("pause") {
-        session.push_event(timesheet::Event::Pause)
-    }
-    if matches.is_present("proceed") {
-        session.push_event(timesheet::Event::Proceed)
-    }
+    println!("[UNUSED] Value for config: {}", config);
 
     match matches.subcommand() { 
+        ("beginperiod", Some(..)) => {
+            session.push_event(timesheet::Event::BeginPeriod)
+        }
+        ("endperiod", Some(..)) => {
+            session.push_event(timesheet::Event::EndPeriod)
+        }
+        ("beginsession", Some(..)) => {
+            session.push_event(timesheet::Event::BeginSession)
+        }
+        ("endsession", Some(..)) => {
+            session.push_event(timesheet::Event::EndSession)
+        }
+        ("pause", Some(..)) => {
+            session.push_event(timesheet::Event::Pause)
+        }
+        ("proceed", Some(..)) => {
+            session.push_event(timesheet::Event::Proceed)
+        }
         ("meta", Some(sub_input)) => {
             let metatext = sub_input.value_of("text").unwrap();
             session.push_event(timesheet::Event::Meta { text: metatext.to_string() });
@@ -112,17 +108,16 @@ fn main() {
         }
         _ => {}
     }
-    println!("{:?}", session);
 
-    // Convert the Point to a JSON string.
+    // Convert the session to a JSON string.
     let serialized = serde_json::to_string(&session).unwrap();
 
-    // Prints serialized = {"x":1,"y":2}
+    // Prints serialized session
     println!("serialized = {}", serialized);
 
-    // Convert the JSON string back to a Point.
+    // Convert the JSON string back to a Session.
     let deserialized: timesheet::Session = serde_json::from_str(&serialized).unwrap();
 
-    // Prints deserialized = Point { x: 1, y: 2 }
+    // Prints deserialized Session
     println!("deserialized = {:?}", deserialized);
 }
