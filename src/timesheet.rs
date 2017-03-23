@@ -88,9 +88,9 @@ pub fn init() -> bool {
     if is_init() {
         false
     } else {
-        /* file does not exist, create it */
+        /* file does not exist, do an init */
+        /* TODO: avoid time-of-check-to-time-of-use race risk */
         let path = Path::new("./.trk/sessions.trk");
-        /* let display = path.display(); */
         let file = OpenOptions::new()
             .read(true)
             .write(true)
@@ -98,34 +98,19 @@ pub fn init() -> bool {
             .open(&path);
 
         match file {
-            Ok(mut f) => {
+            Ok(mut file) => {
                 let sheet = Timesheet::new();
                 /* Convert the sheet to a JSON string. */
-                let serialized = serde_json::to_string(&sheet).unwrap();
-                f.write_all(serialized.as_bytes()).unwrap();
+                let serialized =
+                    serde_json::to_string(&sheet).expect("Could not write serialized time sheet!");
+                file.write_all(serialized.as_bytes()).unwrap();
             }
             Err(why) => println!("{}", why.description()),
         }
-        /*
-
-
-        // Prints serialized session
-        println!("serialized = {}", serialized);
-
-        // Convert the JSON string back to a Session.
-        let deserialized: Timesheet = serde_json::from_str(&serialized).unwrap();
-
-        // Prints deserialized Session
-        println!("deserialized = {:?}", deserialized);
-        */
         true
     }
 }
 
 pub fn is_init() -> bool {
-    /* let p = env::current_dir().unwrap();
-    println!("The current directory is {}", p.display());
-    */
-    let path = Path::new("./.trk/sessions.trk");
-    path.exists()
+    Path::new("./.trk/sessions.trk").exists()
 }
