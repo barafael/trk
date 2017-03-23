@@ -22,8 +22,6 @@ pub enum Event {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Session {
     pub id: u64,
-    /* is this field necessary? At least un-hardcode*/
-    pub user: String,
     events: Vec<Event>,
 }
 
@@ -33,7 +31,6 @@ impl Session {
         let seconds = now.duration_since(UNIX_EPOCH).unwrap().as_secs();
         Session {
             id: seconds,
-            user: "Rafael".to_string(),
             events: Vec::<Event>::new(),
         }
     }
@@ -66,12 +63,12 @@ struct Timesheet {
 }
 
 impl Timesheet {
-    pub fn new() -> Timesheet {
+    pub fn new(name: &str) -> Timesheet {
         let now = SystemTime::now();
         let seconds = now.duration_since(UNIX_EPOCH).unwrap().as_secs();
         Timesheet {
             id: seconds,
-            user: "Rafael".to_string(),
+            user: name.to_string(),
             sessions: Vec::<Session>::new(),
         }
     }
@@ -83,7 +80,7 @@ impl Timesheet {
 }
 
 /* Initializes the .trk/sessions.trk file which holds the serialized timesheet */
-pub fn init() -> bool {
+pub fn init(name: &str) -> bool {
     /* Check if file already exists(no init permitted) */
     if is_init() {
         false
@@ -99,7 +96,7 @@ pub fn init() -> bool {
 
         match file {
             Ok(mut file) => {
-                let sheet = Timesheet::new();
+                let sheet = Timesheet::new(name);
                 /* Convert the sheet to a JSON string. */
                 let serialized =
                     serde_json::to_string(&sheet).expect("Could not write serialized time sheet!");
@@ -116,8 +113,9 @@ pub fn is_init() -> bool {
     Path::new("./.trk/sessions.trk").exists()
 }
 
-pub fn clear() {
+pub fn clear_sessions() {
+    /* TODO: deserialize, find out name and call init with it */
     let path = Path::new("./.trk/sessions.trk");
-    fs::remove_file(&path).expect("Could not remove file at!");
-    init();
+    fs::remove_file(&path).expect("Could not remove file!");
+    init("Rafael Bachmann");
 }

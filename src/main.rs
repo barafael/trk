@@ -4,6 +4,8 @@ extern crate clap;
 #[macro_use]
 extern crate serde_derive;
 
+use std::process::Command;
+
 mod timesheet;
 
 fn main() {
@@ -22,6 +24,7 @@ fn main() {
                 (about: "Initialise trk in this directory")
                 (version: "0.1")
                 (author:  "Rafael B. <mediumendian@gmail.com>")
+                (@arg name: "User name. Default is git user name if set, empty otherwise.")
             )
             (@subcommand begin =>
                 (about: "Begin session")
@@ -79,8 +82,10 @@ fn main() {
     println!("[UNUSED] Value for config: {}", config);
 
     match matches.subcommand() {
-        ("init", Some(..)) => {
-            if !timesheet::init() {
+        ("init", Some(name)) => {
+            let git_name = git_name().unwrap_or("".to_string());
+            let author = name.value_of("name").unwrap_or(&git_name);
+            if !timesheet::init(author) {
                 println!("Already initialized!");
             }
         }
@@ -105,10 +110,28 @@ fn main() {
             session.status();
         }
         ("clear", Some(..)) => {
-            // TODO: really do it
             println!("Clearing sessions!");
-            timesheet::clear();
+            timesheet::clear_sessions();
         }
         _ => {}
+    }
+}
+
+pub fn git_name() -> Option<String> {
+
+    if let Ok(output) = Command::new("git").arg("config").arg("user.name").output() {
+        if output.status.success() {
+            let s = String::from_utf8_lossy(&output.stdout);
+            /* remove trailing newline character */
+            let mut s = s.to_string();
+            s.pop().expect("Empty name in git config!?!");
+            Some(s)
+        } else {
+            let s = String::from_utf8_lossy(&output.stderr);
+            println!("git config user.name failed! {}", s);
+            None
+        }
+    } else {
+        None
     }
 }
