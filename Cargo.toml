@@ -6,3 +6,7 @@ authors = ["rafael"]
 [dependencies]
 time = "0.1.36"
 clap = "2.21.2"
+serde = "0.9.11"
+serde_derive = "0.9.11"
+serde_json = "0.9.9"
+
