@@ -34,6 +34,7 @@ impl Session {
         }
     }
     pub fn push_event(&mut self, e: Event) {
+        // TODO: add logic
         match e {
             Event::BeginPeriod => self.events.push(e),
             Event::EndPeriod => self.events.push(e),
@@ -45,6 +46,9 @@ impl Session {
             Event::Commit { .. } => self.events.push(e),
             Event::Branch { .. } => self.events.push(e),
         }
+    }
+    pub fn status(&self) { // return formatted string
+        println!("{:?}", self.events);
     }
 }
 

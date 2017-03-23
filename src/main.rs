@@ -25,9 +25,9 @@ fn main() {
                 (author:  "Rafael B. <mediumendian@gmail.com>")
             )
             (@subcommand beginsession =>
-                    (about: "Begin session")
-                    (version: "0.1")
-                    (author:  "Rafael B. <mediumendian@gmail.com>")
+                (about: "Begin session")
+                (version: "0.1")
+                (author:  "Rafael B. <mediumendian@gmail.com>")
             )
             (@subcommand endperiod =>
                 (about: "End period")
@@ -67,6 +67,16 @@ fn main() {
                 (author: "mediumendian@gmail.com")
                 (@arg name: +required "New branch name")
             )
+            (@subcommand status =>
+                (about: "prints the current WIP")
+                (version: "0.1")
+                (author: "mediumendian@gmail.com")
+            )
+            (@subcommand clear =>
+                (about: "temporary: clears the deserialized file")
+                (version: "0.1")
+                (author: "mediumendian@gmail.com")
+            )
        )
             .get_matches();
 
@@ -75,24 +85,12 @@ fn main() {
     println!("[UNUSED] Value for config: {}", config);
 
     match matches.subcommand() { 
-        ("beginperiod", Some(..)) => {
-            session.push_event(timesheet::Event::BeginPeriod)
-        }
-        ("endperiod", Some(..)) => {
-            session.push_event(timesheet::Event::EndPeriod)
-        }
-        ("beginsession", Some(..)) => {
-            session.push_event(timesheet::Event::BeginSession)
-        }
-        ("endsession", Some(..)) => {
-            session.push_event(timesheet::Event::EndSession)
-        }
-        ("pause", Some(..)) => {
-            session.push_event(timesheet::Event::Pause)
-        }
-        ("proceed", Some(..)) => {
-            session.push_event(timesheet::Event::Proceed)
-        }
+        ("beginperiod", Some(..)) => session.push_event(timesheet::Event::BeginPeriod),
+        ("endperiod", Some(..)) => session.push_event(timesheet::Event::EndPeriod),
+        ("beginsession", Some(..)) => session.push_event(timesheet::Event::BeginSession),
+        ("endsession", Some(..)) => session.push_event(timesheet::Event::EndSession),
+        ("pause", Some(..)) => session.push_event(timesheet::Event::Pause),
+        ("proceed", Some(..)) => session.push_event(timesheet::Event::Proceed),
         ("meta", Some(sub_input)) => {
             let metatext = sub_input.value_of("text").unwrap();
             session.push_event(timesheet::Event::Meta { text: metatext.to_string() });
@@ -105,6 +103,13 @@ fn main() {
         ("branch", Some(sub_input)) => {
             let branch_name = sub_input.value_of("name").unwrap();
             session.push_event(timesheet::Event::Branch { name: branch_name.to_string() });
+        }
+        ("status", Some(..)) => {
+            session.status();
+        }
+        ("clear", Some(..)) => {
+            // TODO: really do it
+            println!("Clearing session and period!");
         }
         _ => {}
     }
