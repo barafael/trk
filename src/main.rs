@@ -1,6 +1,11 @@
 #[macro_use]
 extern crate clap;
 
+#[macro_use]
+extern crate serde_derive;
+
+extern crate serde_json;
+
 mod timesheet;
 
 fn main() {
@@ -70,6 +75,7 @@ fn main() {
     println!("Value for config: {}", config);
 
     // You can handle information about subcommands by requesting their matches by name
+    // TODO: Find a way to do this in a better way than an if sequence
     if matches.is_present("beginperiod") {
         ts.append_event(timesheet::Event::BeginPeriod)
     }
@@ -107,4 +113,17 @@ fn main() {
         _ => {}
     }
     println!("{:?}", ts);
+
+    // Convert the Point to a JSON string.
+    let serialized = serde_json::to_string(&ts).unwrap();
+
+    // Prints serialized = {"x":1,"y":2}
+    println!("serialized = {}", serialized);
+
+    // Convert the JSON string back to a Point.
+    let deserialized: timesheet::Session = serde_json::from_str(&serialized).unwrap();
+
+    // Prints deserialized = Point { x: 1, y: 2 }
+    println!("deserialized = {:?}", deserialized);
 }
+

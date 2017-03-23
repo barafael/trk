@@ -2,7 +2,7 @@ extern crate time;
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub enum Event {
     BeginPeriod,
     EndPeriod,
@@ -15,10 +15,10 @@ pub enum Event {
     Branch { name: String },
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Session {
     pub id: u64,
-    pub user: &'static str,
+    pub user: String,
     events: Vec<Event>,
 }
 
@@ -28,7 +28,7 @@ impl Session {
         let seconds = now.duration_since(UNIX_EPOCH).unwrap().as_secs();
         Session {
             id: seconds,
-            user: "Rafael",
+            user: "Rafael".to_string(),
             events: Vec::<Event>::new(),
         }
     }
