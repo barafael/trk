@@ -9,7 +9,7 @@ extern crate serde_json;
 mod timesheet;
 
 fn main() {
-    let mut ts = timesheet::Session::new();
+    let mut session = timesheet::Session::new();
 
     /* Handle command line arguments with clap */
     let matches = clap_app!(trk =>
@@ -77,45 +77,45 @@ fn main() {
     // You can handle information about subcommands by requesting their matches by name
     // TODO: Find a way to do this in a better way than an if sequence
     if matches.is_present("beginperiod") {
-        ts.append_event(timesheet::Event::BeginPeriod)
+        session.append_event(timesheet::Event::BeginPeriod)
     }
     if matches.is_present("beginsession") {
-        ts.append_event(timesheet::Event::BeginSession)
+        session.append_event(timesheet::Event::BeginSession)
     }
     if matches.is_present("endperiod") {
-        ts.append_event(timesheet::Event::EndPeriod)
+        session.append_event(timesheet::Event::EndPeriod)
     }
     if matches.is_present("endsession") {
-        ts.append_event(timesheet::Event::EndSession)
+        session.append_event(timesheet::Event::EndSession)
     }
 
     if matches.is_present("pause") {
-        ts.append_event(timesheet::Event::Pause)
+        session.append_event(timesheet::Event::Pause)
     }
     if matches.is_present("proceed") {
-        ts.append_event(timesheet::Event::Proceed)
+        session.append_event(timesheet::Event::Proceed)
     }
 
     match matches.subcommand() { 
         ("meta", Some(sub_input)) => {
             let metatext = sub_input.value_of("text").unwrap();
-            ts.append_event(timesheet::Event::Meta { text: metatext.to_string() });
+            session.append_event(timesheet::Event::Meta { text: metatext.to_string() });
         }
         ("commit", Some(sub_input)) => {
             let commit_hash = sub_input.value_of("hash").unwrap();
             let hash_parsed = u64::from_str_radix(commit_hash, 16).unwrap();
-            ts.append_event(timesheet::Event::Commit { hash: hash_parsed });
+            session.append_event(timesheet::Event::Commit { hash: hash_parsed });
         }
         ("branch", Some(sub_input)) => {
             let branch_name = sub_input.value_of("name").unwrap();
-            ts.append_event(timesheet::Event::Branch { name: branch_name.to_string() });
+            session.append_event(timesheet::Event::Branch { name: branch_name.to_string() });
         }
         _ => {}
     }
-    println!("{:?}", ts);
+    println!("{:?}", session);
 
     // Convert the Point to a JSON string.
-    let serialized = serde_json::to_string(&ts).unwrap();
+    let serialized = serde_json::to_string(&session).unwrap();
 
     // Prints serialized = {"x":1,"y":2}
     println!("serialized = {}", serialized);
@@ -126,4 +126,3 @@ fn main() {
     // Prints deserialized = Point { x: 1, y: 2 }
     println!("deserialized = {:?}", deserialized);
 }
-
