@@ -9,8 +9,6 @@ use std::process::Command;
 mod timesheet;
 
 fn main() {
-    let mut session = timesheet::Session::new();
-
     /* Handle command line arguments with clap */
     let matches = clap_app!(trk =>
         (version: "0.1")
@@ -77,37 +75,57 @@ fn main() {
        )
             .get_matches();
 
-    // Gets a value for config if supplied by user, or defaults to "default.conf"
-    let config = matches.value_of("config").unwrap_or("default.conf");
-    println!("[UNUSED] Value for config: {}", config);
-
     match matches.subcommand() {
         ("init", Some(name)) => {
             let git_name = git_name().unwrap_or("".to_string());
             let author = name.value_of("name").unwrap_or(&git_name);
             if !timesheet::init(author) {
                 println!("Already initialized!");
+                return;
+            } else {
+                return;
             }
         }
-        ("begin", Some(..)) => session.push_event(timesheet::Event::Begin),
-        ("end", Some(..)) => session.push_event(timesheet::Event::End),
-        ("pause", Some(..)) => session.push_event(timesheet::Event::Pause),
-        ("proceed", Some(..)) => session.push_event(timesheet::Event::Proceed),
-        ("meta", Some(sub_input)) => {
-            let metatext = sub_input.value_of("text").unwrap();
-            session.push_event(timesheet::Event::Meta { text: metatext.to_string() });
+    }
+    let t_sheet = match timesheet::load_from_file() {
+        Some(ts) => ts,
+        None     => timesheet::Timesheet::new(&git_name().unwrap_or("".to_string())),
+    };
+    // Gets a value for config if supplied by user, or defaults to "default.conf"
+    let config = matches.value_of("config").unwrap_or("default.conf");
+    println!("[UNUSED] Value for config: {}", config);
+
+    match matches.subcommand() {
+        ("begin", Some(..)) => {
+            t_sheet.push_session(timesheet::Session::new());
         }
-        ("commit", Some(sub_input)) => {
-            let commit_hash = sub_input.value_of("hash").unwrap();
+        ("end", Some(..)) => {
+            let session = t_sheet.get_last_session().expect("No sessions to end!");
+            session.finalize();
+        }
+        ("pause", Some(..)) => t_sheet.get_last_session().expect("No session to pause!")
+            .push_event(timesheet::Event::Pause),
+        ("proceed", Some(..)) => t_sheet.get_last_session().expect("No session to proceed!")
+            .push_event(timesheet::Event::Proceed),
+        ("meta", Some(sub_arg)) => {
+            let metatext = sub_arg.value_of("text").unwrap();
+            t_sheet.get_last_session().expect("No session to add meta to!")
+            .push_event(timesheet::Event::Meta { text: metatext.to_string()})
+        }
+        ("commit", Some(sub_arg)) => {
+            let commit_hash = sub_arg.value_of("hash").unwrap();
             let hash_parsed = u64::from_str_radix(commit_hash, 16).unwrap();
-            session.push_event(timesheet::Event::Commit { hash: hash_parsed });
+            t_sheet.get_last_session().expect("No session to add commit to!")
+            .push_event(timesheet::Event::Commit { hash: hash_parsed})
         }
-        ("branch", Some(sub_input)) => {
-            let branch_name = sub_input.value_of("name").unwrap();
-            session.push_event(timesheet::Event::Branch { name: branch_name.to_string() });
+        ("branch", Some(sub_arg)) => {
+            let branch_name = sub_arg.value_of("name").unwrap();
+            t_sheet.get_last_session().expect("No session to add branch to!")
+            .push_event(timesheet::Event::Branch { name: branch_name.to_string()})
         }
         ("status", Some(..)) => {
-            println!("{}", session.status());
+            println!("{}", t_sheet.get_last_session().expect("No session to print status of!")
+                .status());
         }
         ("clear", Some(..)) => {
             println!("Clearing sessions!");

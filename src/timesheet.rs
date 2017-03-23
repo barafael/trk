@@ -21,7 +21,8 @@ pub enum Event {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Session {
-    pub id: u64,
+    pub start: u64,
+    pub finish: u64,
     events: Vec<Event>,
 }
 
@@ -30,7 +31,8 @@ impl Session {
         let now = SystemTime::now();
         let seconds = now.duration_since(UNIX_EPOCH).unwrap().as_secs();
         Session {
-            id: seconds,
+            start: seconds,
+            finish: seconds-1,
             events: Vec::<Event>::new(),
         }
     }
@@ -48,13 +50,18 @@ impl Session {
         }
     }
 
+    pub fn finalize(&mut self) {
+        let now = SystemTime::now();
+        let seconds = now.duration_since(UNIX_EPOCH).unwrap().as_secs();
+        self.finish = seconds;
+    }
     pub fn status(&self) -> String {
         format!("{:?}", self.events)
     }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct Timesheet {
+pub struct Timesheet {
     id: u64,
     /* is this field necessary? At least un-hardcode*/
     user: String,
@@ -69,6 +76,13 @@ impl Timesheet {
             id: seconds,
             user: name.to_string(),
             sessions: Vec::<Session>::new(),
+        }
+    }
+
+    pub fn get_last_session(&self) -> Option<&Session> {
+        match self.sessions.len() {
+            0 => None,
+            n => Some(&self.sessions[n-1])
         }
     }
 
@@ -95,6 +109,7 @@ pub fn init(name: &str) -> bool {
 
         match file {
             Ok(mut file) => {
+                /* leave an empty timesheet, not an empty file */
                 let sheet = Timesheet::new(name);
                 /* Convert the sheet to a JSON string. */
                 let serialized =
@@ -113,8 +128,23 @@ pub fn is_init() -> bool {
 }
 
 pub fn clear_sessions() {
-    /* TODO: deserialize, find out name and call init with it */
+    let temp_ts = load_from_file().unwrap();
+    let name = temp_ts.user;
     let path = Path::new("./.trk/sessions.trk");
     fs::remove_file(&path).expect("Could not remove file!");
-    init("Rafael Bachmann");
+    init(&name);
+}
+
+pub fn load_from_file() -> Option<Timesheet> {
+    let path = Path::new("./.trk/sessions.trk");
+    let file = OpenOptions::new().read(true).create(true).open(&path);
+    match file {
+        Ok(mut f) => {
+            let mut serialized = String::new();
+            f.read_to_string(&mut serialized).unwrap();
+            let deserialized: Timesheet = serde_json::from_str(&serialized).unwrap();
+            Some(deserialized)
+        }
+        Err(_) => None,
+    }
 }
