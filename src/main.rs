@@ -75,57 +75,109 @@ fn main() {
        )
             .get_matches();
 
-    match matches.subcommand() {
-        ("init", Some(name)) => {
-            let git_name = git_name().unwrap_or("".to_string());
-            let author = name.value_of("name").unwrap_or(&git_name);
-            if !timesheet::init(author) {
-                println!("Already initialized!");
-                return;
-            } else {
-                return;
-            }
-        }
-    }
-    let t_sheet = match timesheet::load_from_file() {
-        Some(ts) => ts,
-        None     => timesheet::Timesheet::new(&git_name().unwrap_or("".to_string())),
-    };
     // Gets a value for config if supplied by user, or defaults to "default.conf"
     let config = matches.value_of("config").unwrap_or("default.conf");
     println!("[UNUSED] Value for config: {}", config);
 
+    let t_sheet = timesheet::load_from_file();
+
     match matches.subcommand() {
+        ("init", Some(name)) => {
+            match t_sheet {
+                Some(..) => println!("Already initialised!"),
+                None => {
+                    let git_name = git_name().unwrap_or("".to_string());
+                    let author = name.value_of("name").unwrap_or(&git_name);
+                    match timesheet::init(author) {
+                        true => println!("Init successful."),
+                        false => println!("Could not initialize."),
+                    }
+                }
+            }
+        }
         ("begin", Some(..)) => {
-            t_sheet.push_session(timesheet::Session::new());
+            match t_sheet {
+                //TODO: prevent double begin
+                Some(mut sheet) => {
+                    sheet.new_session();
+                }
+                None => println!("No sheet open! Did you init?"),
+            }
         }
         ("end", Some(..)) => {
-            let session = t_sheet.get_last_session().expect("No sessions to end!");
-            session.finalize();
+            match t_sheet {
+                Some(mut sheet) => sheet.finalize_last(),
+                None => println!("No sheet open!"),
+            }
         }
-        ("pause", Some(..)) => t_sheet.get_last_session().expect("No session to pause!")
-            .push_event(timesheet::Event::Pause),
-        ("proceed", Some(..)) => t_sheet.get_last_session().expect("No session to proceed!")
-            .push_event(timesheet::Event::Proceed),
+        ("pause", Some(..)) => {
+            match t_sheet {
+                Some(mut sheet) => {
+                    if !sheet.push_event(timesheet::Event::Pause {
+                                             time: timesheet::get_seconds(),
+                                         }) {
+                        println!("Can't pause now!");
+                    }
+                }
+                None => println!("No sheet open!"),
+            }
+        }
+        ("proceed", Some(..)) => {
+            match t_sheet {
+                Some(mut sheet) => {
+                    if !sheet.push_event(timesheet::Event::Proceed {
+                                             time: timesheet::get_seconds(),
+                                         }) {
+                        println!("Can't proceed now!");
+                    }
+                }
+                None => println!("No sheet open!"),
+            }
+        }
         ("meta", Some(sub_arg)) => {
-            let metatext = sub_arg.value_of("text").unwrap();
-            t_sheet.get_last_session().expect("No session to add meta to!")
-            .push_event(timesheet::Event::Meta { text: metatext.to_string()})
+            match t_sheet {
+                Some(mut sheet) => {
+                    let metatext = sub_arg.value_of("text").unwrap();
+                    if !sheet.push_event(timesheet::Event::Meta { text: metatext.to_string() }) {
+                        println!("Can't meta now!");
+                    }
+                }
+                None => println!("No sheet open!"),
+            }
         }
         ("commit", Some(sub_arg)) => {
-            let commit_hash = sub_arg.value_of("hash").unwrap();
-            let hash_parsed = u64::from_str_radix(commit_hash, 16).unwrap();
-            t_sheet.get_last_session().expect("No session to add commit to!")
-            .push_event(timesheet::Event::Commit { hash: hash_parsed})
+            match t_sheet {
+                Some(mut sheet) => {
+                    let commit_hash = sub_arg.value_of("hash").unwrap();
+                    let hash_parsed = u64::from_str_radix(commit_hash, 16).unwrap();
+                    if !sheet.push_event(timesheet::Event::Commit { hash: hash_parsed }) {
+                        println!("Can't commit now!");
+                    }
+                }
+                None => println!("No sheet open!"),
+            }
         }
         ("branch", Some(sub_arg)) => {
-            let branch_name = sub_arg.value_of("name").unwrap();
-            t_sheet.get_last_session().expect("No session to add branch to!")
-            .push_event(timesheet::Event::Branch { name: branch_name.to_string()})
+            match t_sheet {
+                Some(mut sheet) => {
+                    let branch_name = sub_arg.value_of("name").unwrap();
+                    if !sheet.push_event(timesheet::Event::Branch {
+                                             name: branch_name.to_string(),
+                                         }) {
+                        println!("Can't change branch now!");
+                    }
+                }
+                None => println!("No sheet open!"),
+            }
         }
         ("status", Some(..)) => {
-            println!("{}", t_sheet.get_last_session().expect("No session to print status of!")
-                .status());
+            match t_sheet {
+                Some(mut sheet) => {
+                    println!("{:?}", sheet.last_status());
+                }
+
+                None => println!("No sheet open!"),
+            }
         }
         ("clear", Some(..)) => {
             println!("Clearing sessions!");
@@ -136,7 +188,6 @@ fn main() {
 }
 
 pub fn git_name() -> Option<String> {
-
     if let Ok(output) = Command::new("git").arg("config").arg("user.name").output() {
         if output.status.success() {
             let s = String::from_utf8_lossy(&output.stdout);
