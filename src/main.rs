@@ -76,8 +76,8 @@ fn main() {
             .get_matches();
 
     // Gets a value for config if supplied by user, or defaults to "default.conf"
-    let config = matches.value_of("config").unwrap_or("default.conf");
-    println!("[UNUSED] Value for config: {}", config);
+    /* let config = matches.value_of("config").unwrap_or("default.conf"); */
+    // println!("[UNUSED] Value for config: {}", config);
 
     let t_sheet = timesheet::load_from_file();
 
@@ -97,9 +97,10 @@ fn main() {
         }
         ("begin", Some(..)) => {
             match t_sheet {
-                //TODO: prevent double begin
                 Some(mut sheet) => {
-                    sheet.new_session();
+                    if !sheet.new_session() {
+                        println!("There is already a running session!");
+                    }
                 }
                 None => println!("No sheet open! Did you init?"),
             }
@@ -172,8 +173,8 @@ fn main() {
         }
         ("status", Some(..)) => {
             match t_sheet {
-                Some(mut sheet) => {
-                    println!("{:?}", sheet.last_status());
+                Some(sheet) => {
+                    println!("{:?}", sheet.status());
                 }
 
                 None => println!("No sheet open!"),

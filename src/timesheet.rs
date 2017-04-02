@@ -65,7 +65,6 @@ impl Session {
                 pushed
             }
             Event::Meta { .. } => {
-                println!("pushing meta");
                 self.events.push(e);
                 true
             }
@@ -78,6 +77,10 @@ impl Session {
                 true
             }
         }
+    }
+
+    fn is_running(&self) -> bool {
+        self.finish == (self.start - 1)
     }
 
     pub fn finalize(&mut self) {
@@ -117,6 +120,7 @@ impl Timesheet {
         self.save_to_file();
         result
     }
+
     pub fn get_last_session(&mut self) -> Option<&mut Session> {
         match self.sessions.len() {
             0 => None,
@@ -124,10 +128,17 @@ impl Timesheet {
         }
     }
 
-    pub fn new_session(&mut self) {
-        /* TODO: assert valid session logic here */
-        self.sessions.push(Session::new());
+    pub fn new_session(&mut self) -> bool {
+        let s_count = self.sessions.len();
+        let push = match s_count {
+            0 => true,
+            _ => !self.sessions[s_count - 1].is_running(),
+        };
+        if push {
+            self.sessions.push(Session::new());
+        }
         self.save_to_file();
+        push
     }
 
     pub fn finalize_last(&mut self) {
@@ -172,13 +183,16 @@ impl Timesheet {
             }
         }
     }
+
+    pub fn status(&self) -> String {
+        format!("{:?}", self)
+    }
 }
 
 /* Initializes the .trk/sessions.trk file which holds the serialized timesheet */
 pub fn init(name: &str) -> bool {
     /* Check if file already exists(no init permitted) */
     if is_init() {
-        println!("Already initialized!");
         false
     } else {
         /* file does not exist, initialize */
