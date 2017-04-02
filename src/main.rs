@@ -63,10 +63,11 @@ fn main() {
                 (@arg name: +required "New branch name")
             )
             (@subcommand status =>
-                (about: "prints the current WIP")
+                (about: "prints the current WIP for session or entire sheet as json")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
-            )
+                (@arg which: +required "session or sheet")
+                )
             (@subcommand clear =>
                 (about: "temporary: clears the deserialized file")
                 (version: "0.1")
@@ -171,10 +172,15 @@ fn main() {
                 None => println!("No sheet open!"),
             }
         }
-        ("status", Some(..)) => {
+        ("status", Some(which)) => {
             match t_sheet {
                 Some(sheet) => {
-                    println!("{:?}", sheet.status());
+                    match which.value_of("which") {
+                        Some("session") => println!("{:?}", sheet.last_status()),
+                        Some("sheet") => println!("{:?}", sheet.status()),
+                        Some(text) => println!("What do you mean by {}?", text),
+                        None => {}
+                    }
                 }
 
                 None => println!("No sheet open!"),

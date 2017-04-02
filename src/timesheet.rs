@@ -149,10 +149,11 @@ impl Timesheet {
         self.save_to_file();
     }
 
-    pub fn last_status(&mut self) -> Option<String> {
-        match self.get_last_session() {
-            Some(s) => Some(s.status()),
-            None => None,
+    pub fn last_status(&self) -> Option<String> {
+        let s_count = self.sessions.len();
+        match s_count {
+            0 => None,
+            n => Some(self.sessions[n - 1].status()),
         }
     }
 
