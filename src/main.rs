@@ -81,114 +81,79 @@ fn main() {
 
     let t_sheet: Option<timesheet::Timesheet> = timesheet::Timesheet::load_from_file();
 
-    match matches.subcommand() {
-        ("init", Some(name)) => {
-            match t_sheet {
-                Some(..) => println!("Already initialised!"),
-                None => {
-                    let author = match name.value_of("name") {
-                        Some(n) => Some(n),
-                        None => None,
-                    };
-                    match timesheet::Timesheet::init(author) {
-                        Some(..) => println!("Init successful."),
-                        None => println!("Could not initialize."),
-                    }
+    /* Special case for init because t_sheet can and should be None before initialisation */
+    if let Some(command) = matches.subcommand_matches("init") {
+        match t_sheet {
+            Some(..) => println!("Already initialised!"),
+            None => {
+                let author = match command.value_of("name") {
+                    Some(name) => Some(name),
+                    None => None,
+                };
+                match timesheet::Timesheet::init(author) {
+                    Some(..) => println!("Init successful."),
+                    None => println!("Could not initialize."),
                 }
             }
         }
+        return;
+    }
+
+    let mut ts = match t_sheet {
+        Some(f) => f,
+        None => panic!("No sessions file! You might have to init first."),
+    };
+
+    match matches.subcommand() {
         ("begin", Some(..)) => {
-            match t_sheet {
-                Some(mut sheet) => {
-                    sheet.new_session();
-                }
-                None => println!("No sheet open! Did you init?"),
-            }
+            ts.new_session();
         }
         ("end", Some(..)) => {
-            match t_sheet {
-                Some(mut sheet) => sheet.finalize_last(),
-                None => println!("No sheet open!"),
-            }
+            ts.finalize_last();
         }
         ("pause", Some(..)) => {
-            match t_sheet {
-                Some(mut sheet) => {
-                    if !sheet.push_event(timesheet::Event::Pause {
-                                             time: timesheet::get_seconds(),
-                                         }) {
-                        println!("Can't pause now!");
-                    }
-                }
-                None => println!("No sheet open!"),
+            if !ts.push_event(timesheet::Event::Pause { time: timesheet::get_seconds() }) {
+                println!("Can't pause now!");
             }
         }
         ("proceed", Some(..)) => {
-            match t_sheet {
-                Some(mut sheet) => {
-                    if !sheet.push_event(timesheet::Event::Proceed {
-                                             time: timesheet::get_seconds(),
-                                         }) {
-                        println!("Can't proceed now!");
-                    }
-                }
-                None => println!("No sheet open!"),
+            if !ts.push_event(timesheet::Event::Proceed { time: timesheet::get_seconds() }) {
+                println!("Can't proceed now!");
             }
         }
         ("meta", Some(sub_arg)) => {
-            match t_sheet {
-                Some(mut sheet) => {
-                    let metatext = sub_arg.value_of("text").unwrap();
-                    if !sheet.push_event(timesheet::Event::Meta { text: metatext.to_string() }) {
-                        println!("Can't meta now!");
-                    }
-                }
-                None => println!("No sheet open!"),
+            let metatext = sub_arg.value_of("text").unwrap();
+            if !ts.push_event(timesheet::Event::Meta { text: metatext.to_string() }) {
+
+                println!("Can't meta now!");
             }
         }
         ("commit", Some(sub_arg)) => {
-            match t_sheet {
-                Some(mut sheet) => {
-                    let commit_hash = sub_arg.value_of("hash").unwrap();
-                    let hash_parsed = u64::from_str_radix(commit_hash, 16).unwrap();
-                    if !sheet.push_event(timesheet::Event::Commit { hash: hash_parsed }) {
-                        println!("Can't commit now!");
-                    }
-                }
-                None => println!("No sheet open!"),
+            let commit_hash = sub_arg.value_of("hash").unwrap();
+            let hash_parsed = u64::from_str_radix(commit_hash, 16).unwrap();
+            if !ts.push_event(timesheet::Event::Commit { hash: hash_parsed }) {
+                println!("Can't commit now!");
             }
         }
         ("branch", Some(sub_arg)) => {
-            match t_sheet {
-                Some(mut sheet) => {
-                    let branch_name = sub_arg.value_of("name").unwrap();
-                    if !sheet.push_event(timesheet::Event::Branch {
-                                             name: branch_name.to_string(),
-                                         }) {
-                        println!("Can't change branch now!");
-                    }
-                }
-                None => println!("No sheet open!"),
+            let branch_name = sub_arg.value_of("name").unwrap();
+            if !ts.push_event(timesheet::Event::Branch { name: branch_name.to_string() }) {
+                println!("Can't change branch now!");
             }
         }
         ("status", Some(which)) => {
-            match t_sheet {
-                Some(sheet) => {
-                    match which.value_of("which") {
-                        Some("session") => println!("{:?}", sheet.last_session_status()),
-                        Some("sheet") => println!("{:?}", sheet.timesheet_status()),
-                        Some(text) => println!("What do you mean by {}?", text),
-                        None => {}
-                    }
-                }
-
-                None => println!("No sheet open!"),
+            match which.value_of("which") {
+                Some("session") => println!("{:?}", ts.last_session_status()),
+                Some("sheet") => println!("{:?}", ts.timesheet_status()),
+                Some(text) => println!("What do you mean by {}?", text),
+                None => {}
             }
         }
         ("clear", Some(..)) => {
             println!("Clearing sessions!");
             timesheet::Timesheet::clear_sessions();
         }
+        // Can this be avoided? It is needed even if init is added to the match.
         _ => {}
     }
 }
