@@ -4,11 +4,17 @@ Make time sheets with git integration.
 trk is supposed to generate time sheets based on its inputs and the git history. For example:
 
 10:00 $> trk begin
+
 10:01 $> trk meta 'blablabla'
+
 10:10 $> trk commit 56345636 #automated, via git hook
+
 10:11 $> trk pause
+
 10:15 $> trk proceed
+
 ...
+
 18:00 $> trk end
 
 ```json
