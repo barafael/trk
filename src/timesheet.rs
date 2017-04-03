@@ -14,8 +14,8 @@ use std::process::Command;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Event {
-    Pause,
-    Proceed,
+    Pause(u64),
+    Proceed(u64),
     Meta { text: String },
     Commit { hash: u64 },
     Branch { name: String },
@@ -42,7 +42,7 @@ impl Session {
         self.start == (self.end + 1)
     }
 
-    pub fn finalize(&mut self) {
+    fn finalize(&mut self) {
         self.end = get_seconds();
     }
 
@@ -58,18 +58,21 @@ impl Session {
         }
         /* TODO: add logic */
         match event {
-            Event::Pause => {
+            Event::Pause(..) => {
                 let nsessions = self.events.len();
                 match nsessions {
                     /* Can't start a session with a pause */
-                    0 => false,
+                    0 => {
+                        println!("Can't pause now!");
+                        false
+                    }
                     _ => {
                         self.events.push(event);
                         true
                     }
                 }
             }
-            Event::Proceed => {
+            Event::Proceed(..) => {
                 let mut nsessions = self.events.len();
                 let mut pushed = false;
                 while nsessions > 0 {
@@ -82,7 +85,13 @@ impl Session {
                         _ => nsessions -= 1,
                     }
                 }
-                pushed
+                match pushed {
+                    true => true,
+                    false => {
+                        println!("Can't proceed now!");
+                        false
+                    }
+                }
             }
             Event::Meta { .. } => {
                 self.events.push(event);
@@ -186,9 +195,31 @@ impl Timesheet {
         pushed
     }
 
+    pub fn pause(&mut self) {
+        match self.get_last_session() {
+            Some(session) => {
+                let now = get_seconds();
+                session.push_event(Event::Pause(now));
+            }
+            None => println!("No session to pause!"),
+        }
+        self.save_to_file();
+    }
+
+    pub fn proceed(&mut self) {
+        match self.get_last_session() {
+            Some(session) => {
+                let now = get_seconds();
+                session.push_event(Event::Proceed(now));
+            }
+            None => println!("No session to pause!"),
+        }
+        self.save_to_file();
+    }
+
     pub fn finalize_last(&mut self) {
         match self.get_last_session() {
-            Some(sheet) => sheet.finalize(),
+            Some(session) => session.finalize(),
             None => println!("No session to finalize!"),
         }
         self.save_to_file();

@@ -97,7 +97,7 @@ fn main() {
 
     /* Unwrap the timesheet and continue only if sessions file exists */
     let mut sheet = match sheet_opt {
-        Some(f) => f,
+        Some(file) => file,
         None => {
             println!("No sessions file! You might have to init first.");
             return;
@@ -112,14 +112,10 @@ fn main() {
             sheet.finalize_last();
         }
         ("pause", Some(..)) => {
-            if !sheet.push_event(timesheet::Event::Pause) {
-                println!("Can't pause now!");
-            }
+            sheet.pause();
         }
         ("proceed", Some(..)) => {
-            if !sheet.push_event(timesheet::Event::Proceed) {
-                println!("Can't proceed now!");
-            }
+            sheet.proceed();
         }
         ("meta", Some(sub_arg)) => {
             let metatext = sub_arg.value_of("text").unwrap();
@@ -154,6 +150,6 @@ fn main() {
             timesheet::Timesheet::clear_sessions();
         }
         // Can this be avoided? It is needed even if init is added to the match.
-        _ => {}
+        _ => unreachable!(),
     }
 }
