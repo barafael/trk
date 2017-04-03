@@ -4,7 +4,6 @@ extern crate clap;
 #[macro_use]
 extern crate serde_derive;
 
-use std::process::Command;
 
 mod timesheet;
 
@@ -63,7 +62,7 @@ fn main() {
                 (@arg name: +required "New branch name")
             )
             (@subcommand status =>
-                (about: "prints the current WIP for session or entire sheet as json")
+                (about: "prints the current WIP for session or entire sheet (eventually as json)")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
                 (@arg which: +required "session or sheet")
@@ -76,22 +75,24 @@ fn main() {
        )
             .get_matches();
 
-    // Gets a value for config if supplied by user, or defaults to "default.conf"
-    /* let config = matches.value_of("config").unwrap_or("default.conf"); */
+    /* Gets a value for config if supplied by user, or defaults to "default.conf" */
+    // let config = matches.value_of("config").unwrap_or("default.conf");
     // println!("[UNUSED] Value for config: {}", config);
 
-    let t_sheet = timesheet::load_from_file();
+    let t_sheet: Option<timesheet::Timesheet> = timesheet::Timesheet::load_from_file();
 
     match matches.subcommand() {
         ("init", Some(name)) => {
             match t_sheet {
                 Some(..) => println!("Already initialised!"),
                 None => {
-                    let git_name = git_name().unwrap_or("".to_string());
-                    let author = name.value_of("name").unwrap_or(&git_name);
-                    match timesheet::init(author) {
-                        true => println!("Init successful."),
-                        false => println!("Could not initialize."),
+                    let author = match name.value_of("name") {
+                        Some(n) => Some(n),
+                        None => None,
+                    };
+                    match timesheet::Timesheet::init(author) {
+                        Some(..) => println!("Init successful."),
+                        None => println!("Could not initialize."),
                     }
                 }
             }
@@ -99,9 +100,7 @@ fn main() {
         ("begin", Some(..)) => {
             match t_sheet {
                 Some(mut sheet) => {
-                    if !sheet.new_session() {
-                        println!("There is already a running session!");
-                    }
+                    sheet.new_session();
                 }
                 None => println!("No sheet open! Did you init?"),
             }
@@ -176,8 +175,8 @@ fn main() {
             match t_sheet {
                 Some(sheet) => {
                     match which.value_of("which") {
-                        Some("session") => println!("{:?}", sheet.last_status()),
-                        Some("sheet") => println!("{:?}", sheet.status()),
+                        Some("session") => println!("{:?}", sheet.last_session_status()),
+                        Some("sheet") => println!("{:?}", sheet.timesheet_status()),
                         Some(text) => println!("What do you mean by {}?", text),
                         None => {}
                     }
@@ -188,26 +187,8 @@ fn main() {
         }
         ("clear", Some(..)) => {
             println!("Clearing sessions!");
-            timesheet::clear_sessions();
+            timesheet::Timesheet::clear_sessions();
         }
         _ => {}
-    }
-}
-
-pub fn git_name() -> Option<String> {
-    if let Ok(output) = Command::new("git").arg("config").arg("user.name").output() {
-        if output.status.success() {
-            let s = String::from_utf8_lossy(&output.stdout);
-            /* remove trailing newline character */
-            let mut s = s.to_string();
-            s.pop().expect("Empty name in git config!?!");
-            Some(s)
-        } else {
-            let s = String::from_utf8_lossy(&output.stderr);
-            println!("git config user.name failed! {}", s);
-            None
-        }
-    } else {
-        None
     }
 }

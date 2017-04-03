@@ -2,11 +2,15 @@ extern crate time;
 extern crate serde_json;
 
 use std::io::prelude::*;
+
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::error::Error;
+
 use std::fs;
-use std::fs::OpenOptions;
 use std::path::Path;
+use std::error::Error;
+use std::fs::OpenOptions;
+
+use std::process::Command;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Event {
@@ -20,7 +24,7 @@ pub enum Event {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Session {
     pub start: u64,
-    pub finish: u64,
+    pub end: u64,
     events: Vec<Event>,
 }
 
@@ -29,19 +33,38 @@ impl Session {
         let seconds = get_seconds();
         Session {
             start: seconds,
-            finish: seconds - 1,
+            end: seconds - 1,
             events: Vec::<Event>::new(),
         }
     }
 
+    fn is_running(&self) -> bool {
+        self.end == (self.start - 1)
+    }
+
+    pub fn finalize(&mut self) {
+        self.end = get_seconds();
+        assert!(self.end > self.start);
+    }
+
+    fn status(&self) -> String {
+        format!("{:?}", self)
+    }
+
     pub fn push_event(&mut self, e: Event) -> bool {
+        /* Cannot push if session is already finalized! */
+        if !self.is_running() {
+            println!("Already finalized, cannot push event");
+            return false;
+        }
         /* TODO: add logic */
         match e {
             Event::Pause { time } => {
                 assert!(time > self.start);
                 let i = self.events.len();
                 match i {
-                    0 => false, // can't start a session with a pause
+                    /* can't start a session with a pause */
+                    0 => false,
                     _ => {
                         self.events.push(e);
                         true
@@ -78,37 +101,51 @@ impl Session {
             }
         }
     }
-
-    fn is_running(&self) -> bool {
-        self.finish == (self.start - 1)
-    }
-
-    pub fn finalize(&mut self) {
-        self.finish = get_seconds();
-        assert!(self.finish > self.start);
-    }
-
-    fn status(&self) -> String {
-        format!("{:?}", self)
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Timesheet {
-    begin: u64,
-    /* is this field necessary? */
+    start: u64,
+    end: u64,
     user: String,
     sessions: Vec<Session>,
 }
 
 impl Timesheet {
-    pub fn new(name: &str) -> Timesheet {
-        let now = SystemTime::now();
-        let seconds = now.duration_since(UNIX_EPOCH).unwrap().as_secs();
-        Timesheet {
-            begin: seconds,
-            user: name.to_string(),
-            sessions: Vec::<Session>::new(),
+    /** Initializes the .trk/sessions.trk file which holds
+     * the serialized timesheet
+     * Returns Some(newTimesheet) if operation succeeded */
+    pub fn init(name: Option<&str>) -> Option<Timesheet> {
+        /* Check if file already exists(no init permitted) */
+        if Timesheet::is_init() {
+            None
+        } else {
+            /* File does not exist, initialize */
+            let git_name = &git_name().unwrap_or("".to_string());
+            let author = match name {
+                Some(n) => n,
+                None => git_name,
+            };
+            let ts = Timesheet {
+                start: get_seconds(),
+                end: get_seconds() - 1,
+                user: author.to_string(),
+                sessions: Vec::<Session>::new(),
+            };
+            if ts.save_to_file() { Some(ts) } else { None }
+        }
+    }
+
+    pub fn is_init() -> bool {
+        if Path::new("./.trk/sessions.trk").exists() {
+            match Timesheet::load_from_file() {
+                Some(..) => true,
+                /* else, loading failed */
+                None => false,
+            }
+        } else {
+            /* File doesn't even exist */
+            false
         }
     }
 
@@ -129,16 +166,23 @@ impl Timesheet {
     }
 
     pub fn new_session(&mut self) -> bool {
-        let s_count = self.sessions.len();
-        let push = match s_count {
+        let nsessions = self.sessions.len();
+        let pushed = match nsessions {
             0 => true,
-            _ => !self.sessions[s_count - 1].is_running(),
+            _ => {
+                if !self.sessions[nsessions - 1].is_running() {
+                    true
+                } else {
+                    println!("Last session is still running!");
+                    false
+                }
+            }
         };
-        if push {
+        if pushed {
             self.sessions.push(Session::new());
+            self.save_to_file();
         }
-        self.save_to_file();
-        push
+        pushed
     }
 
     pub fn finalize_last(&mut self) {
@@ -149,25 +193,16 @@ impl Timesheet {
         self.save_to_file();
     }
 
-    pub fn last_status(&self) -> Option<String> {
-        let s_count = self.sessions.len();
-        match s_count {
-            0 => None,
-            n => Some(self.sessions[n - 1].status()),
-        }
-    }
-
     pub fn save_to_file(&self) -> bool {
         /* TODO: avoid time-of-check-to-time-of-use race risk */
-        /* TODO: make all commands run regardless of where trk is executed (and not just in root
-         * which is assumed here */
+        /* TODO: make all commands run regardless of where trk is executed
+         * (and not just in root which is assumed here */
         let path = Path::new("./.trk/sessions.trk");
-        match fs::remove_file(&path) {
-            Ok(..) => {}
-            Err(..) => {}
-        }
-
-        let file = OpenOptions::new().write(true).create(true).open(&path);
+        let file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .create(true)
+            .open(&path);
 
         match file {
             Ok(mut file) => {
@@ -185,68 +220,91 @@ impl Timesheet {
         }
     }
 
-    pub fn status(&self) -> String {
-        format!("{:?}", self)
-    }
-}
-
-/* Initializes the .trk/sessions.trk file which holds the serialized timesheet */
-pub fn init(name: &str) -> bool {
-    /* Check if file already exists(no init permitted) */
-    if is_init() {
-        false
-    } else {
-        /* file does not exist, initialize */
-        let ts = Timesheet::new(name);
-        ts.save_to_file()
-    }
-}
-
-pub fn is_init() -> bool {
-    if Path::new("./.trk/sessions.trk").exists() {
-        match load_from_file() {
-            Some(..) => true,
-            None => false,
-        }
-    } else {
-        false
-    }
-}
-
-pub fn clear_sessions() {
-    /* Try to get name */
-    let temp_ts = load_from_file().unwrap();
-    let name = temp_ts.user;
-
-    let path = Path::new("./.trk/sessions.trk");
-    fs::remove_file(&path).expect("Could not remove file!");
-    init(&name);
-}
-
-/** Return an Some(Timesheet) struct if a sessions.trk file is present and valid
- * in the .trk directory, and None otherwise.
- * TODO: improve error handling
- * */
-
-pub fn load_from_file() -> Option<Timesheet> {
-    let path = Path::new("./.trk/sessions.trk");
-    let file = OpenOptions::new().read(true).open(&path);
-    match file {
-        Ok(mut f) => {
-            let mut serialized = String::new();
-            match f.read_to_string(&mut serialized) {
-                Ok(..) => serde_json::from_str(&serialized).unwrap_or(None),
-                Err(..) => {
-                    println!("Reading the string failed!");
-                    None
+    /** Return a Some(Timesheet) struct if a sessions.trk file is present and valid
+     * in the .trk directory, and None otherwise.
+     * TODO: improve error handling
+     * */
+    pub fn load_from_file() -> Option<Timesheet> {
+        let path = Path::new("./.trk/sessions.trk");
+        let file = OpenOptions::new().read(true).open(&path);
+        match file {
+            Ok(mut f) => {
+                let mut serialized = String::new();
+                match f.read_to_string(&mut serialized) {
+                    Ok(..) => serde_json::from_str(&serialized).unwrap_or(None),
+                    Err(..) => {
+                        println!("Reading the string failed!");
+                        None
+                    }
                 }
             }
+            Err(..) => {
+                // println!("{}", why.description());
+                None
+            }
         }
-        Err(..) => None,
+    }
+
+    pub fn clear_sessions() {
+        /* Try to get name */
+        let ts = Timesheet::load_from_file();
+        let name: Option<String> = match ts {
+            Some(t) => {
+                let n = t.user.clone();
+                Some(n)
+            }
+            None => None,
+        };
+
+        let path = Path::new("./.trk/sessions.trk");
+        if path.exists() {
+            match fs::remove_file(&path) {
+                Ok(..) => {}
+                Err(why) => println!("Could not remove sessions file: {}", why.description()),
+            }
+        }
+        match name {
+            Some(n) => {
+                /* Will overwrite file */
+                Timesheet::init(Some(&n));
+            }
+            None => {
+                Timesheet::init(None);
+            }
+        }
+    }
+
+    pub fn timesheet_status(&self) -> String {
+        format!("{:?}", self)
+    }
+
+    pub fn last_session_status(&self) -> Option<String> {
+        let nsessions = self.sessions.len();
+        match nsessions {
+            0 => None,
+            n => Some(self.sessions[n - 1].status()),
+        }
     }
 }
 
 pub fn get_seconds() -> u64 {
-    let now = SystemTime::now();
-    now.duration_since(UNIX_EPOCH).unwrap().as_secs()
+    SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs()
+}
+
+pub fn git_name() -> Option<String> {
+    if let Ok(output) = Command::new("git").arg("config").arg("user.name").output() {
+        if output.status.success() {
+            let s = String::from_utf8_lossy(&output.stdout);
+            /* remove trailing newline character */
+            let mut s = s.to_string();
+            s.pop().expect("Empty name in git config!?!");
+            Some(s)
+        } else {
+            let s = String::from_utf8_lossy(&output.stderr);
+            println!("git config user.name failed! {}", s);
+            None
+        }
+    } else {
+        None
+    }
 }
