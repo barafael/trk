@@ -14,8 +14,8 @@ use std::process::Command;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Event {
-    Pause { time: u64 },
-    Proceed { time: u64 },
+    Pause,
+    Proceed,
     Meta { text: String },
     Commit { hash: u64 },
     Branch { name: String },
@@ -38,65 +38,62 @@ impl Session {
         }
     }
 
-    fn is_running(&self) -> bool {
-        self.end == (self.start - 1)
+    fn in_progress(&self) -> bool {
+        self.start == (self.end + 1)
     }
 
     pub fn finalize(&mut self) {
         self.end = get_seconds();
-        assert!(self.end > self.start);
     }
 
     fn status(&self) -> String {
         format!("{:?}", self)
     }
 
-    pub fn push_event(&mut self, e: Event) -> bool {
+    pub fn push_event(&mut self, event: Event) -> bool {
         /* Cannot push if session is already finalized! */
-        if !self.is_running() {
+        if !self.in_progress() {
             println!("Already finalized, cannot push event");
             return false;
         }
         /* TODO: add logic */
-        match e {
-            Event::Pause { time } => {
-                assert!(time > self.start);
-                let i = self.events.len();
-                match i {
-                    /* can't start a session with a pause */
+        match event {
+            Event::Pause => {
+                let nsessions = self.events.len();
+                match nsessions {
+                    /* Can't start a session with a pause */
                     0 => false,
                     _ => {
-                        self.events.push(e);
+                        self.events.push(event);
                         true
                     }
                 }
             }
-
-            Event::Proceed { .. } => {
-                let mut i = self.events.len();
+            Event::Proceed => {
+                let mut nsessions = self.events.len();
                 let mut pushed = false;
-                while i > 0 {
-                    match self.events[i - 1] {
+                while nsessions > 0 {
+                    match self.events[nsessions - 1] {
                         Event::Pause { .. } => {
-                            self.events.push(e);
+                            self.events.push(event);
                             pushed = true;
                             break;
                         }
-                        _ => i -= 1,
+                        _ => nsessions -= 1,
                     }
                 }
                 pushed
             }
             Event::Meta { .. } => {
-                self.events.push(e);
+                self.events.push(event);
                 true
             }
             Event::Commit { .. } => {
-                self.events.push(e);
+                self.events.push(event);
                 true
             }
             Event::Branch { .. } => {
-                self.events.push(e);
+                self.events.push(event);
                 true
             }
         }
@@ -115,24 +112,28 @@ impl Timesheet {
     /** Initializes the .trk/sessions.trk file which holds
      * the serialized timesheet
      * Returns Some(newTimesheet) if operation succeeded */
-    pub fn init(name: Option<&str>) -> Option<Timesheet> {
-        /* Check if file already exists(no init permitted) */
+    pub fn init(author_name: Option<&str>) -> Option<Timesheet> {
+        /* Check if file already exists (no init permitted) */
         if Timesheet::is_init() {
             None
         } else {
             /* File does not exist, initialize */
-            let git_name = &git_name().unwrap_or("".to_string());
-            let author = match name {
-                Some(n) => n,
-                None => git_name,
+            let git_author_name = &git_author().unwrap_or("".to_string());
+            let author_name = match author_name {
+                Some(name) => name,
+                None => git_author_name,
             };
-            let ts = Timesheet {
+            let sheet = Timesheet {
                 start: get_seconds(),
                 end: get_seconds() - 1,
-                user: author.to_string(),
+                user: author_name.to_string(),
                 sessions: Vec::<Session>::new(),
             };
-            if ts.save_to_file() { Some(ts) } else { None }
+            if sheet.save_to_file() {
+                Some(sheet)
+            } else {
+                None
+            }
         }
     }
 
@@ -149,9 +150,9 @@ impl Timesheet {
         }
     }
 
-    pub fn push_event(&mut self, e: Event) -> bool {
+    pub fn push_event(&mut self, event: Event) -> bool {
         let result = match self.get_last_session() {
-            Some(s) => s.push_event(e),
+            Some(sheet) => sheet.push_event(event),
             None => false,
         };
         self.save_to_file();
@@ -170,7 +171,7 @@ impl Timesheet {
         let pushed = match nsessions {
             0 => true,
             _ => {
-                if !self.sessions[nsessions - 1].is_running() {
+                if !self.sessions[nsessions - 1].in_progress() {
                     true
                 } else {
                     println!("Last session is still running!");
@@ -187,7 +188,7 @@ impl Timesheet {
 
     pub fn finalize_last(&mut self) {
         match self.get_last_session() {
-            Some(s) => s.finalize(),
+            Some(sheet) => sheet.finalize(),
             None => println!("No session to finalize!"),
         }
         self.save_to_file();
@@ -228,9 +229,9 @@ impl Timesheet {
         let path = Path::new("./.trk/sessions.trk");
         let file = OpenOptions::new().read(true).open(&path);
         match file {
-            Ok(mut f) => {
+            Ok(mut file) => {
                 let mut serialized = String::new();
-                match f.read_to_string(&mut serialized) {
+                match file.read_to_string(&mut serialized) {
                     Ok(..) => serde_json::from_str(&serialized).unwrap_or(None),
                     Err(..) => {
                         println!("Reading the string failed!");
@@ -247,11 +248,11 @@ impl Timesheet {
 
     pub fn clear_sessions() {
         /* Try to get name */
-        let ts = Timesheet::load_from_file();
-        let name: Option<String> = match ts {
-            Some(t) => {
-                let n = t.user.clone();
-                Some(n)
+        let sheet = Timesheet::load_from_file();
+        let name: Option<String> = match sheet {
+            Some(sheet) => {
+                let name = sheet.user.clone();
+                Some(name)
             }
             None => None,
         };
@@ -264,9 +265,9 @@ impl Timesheet {
             }
         }
         match name {
-            Some(n) => {
+            Some(name) => {
                 /* Will overwrite file */
-                Timesheet::init(Some(&n));
+                Timesheet::init(Some(&name));
             }
             None => {
                 Timesheet::init(None);
@@ -291,17 +292,17 @@ pub fn get_seconds() -> u64 {
     SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs()
 }
 
-pub fn git_name() -> Option<String> {
+pub fn git_author() -> Option<String> {
     if let Ok(output) = Command::new("git").arg("config").arg("user.name").output() {
         if output.status.success() {
-            let s = String::from_utf8_lossy(&output.stdout);
+            let output = String::from_utf8_lossy(&output.stdout);
             /* remove trailing newline character */
-            let mut s = s.to_string();
-            s.pop().expect("Empty name in git config!?!");
-            Some(s)
+            let mut output = output.to_string();
+            output.pop().expect("Empty name in git config!?!");
+            Some(output)
         } else {
-            let s = String::from_utf8_lossy(&output.stderr);
-            println!("git config user.name failed! {}", s);
+            let output = String::from_utf8_lossy(&output.stderr);
+            println!("git config user.name failed! {}", output);
             None
         }
     } else {

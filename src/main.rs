@@ -9,7 +9,7 @@ mod timesheet;
 
 fn main() {
     /* Handle command line arguments with clap */
-    let matches = clap_app!(trk =>
+    let arguments = clap_app!(trk =>
         (version: "0.1")
         (author: "Rafael B. <mediumendian@gmail.com>")
         (about: "Create timesheets from git history and meta info")
@@ -79,18 +79,14 @@ fn main() {
     // let config = matches.value_of("config").unwrap_or("default.conf");
     // println!("[UNUSED] Value for config: {}", config);
 
-    let t_sheet: Option<timesheet::Timesheet> = timesheet::Timesheet::load_from_file();
+    let sheet_opt: Option<timesheet::Timesheet> = timesheet::Timesheet::load_from_file();
 
     /* Special case for init because t_sheet can and should be None before initialisation */
-    if let Some(command) = matches.subcommand_matches("init") {
-        match t_sheet {
+    if let Some(command) = arguments.subcommand_matches("init") {
+        match sheet_opt {
             Some(..) => println!("Already initialised!"),
             None => {
-                let author = match command.value_of("name") {
-                    Some(name) => Some(name),
-                    None => None,
-                };
-                match timesheet::Timesheet::init(author) {
+                match timesheet::Timesheet::init(command.value_of("name")) {
                     Some(..) => println!("Init successful."),
                     None => println!("Could not initialize."),
                 }
@@ -99,31 +95,35 @@ fn main() {
         return;
     }
 
-    let mut ts = match t_sheet {
+    /* Unwrap the timesheet and continue only if sessions file exists */
+    let mut sheet = match sheet_opt {
         Some(f) => f,
-        None => panic!("No sessions file! You might have to init first."),
+        None => {
+            println!("No sessions file! You might have to init first.");
+            return;
+        }
     };
 
-    match matches.subcommand() {
+    match arguments.subcommand() {
         ("begin", Some(..)) => {
-            ts.new_session();
+            sheet.new_session();
         }
         ("end", Some(..)) => {
-            ts.finalize_last();
+            sheet.finalize_last();
         }
         ("pause", Some(..)) => {
-            if !ts.push_event(timesheet::Event::Pause { time: timesheet::get_seconds() }) {
+            if !sheet.push_event(timesheet::Event::Pause) {
                 println!("Can't pause now!");
             }
         }
         ("proceed", Some(..)) => {
-            if !ts.push_event(timesheet::Event::Proceed { time: timesheet::get_seconds() }) {
+            if !sheet.push_event(timesheet::Event::Proceed) {
                 println!("Can't proceed now!");
             }
         }
         ("meta", Some(sub_arg)) => {
             let metatext = sub_arg.value_of("text").unwrap();
-            if !ts.push_event(timesheet::Event::Meta { text: metatext.to_string() }) {
+            if !sheet.push_event(timesheet::Event::Meta { text: metatext.to_string() }) {
 
                 println!("Can't meta now!");
             }
@@ -131,20 +131,20 @@ fn main() {
         ("commit", Some(sub_arg)) => {
             let commit_hash = sub_arg.value_of("hash").unwrap();
             let hash_parsed = u64::from_str_radix(commit_hash, 16).unwrap();
-            if !ts.push_event(timesheet::Event::Commit { hash: hash_parsed }) {
+            if !sheet.push_event(timesheet::Event::Commit { hash: hash_parsed }) {
                 println!("Can't commit now!");
             }
         }
         ("branch", Some(sub_arg)) => {
             let branch_name = sub_arg.value_of("name").unwrap();
-            if !ts.push_event(timesheet::Event::Branch { name: branch_name.to_string() }) {
+            if !sheet.push_event(timesheet::Event::Branch { name: branch_name.to_string() }) {
                 println!("Can't change branch now!");
             }
         }
         ("status", Some(which)) => {
             match which.value_of("which") {
-                Some("session") => println!("{:?}", ts.last_session_status()),
-                Some("sheet") => println!("{:?}", ts.timesheet_status()),
+                Some("session") => println!("{:?}", sheet.last_session_status()),
+                Some("sheet") => println!("{:?}", sheet.timesheet_status()),
                 Some(text) => println!("What do you mean by {}?", text),
                 None => {}
             }
