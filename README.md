@@ -52,9 +52,12 @@ TODO: This json string should be converted to a nice representation as time shee
 
 ### Notes and TODO items ###
 
-* Pomodoro integration?
+* TODO: Convert unix timestamps to date strings (locale?)
+* TODO: Find a way to query time sheets from certain time periods (one week, since=date, or maybe place pins...)
+* Which options should trk status take and what should it output? Open a browser window with report?
+* TODO: Format output - leave out commits and branches, for example
+* TODO/nicetohave: Run this on a server instead of the local machine. What happens to git commits and the like?
 * How to handle branches? Like commits? Assume they are feature branches and append "... started working on topic x"?
 * The session struct is a list of sequential events with timestamps. A session struct is identified by it's starting time (and maybe git author?).
-* The Timesheet struct is deserialized on every run, worked on, and then serialized again. It has a tohtml impl. trk end pushes the ending session to the end of the Timesheet.
-* Timeout after [commit or branch change] without meta?
-* Which options should trk status take and what should it output? Open a browser window with report?
+* The Timesheet struct is deserialized on every run, worked on, and then serialized again. It has a tohtml impl.
+* Timeout after [commit or branch change] without meta? NO
