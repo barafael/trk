@@ -91,11 +91,23 @@ impl Session {
                     false
                 }
             }
-            Event::Meta { .. } => {
+            Event::Meta { time: ref metatime, text: ref metatext } => {
                 if self.is_paused() {
-                    /* morph last pause into a pause_meta */
+                    /* morph last pause into a MetaPause */
+                    let pause = self.events.pop().unwrap();
+                    match pause {
+                        Event::Pause {time: pausetime} => {
+                            self.push_event(Event::MetaPause { time: pausetime, reason: metatext.to_string()})
+                        }
+                        Event::MetaPause { time: mp_time, reason } => {
+                            /* Concat? */
+                            let reason_concat = reason + metatext;
+                            self.push_event(Event::MetaPause { time: mp_time, reason: reason_concat.to_string()})
+                        }
+                        _ => unreachable!(),
+                    };
                 } else {
-                    self.events.push(event);
+                    self.events.push(Event::Meta {time: *metatime, text: metatext.clone()} )
                 };
                 true
             }
