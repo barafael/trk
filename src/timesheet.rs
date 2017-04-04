@@ -15,6 +15,7 @@ use std::process::Command;
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Event {
     Pause(u64),
+    PauseMeta { time: u64, reason: String },
     Proceed(u64),
     Meta { text: String },
     Commit { hash: u64 },
@@ -22,14 +23,14 @@ pub enum Event {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Session {
+struct Session {
     pub start: u64,
     pub end: u64,
     events: Vec<Event>,
 }
 
 impl Session {
-    pub fn new() -> Session {
+    fn new() -> Session {
         let seconds = get_seconds();
         Session {
             start: seconds,
@@ -50,7 +51,19 @@ impl Session {
         format!("{:?}", self)
     }
 
-    pub fn push_event(&mut self, event: Event) -> bool {
+    fn pausable(&self) -> bool {
+        match self.events.len() {
+            0 => true,
+            n => {
+                match self.events[n - 1] {
+                    Event::Pause(..) |
+                    Event::PauseMeta { .. } => false,
+                    _ => true,
+                }
+            }
+        }
+    }
+    fn push_event(&mut self, event: Event) -> bool {
         /* Cannot push if session is already finalized! */
         if !self.in_progress() {
             println!("Already finalized, cannot push event");
@@ -58,18 +71,13 @@ impl Session {
         }
         /* TODO: add logic */
         match event {
-            Event::Pause(..) => {
-                let nsessions = self.events.len();
-                match nsessions {
-                    /* Can't start a session with a pause */
-                    0 => {
-                        println!("Can't pause now!");
-                        false
-                    }
-                    _ => {
-                        self.events.push(event);
-                        true
-                    }
+            Event::Pause(..) | Event::PauseMeta {..} => {
+                if self.pausable() {
+                    self.events.push(event);
+                    true
+                } else {
+                    println!("Already paused!");
+                    false
                 }
             }
             Event::Proceed(..) => {
@@ -146,7 +154,7 @@ impl Timesheet {
         }
     }
 
-    pub fn is_init() -> bool {
+    fn is_init() -> bool {
         if Path::new("./.trk/sessions.trk").exists() {
             match Timesheet::load_from_file() {
                 Some(..) => true,
@@ -159,6 +167,13 @@ impl Timesheet {
         }
     }
 
+    fn get_last_session(&mut self) -> Option<&mut Session> {
+        match self.sessions.len() {
+            0 => None,
+            n => Some(&mut self.sessions[n - 1]),
+        }
+    }
+
     pub fn push_event(&mut self, event: Event) -> bool {
         let result = match self.get_last_session() {
             Some(sheet) => sheet.push_event(event),
@@ -166,13 +181,6 @@ impl Timesheet {
         };
         self.save_to_file();
         result
-    }
-
-    pub fn get_last_session(&mut self) -> Option<&mut Session> {
-        match self.sessions.len() {
-            0 => None,
-            n => Some(&mut self.sessions[n - 1]),
-        }
     }
 
     pub fn new_session(&mut self) -> bool {
@@ -195,11 +203,33 @@ impl Timesheet {
         pushed
     }
 
+    pub fn end_session(&mut self) {
+        match self.get_last_session() {
+            Some(session) => session.finalize(),
+            None => println!("No session to finalize!"),
+        }
+        self.save_to_file();
+    }
+
     pub fn pause(&mut self) {
         match self.get_last_session() {
             Some(session) => {
                 let now = get_seconds();
                 session.push_event(Event::Pause(now));
+            }
+            None => println!("No session to pause!"),
+        }
+        self.save_to_file();
+    }
+
+    pub fn pause_meta(&mut self, reason: &str) {
+        match self.get_last_session() {
+            Some(session) => {
+                let now = get_seconds();
+                session.push_event(Event::PauseMeta {
+                                       time: now,
+                                       reason: reason.to_string(),
+                                   });
             }
             None => println!("No session to pause!"),
         }
@@ -217,15 +247,7 @@ impl Timesheet {
         self.save_to_file();
     }
 
-    pub fn finalize_last(&mut self) {
-        match self.get_last_session() {
-            Some(session) => session.finalize(),
-            None => println!("No session to finalize!"),
-        }
-        self.save_to_file();
-    }
-
-    pub fn save_to_file(&self) -> bool {
+    fn save_to_file(&self) -> bool {
         /* TODO: avoid time-of-check-to-time-of-use race risk */
         /* TODO: make all commands run regardless of where trk is executed
          * (and not just in root which is assumed here */
@@ -280,13 +302,7 @@ impl Timesheet {
     pub fn clear_sessions() {
         /* Try to get name */
         let sheet = Timesheet::load_from_file();
-        let name: Option<String> = match sheet {
-            Some(sheet) => {
-                let name = sheet.user.clone();
-                Some(name)
-            }
-            None => None,
-        };
+        let name: Option<String> = sheet.map(|s| s.user.clone());
 
         let path = Path::new("./.trk/sessions.trk");
         if path.exists() {
@@ -319,11 +335,11 @@ impl Timesheet {
     }
 }
 
-pub fn get_seconds() -> u64 {
+fn get_seconds() -> u64 {
     SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs()
 }
 
-pub fn git_author() -> Option<String> {
+fn git_author() -> Option<String> {
     if let Ok(output) = Command::new("git").arg("config").arg("user.name").output() {
         if output.status.success() {
             let output = String::from_utf8_lossy(&output.stdout);

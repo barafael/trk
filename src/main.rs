@@ -38,6 +38,13 @@ fn main() {
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
             )
+            (@subcommand pause_meta =>
+                (about: "Pause current session and give a reason")
+                (version: "0.1")
+                (author: "mediumendian@gmail.com")
+                (@arg reason: +required "Meta information about pause")
+            )
+
             (@subcommand proceed =>
                 (about: "Proceed with currently paused session")
                 (version: "0.1")
@@ -109,30 +116,33 @@ fn main() {
             sheet.new_session();
         }
         ("end", Some(..)) => {
-            sheet.finalize_last();
+            sheet.end_session();
         }
         ("pause", Some(..)) => {
             sheet.pause();
         }
+        ("pause_meta", Some(arg)) => {
+            let reason = arg.value_of("reason").unwrap();
+            sheet.pause_meta(reason);
+        }
         ("proceed", Some(..)) => {
             sheet.proceed();
         }
-        ("meta", Some(sub_arg)) => {
-            let metatext = sub_arg.value_of("text").unwrap();
+        ("meta", Some(arg)) => {
+            let metatext = arg.value_of("text").unwrap();
             if !sheet.push_event(timesheet::Event::Meta { text: metatext.to_string() }) {
-
                 println!("Can't meta now!");
             }
         }
-        ("commit", Some(sub_arg)) => {
-            let commit_hash = sub_arg.value_of("hash").unwrap();
+        ("commit", Some(arg)) => {
+            let commit_hash = arg.value_of("hash").unwrap();
             let hash_parsed = u64::from_str_radix(commit_hash, 16).unwrap();
             if !sheet.push_event(timesheet::Event::Commit { hash: hash_parsed }) {
                 println!("Can't commit now!");
             }
         }
-        ("branch", Some(sub_arg)) => {
-            let branch_name = sub_arg.value_of("name").unwrap();
+        ("branch", Some(arg)) => {
+            let branch_name = arg.value_of("name").unwrap();
             if !sheet.push_event(timesheet::Event::Branch { name: branch_name.to_string() }) {
                 println!("Can't change branch now!");
             }
@@ -149,7 +159,6 @@ fn main() {
             println!("Clearing sessions!");
             timesheet::Timesheet::clear_sessions();
         }
-        // Can this be avoided? It is needed even if init is added to the match.
         _ => unreachable!(),
     }
 }
