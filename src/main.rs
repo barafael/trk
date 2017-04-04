@@ -4,6 +4,7 @@ extern crate clap;
 #[macro_use]
 extern crate serde_derive;
 
+extern crate regex;
 
 mod timesheet;
 
@@ -38,44 +39,51 @@ fn main() {
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
             )
+            // TODO: needed or covered by meta handling for pause?
             (@subcommand metapause =>
-                (about: "Pause current session and give a reason")
+                (about: "Pause current session and give meta info about the pause")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
-                (@arg reason: +required "Meta information about pause")
+                (@arg metatext: +required "Meta information about pause")
             )
-
-            (@subcommand proceed =>
-                (about: "Proceed with currently paused session")
+            (@subcommand retropause =>
+                (about: "Pause current session after taking a break, (set length of break)")
+                (version: "0.1")
+                (author: "mediumendian@gmail.com")
+                (@arg length: +required "How long the pause was")
+                (@arg metatext: "Meta information about pause")
+            )
+            (@subcommand resume =>
+                (about: "Resume currently paused session")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
             )
             (@subcommand meta =>
-                (about: "Proceed with currently paused session")
+                (about: "Give meta info about current work or started pause")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
-                (@arg text: +required "Meta information about work")
+                (@arg metatext: +required "Meta information about work")
             )
             (@subcommand commit =>
-                (about: "add a commit to the event list")
+                (about: "Add a commit to the event list")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
                 (@arg hash: +required "Commit hash id")
             )
             (@subcommand branch =>
-                (about: "add a topic to the event list")
+                (about: "Add a branch change to the event list")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
-                (@arg name: +required "New branch name")
+                (@arg name: +required "The branch's name")
             )
             (@subcommand status =>
-                (about: "prints the current WIP for session or entire sheet (eventually as json)")
+                (about: "Prints the current WIP for session or sheet (eventually as html/latex)")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
                 (@arg which: +required "session or sheet")
                 )
             (@subcommand clear =>
-                (about: "temporary: clears the deserialized file")
+                (about: "Temporary: clears all sessions and updates all timestamps")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
             )
@@ -122,14 +130,22 @@ fn main() {
             sheet.pause(None);
         }
         ("metapause", Some(arg)) => {
-            let reason = arg.value_of("reason").unwrap();
-            sheet.pause(Some(reason.to_string()));
+            let metatext = arg.value_of("metatext").unwrap();
+            sheet.pause(Some(metatext.to_string()));
         }
-        ("proceed", Some(..)) => {
-            sheet.proceed();
+        ("retropause", Some(arg)) => {
+            let length_in_seconds = parse_to_seconds(arg.value_of("length").unwrap());
+            let metatext = arg.value_of("metatext");
+            match metatext {
+                Some(metatext) => sheet.retropause(length_in_seconds, Some(metatext.to_string())),
+                None => sheet.retropause(length_in_seconds, None),
+            }
+        }
+        ("resume", Some(..)) => {
+            sheet.resume();
         }
         ("meta", Some(arg)) => {
-            let metatext = arg.value_of("text").unwrap();
+            let metatext = arg.value_of("metatext").unwrap();
             sheet.push_meta(metatext.to_string());
         }
         ("commit", Some(arg)) => {
@@ -155,4 +171,9 @@ fn main() {
         }
         _ => unreachable!(),
     }
+}
+
+fn parse_to_seconds(timestr: &str) -> u64 {
+
+    6
 }
