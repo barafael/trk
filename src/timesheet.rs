@@ -14,9 +14,9 @@ use std::process::Command;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Event {
-    Pause(u64),
+    Pause { time: u64 },
     MetaPause { time: u64, reason: String },
-    Proceed(u64),
+    Proceed { time: u64 },
     Meta { time: u64, text: String },
     Commit { time: u64, hash: u64 },
     Branch { time: u64, name: String },
@@ -24,8 +24,8 @@ pub enum Event {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Session {
-    pub start: u64,
-    pub end: u64,
+    start: u64,
+    end: u64,
     events: Vec<Event>,
 }
 
@@ -56,7 +56,7 @@ impl Session {
             0 => false,
             n => {
                 match self.events[n - 1] {
-                    Event::Pause(..) |
+                    Event::Pause { .. } |
                     Event::MetaPause { .. } => true,
                     _ => false,
                 }
@@ -72,7 +72,7 @@ impl Session {
         }
         /* TODO: add logic */
         match event {
-            Event::Pause(..) |
+            Event::Pause { .. } |
             Event::MetaPause { .. } => {
                 if !self.is_paused() {
                     self.events.push(event);
@@ -82,7 +82,7 @@ impl Session {
                     false
                 }
             }
-            Event::Proceed(..) => {
+            Event::Proceed { .. } => {
                 if self.is_paused() {
                     self.events.push(event);
                     true
@@ -103,7 +103,7 @@ impl Session {
             Event::Branch { .. } => {
                 if self.is_paused() {
                     let now = get_seconds();
-                    self.push_event(Event::Proceed(now));
+                    self.push_event(Event::Proceed { time: now });
                 }
                 self.events.push(event);
                 true
@@ -206,13 +206,13 @@ impl Timesheet {
                 match metatext {
                     Some(reason) => {
                         session.push_event(Event::MetaPause {
-                                            time: now,
-                                            reason: reason.to_string(),
-                                        });
+                                               time: now,
+                                               reason: reason.to_string(),
+                                           });
 
                     }
                     None => {
-                        session.push_event(Event::Pause(now));
+                        session.push_event(Event::Pause { time: now });
                     }
                 }
             }
@@ -225,7 +225,7 @@ impl Timesheet {
         match self.get_last_session() {
             Some(session) => {
                 let now = get_seconds();
-                session.push_event(Event::Proceed(now));
+                session.push_event(Event::Proceed { time: now });
             }
             None => println!("No session to pause!"),
         }
