@@ -87,7 +87,7 @@ impl Session {
                     self.events.push(event);
                     true
                 } else {
-                    println!("No pause in progress!");
+                    println!("Currently not paused!");
                     false
                 }
             }
