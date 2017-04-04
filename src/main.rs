@@ -119,11 +119,11 @@ fn main() {
             sheet.end_session();
         }
         ("pause", Some(..)) => {
-            sheet.pause();
+            sheet.pause(None);
         }
         ("metapause", Some(arg)) => {
             let reason = arg.value_of("reason").unwrap();
-            sheet.metapause(reason);
+            sheet.pause(Some(reason.to_string()));
         }
         ("proceed", Some(..)) => {
             sheet.proceed();

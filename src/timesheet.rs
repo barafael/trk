@@ -15,7 +15,7 @@ use std::process::Command;
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Event {
     Pause(u64),
-    PauseMeta { time: u64, reason: String },
+    MetaPause { time: u64, reason: String },
     Proceed(u64),
     Meta { time: u64, text: String },
     Commit { time: u64, hash: u64 },
@@ -57,7 +57,7 @@ impl Session {
             n => {
                 match self.events[n - 1] {
                     Event::Pause(..) |
-                    Event::PauseMeta { .. } => true,
+                    Event::MetaPause { .. } => true,
                     _ => false,
                 }
             }
@@ -73,7 +73,7 @@ impl Session {
         /* TODO: add logic */
         match event {
             Event::Pause(..) |
-            Event::PauseMeta { .. } => {
+            Event::MetaPause { .. } => {
                 if !self.is_paused() {
                     self.events.push(event);
                     true
@@ -199,25 +199,22 @@ impl Timesheet {
         self.save_to_file();
     }
 
-    pub fn pause(&mut self) {
+    pub fn pause(&mut self, metatext: Option<String>) {
         match self.get_last_session() {
             Some(session) => {
                 let now = get_seconds();
-                session.push_event(Event::Pause(now));
-            }
-            None => println!("No session to pause!"),
-        }
-        self.save_to_file();
-    }
+                match metatext {
+                    Some(reason) => {
+                        session.push_event(Event::MetaPause {
+                                            time: now,
+                                            reason: reason.to_string(),
+                                        });
 
-    pub fn metapause(&mut self, reason: &str) {
-        match self.get_last_session() {
-            Some(session) => {
-                let now = get_seconds();
-                session.push_event(Event::PauseMeta {
-                                       time: now,
-                                       reason: reason.to_string(),
-                                   });
+                    }
+                    None => {
+                        session.push_event(Event::Pause(now));
+                    }
+                }
             }
             None => println!("No session to pause!"),
         }
