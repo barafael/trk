@@ -15,8 +15,8 @@ use std::process::Command;
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Event {
     Pause { time: u64 },
-    MetaPause { time: u64, reason: String },
-    Proceed { time: u64 },
+    MetaPause { time: u64, meta_info: String },
+    Resume { time: u64 },
     Meta { time: u64, text: String },
     Commit { time: u64, hash: u64 },
     Branch { time: u64, name: String },
@@ -26,6 +26,7 @@ pub enum Event {
 struct Session {
     start: u64,
     end: u64,
+    running: bool,
     events: Vec<Event>,
 }
 
@@ -35,16 +36,21 @@ impl Session {
         Session {
             start: seconds,
             end: seconds - 1,
+            running: true,
             events: Vec::<Event>::new(),
         }
     }
 
-    fn in_progress(&self) -> bool {
-        self.start == (self.end + 1)
+    fn update_end(&mut self) {
+        self.end = get_seconds();
+    }
+
+    pub fn is_running(&self) -> bool {
+        self.running
     }
 
     fn finalize(&mut self) {
-        self.end = get_seconds();
+        self.running = false;
     }
 
     fn status(&self) -> String {
@@ -66,7 +72,7 @@ impl Session {
 
     fn push_event(&mut self, event: Event) -> bool {
         /* Cannot push if session is already finalized! */
-        if !self.in_progress() {
+        if !self.is_running() {
             println!("Already finalized, cannot push event");
             return false;
         }
@@ -82,7 +88,7 @@ impl Session {
                     false
                 }
             }
-            Event::Proceed { .. } => {
+            Event::Resume { .. } => {
                 if self.is_paused() {
                     self.events.push(event);
                     true
@@ -96,18 +102,26 @@ impl Session {
                     /* morph last pause into a MetaPause */
                     let pause = self.events.pop().unwrap();
                     match pause {
-                        Event::Pause {time: pausetime} => {
-                            self.push_event(Event::MetaPause { time: pausetime, reason: metatext.to_string()})
+                        Event::Pause { time: pausetime } => {
+                            self.push_event(Event::MetaPause {
+                                                time: pausetime,
+                                                meta_info: metatext.to_string(),
+                                            })
                         }
-                        Event::MetaPause { time: mp_time, reason } => {
-                            /* Concat? */
-                            let reason_concat = reason + metatext;
-                            self.push_event(Event::MetaPause { time: mp_time, reason: reason_concat.to_string()})
+                        Event::MetaPause { time: pausetime, meta_info } => {
+                            let meta_info = meta_info + "\n" + metatext;
+                            self.push_event(Event::MetaPause {
+                                                time: pausetime,
+                                                meta_info: meta_info.to_string(),
+                                            })
                         }
                         _ => unreachable!(),
                     };
                 } else {
-                    self.events.push(Event::Meta {time: *metatime, text: metatext.clone()} )
+                    self.events.push(Event::Meta {
+                                         time: *metatime,
+                                         text: metatext.clone(),
+                                     })
                 };
                 true
             }
@@ -115,7 +129,7 @@ impl Session {
             Event::Branch { .. } => {
                 if self.is_paused() {
                     let now = get_seconds();
-                    self.push_event(Event::Proceed { time: now });
+                    self.push_event(Event::Resume { time: now });
                 }
                 self.events.push(event);
                 true
@@ -124,6 +138,8 @@ impl Session {
     }
 }
 
+// Maybe every event added to a session should set the end date? And begin just always opens a new
+// session?
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Timesheet {
     start: u64,
@@ -181,31 +197,39 @@ impl Timesheet {
         }
     }
 
+    fn update_end(&mut self) {
+        match self.get_last_session().map(|s| s.end = get_seconds()) {
+            Some(_) => {}
+            None => println!("Warning: called Timesheet::update_end() but there are no sessions!"),
+        }
+    }
+
     pub fn new_session(&mut self) -> bool {
-
-
-        let nsessions = self.sessions.len();
-        let pushed = match nsessions {
+        let n_sessions = self.sessions.len();
+        let push = match n_sessions {
             0 => true,
             _ => {
-                if !self.sessions[nsessions - 1].in_progress() {
-                    true
-                } else {
+                if self.sessions[n_sessions - 1].is_running() {
                     println!("Last session is still running!");
                     false
+                } else {
+                    true
                 }
             }
         };
-        if pushed {
+        if push {
             self.sessions.push(Session::new());
             self.save_to_file();
         }
-        pushed
+        push
     }
 
     pub fn end_session(&mut self) {
         match self.get_last_session() {
-            Some(session) => session.finalize(),
+            Some(session) => {
+                session.update_end();
+                session.finalize();
+            }
             None => println!("No session to finalize!"),
         }
         self.save_to_file();
@@ -216,10 +240,10 @@ impl Timesheet {
             Some(session) => {
                 let now = get_seconds();
                 match metatext {
-                    Some(reason) => {
+                    Some(meta_info) => {
                         session.push_event(Event::MetaPause {
                                                time: now,
-                                               reason: reason.to_string(),
+                                               meta_info: meta_info.to_string(),
                                            });
 
                     }
@@ -230,17 +254,30 @@ impl Timesheet {
             }
             None => println!("No session to pause!"),
         }
+        self.update_end();
         self.save_to_file();
     }
 
-    pub fn proceed(&mut self) {
-        match self.get_last_session() {
+    pub fn retropause(&mut self, time_ago: u64, metatext: Option<String>) {
+        /* match self.get_last_session() {
             Some(session) => {
-                let now = get_seconds();
-                session.push_event(Event::Proceed { time: now });
+                if session.is_paused()
             }
             None => println!("No session to pause!"),
         }
+        self.update_end();
+        self.save_to_file(); */
+    }
+
+    pub fn resume(&mut self) {
+        match self.get_last_session() {
+            Some(session) => {
+                let now = get_seconds();
+                session.push_event(Event::Resume { time: now });
+            }
+            None => println!("No session to pause!"),
+        }
+        self.update_end();
         self.save_to_file();
     }
 
@@ -255,6 +292,7 @@ impl Timesheet {
             }
             None => println!("No session to add meta to!"),
         }
+        self.update_end();
         self.save_to_file();
     }
 
@@ -269,6 +307,7 @@ impl Timesheet {
             }
             None => println!("No session to add commit to!"),
         }
+        self.update_end();
         self.save_to_file();
     }
 
@@ -290,6 +329,7 @@ impl Timesheet {
         /* TODO: avoid time-of-check-to-time-of-use race risk */
         /* TODO: make all commands run regardless of where trk is executed
          * (and not just in root which is assumed here */
+
         let path = Path::new("./.trk/sessions.trk");
         let file = OpenOptions::new()
             .write(true)
@@ -366,8 +406,8 @@ impl Timesheet {
     }
 
     pub fn last_session_status(&self) -> Option<String> {
-        let nsessions = self.sessions.len();
-        match nsessions {
+        let n_sessions = self.sessions.len();
+        match n_sessions {
             0 => None,
             n => Some(self.sessions[n - 1].status()),
         }
