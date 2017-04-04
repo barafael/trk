@@ -38,7 +38,7 @@ fn main() {
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
             )
-            (@subcommand pause_meta =>
+            (@subcommand metapause =>
                 (about: "Pause current session and give a reason")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
@@ -121,9 +121,9 @@ fn main() {
         ("pause", Some(..)) => {
             sheet.pause();
         }
-        ("pause_meta", Some(arg)) => {
+        ("metapause", Some(arg)) => {
             let reason = arg.value_of("reason").unwrap();
-            sheet.pause_meta(reason);
+            sheet.metapause(reason);
         }
         ("proceed", Some(..)) => {
             sheet.proceed();

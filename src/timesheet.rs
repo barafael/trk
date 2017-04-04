@@ -210,7 +210,7 @@ impl Timesheet {
         self.save_to_file();
     }
 
-    pub fn pause_meta(&mut self, reason: &str) {
+    pub fn metapause(&mut self, reason: &str) {
         match self.get_last_session() {
             Some(session) => {
                 let now = get_seconds();
