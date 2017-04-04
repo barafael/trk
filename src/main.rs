@@ -130,22 +130,16 @@ fn main() {
         }
         ("meta", Some(arg)) => {
             let metatext = arg.value_of("text").unwrap();
-            if !sheet.push_event(timesheet::Event::Meta { text: metatext.to_string() }) {
-                println!("Can't meta now!");
-            }
+            sheet.push_meta(metatext.to_string());
         }
         ("commit", Some(arg)) => {
             let commit_hash = arg.value_of("hash").unwrap();
             let hash_parsed = u64::from_str_radix(commit_hash, 16).unwrap();
-            if !sheet.push_event(timesheet::Event::Commit { hash: hash_parsed }) {
-                println!("Can't commit now!");
-            }
+            sheet.push_commit(hash_parsed);
         }
         ("branch", Some(arg)) => {
             let branch_name = arg.value_of("name").unwrap();
-            if !sheet.push_event(timesheet::Event::Branch { name: branch_name.to_string() }) {
-                println!("Can't change branch now!");
-            }
+            sheet.push_branch(branch_name.to_string());
         }
         ("status", Some(which)) => {
             match which.value_of("which") {

@@ -17,9 +17,9 @@ pub enum Event {
     Pause(u64),
     PauseMeta { time: u64, reason: String },
     Proceed(u64),
-    Meta { text: String },
-    Commit { hash: u64 },
-    Branch { name: String },
+    Meta { time: u64, text: String },
+    Commit { time: u64, hash: u64 },
+    Branch { time: u64, name: String },
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -51,18 +51,19 @@ impl Session {
         format!("{:?}", self)
     }
 
-    fn pausable(&self) -> bool {
+    fn is_paused(&self) -> bool {
         match self.events.len() {
-            0 => true,
+            0 => false,
             n => {
                 match self.events[n - 1] {
                     Event::Pause(..) |
-                    Event::PauseMeta { .. } => false,
-                    _ => true,
+                    Event::PauseMeta { .. } => true,
+                    _ => false,
                 }
             }
         }
     }
+
     fn push_event(&mut self, event: Event) -> bool {
         /* Cannot push if session is already finalized! */
         if !self.in_progress() {
@@ -71,8 +72,9 @@ impl Session {
         }
         /* TODO: add logic */
         match event {
-            Event::Pause(..) | Event::PauseMeta {..} => {
-                if self.pausable() {
+            Event::Pause(..) |
+            Event::PauseMeta { .. } => {
+                if !self.is_paused() {
                     self.events.push(event);
                     true
                 } else {
@@ -81,35 +83,28 @@ impl Session {
                 }
             }
             Event::Proceed(..) => {
-                let mut nsessions = self.events.len();
-                let mut pushed = false;
-                while nsessions > 0 {
-                    match self.events[nsessions - 1] {
-                        Event::Pause { .. } => {
-                            self.events.push(event);
-                            pushed = true;
-                            break;
-                        }
-                        _ => nsessions -= 1,
-                    }
-                }
-                match pushed {
-                    true => true,
-                    false => {
-                        println!("Can't proceed now!");
-                        false
-                    }
+                if self.is_paused() {
+                    self.events.push(event);
+                    true
+                } else {
+                    println!("No pause in progress!");
+                    false
                 }
             }
             Event::Meta { .. } => {
-                self.events.push(event);
+                if self.is_paused() {
+                    /* morph last pause into a pause_meta */
+                } else {
+                    self.events.push(event);
+                };
                 true
             }
-            Event::Commit { .. } => {
-                self.events.push(event);
-                true
-            }
+            Event::Commit { .. } |
             Event::Branch { .. } => {
+                if self.is_paused() {
+                    let now = get_seconds();
+                    self.push_event(Event::Proceed(now));
+                }
                 self.events.push(event);
                 true
             }
@@ -174,16 +169,9 @@ impl Timesheet {
         }
     }
 
-    pub fn push_event(&mut self, event: Event) -> bool {
-        let result = match self.get_last_session() {
-            Some(sheet) => sheet.push_event(event),
-            None => false,
-        };
-        self.save_to_file();
-        result
-    }
-
     pub fn new_session(&mut self) -> bool {
+
+
         let nsessions = self.sessions.len();
         let pushed = match nsessions {
             0 => true,
@@ -243,6 +231,48 @@ impl Timesheet {
                 session.push_event(Event::Proceed(now));
             }
             None => println!("No session to pause!"),
+        }
+        self.save_to_file();
+    }
+
+    pub fn push_meta(&mut self, metatext: String) {
+        match self.get_last_session() {
+            Some(session) => {
+                let now = get_seconds();
+                session.push_event(Event::Meta {
+                                       time: now,
+                                       text: metatext,
+                                   });
+            }
+            None => println!("No session to add meta to!"),
+        }
+        self.save_to_file();
+    }
+
+    pub fn push_commit(&mut self, hash: u64) {
+        match self.get_last_session() {
+            Some(session) => {
+                let now = get_seconds();
+                session.push_event(Event::Commit {
+                                       time: now,
+                                       hash: hash,
+                                   });
+            }
+            None => println!("No session to add commit to!"),
+        }
+        self.save_to_file();
+    }
+
+    pub fn push_branch(&mut self, name: String) {
+        match self.get_last_session() {
+            Some(session) => {
+                let now = get_seconds();
+                session.push_event(Event::Branch {
+                                       time: now,
+                                       name: name,
+                                   });
+            }
+            None => println!("No session to change branch in!"),
         }
         self.save_to_file();
     }
