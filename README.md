@@ -53,6 +53,7 @@ TODO: This json string should be converted to a nice representation as time shee
 ### Notes and TODO items ###
 
 * TODO: Convert unix timestamps to date strings (locale?)
+* TODO: Find a way to add an event in the past
 * TODO: Find a way to query time sheets from certain time periods (one week, since=date, or maybe place pins...)
 * Which options should trk status take and what should it output? Open a browser window with report?
 * TODO: Format output - leave out commits and branches, for example
