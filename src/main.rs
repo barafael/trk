@@ -1,16 +1,34 @@
 #[macro_use]
 extern crate clap;
+use clap::AppSettings::SubcommandRequiredElseHelp;
 
 #[macro_use]
 extern crate serde_derive;
 
-extern crate regex;
+#[macro_use]
+extern crate nom;
+use nom::IResult::Done;
+
+extern crate chrono;
+use chrono::Duration;
+
+use std::str;
+
+named!(duration(&[u8]) -> Duration,
+    do_parse!(
+        hour: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
+        tag!(":") >>
+        min: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
+        (Duration::minutes(hour * 60 + min))
+    )
+);
 
 mod timesheet;
 
 fn main() {
     /* Handle command line arguments with clap */
     let arguments = clap_app!(trk =>
+        (setting: SubcommandRequiredElseHelp)
         (version: "0.1")
         (author: "Rafael B. <mediumendian@gmail.com>")
         (about: "Create timesheets from git history and meta info")
@@ -133,14 +151,15 @@ fn main() {
             let metatext = arg.value_of("metatext").unwrap();
             sheet.pause(Some(metatext.to_string()));
         }
-        ("retropause", Some(arg)) => {
+        /*("retropause", Some(arg)) => {
+            println!("{:?}", parse_to_seconds("30:00"));
             let length_in_seconds = parse_to_seconds(arg.value_of("length").unwrap());
             let metatext = arg.value_of("metatext");
             match metatext {
                 Some(metatext) => sheet.retropause(length_in_seconds, Some(metatext.to_string())),
                 None => sheet.retropause(length_in_seconds, None),
             }
-        }
+        }*/
         ("resume", Some(..)) => {
             sheet.resume();
         }
@@ -173,7 +192,9 @@ fn main() {
     }
 }
 
-fn parse_to_seconds(timestr: &str) -> u64 {
-
-    6
+fn parse_to_seconds(timestr: &str) -> Option<u64> {
+    match duration(timestr.as_bytes()) {
+        Done(_, out) => Some(out.num_seconds() as u64),
+        _ => None,
+    }
 }

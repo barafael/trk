@@ -5,6 +5,8 @@ use std::io::prelude::*;
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use chrono::{Local, UTC, TimeZone};
+
 use std::fs;
 use std::path::Path;
 use std::error::Error;
@@ -76,6 +78,7 @@ impl Session {
             println!("Already finalized, cannot push event");
             return false;
         }
+        self.update_end();
         /* TODO: add logic */
         match event {
             Event::Pause { .. } |
@@ -153,6 +156,7 @@ impl Timesheet {
      * the serialized timesheet
      * Returns Some(newTimesheet) if operation succeeded */
     pub fn init(author_name: Option<&str>) -> Option<Timesheet> {
+        // ts_to_date(get_seconds());
         /* Check if file already exists (no init permitted) */
         if Timesheet::is_init() {
             None
@@ -197,13 +201,6 @@ impl Timesheet {
         }
     }
 
-    fn update_end(&mut self) {
-        match self.get_last_session().map(|s| s.end = get_seconds()) {
-            Some(_) => {}
-            None => println!("Warning: called Timesheet::update_end() but there are no sessions!"),
-        }
-    }
-
     pub fn new_session(&mut self) -> bool {
         let n_sessions = self.sessions.len();
         let push = match n_sessions {
@@ -245,7 +242,6 @@ impl Timesheet {
                                                time: now,
                                                meta_info: meta_info.to_string(),
                                            });
-
                     }
                     None => {
                         session.push_event(Event::Pause { time: now });
@@ -254,19 +250,7 @@ impl Timesheet {
             }
             None => println!("No session to pause!"),
         }
-        self.update_end();
         self.save_to_file();
-    }
-
-    pub fn retropause(&mut self, time_ago: u64, metatext: Option<String>) {
-        /* match self.get_last_session() {
-            Some(session) => {
-                if session.is_paused()
-            }
-            None => println!("No session to pause!"),
-        }
-        self.update_end();
-        self.save_to_file(); */
     }
 
     pub fn resume(&mut self) {
@@ -277,7 +261,6 @@ impl Timesheet {
             }
             None => println!("No session to pause!"),
         }
-        self.update_end();
         self.save_to_file();
     }
 
@@ -292,7 +275,6 @@ impl Timesheet {
             }
             None => println!("No session to add meta to!"),
         }
-        self.update_end();
         self.save_to_file();
     }
 
@@ -307,7 +289,6 @@ impl Timesheet {
             }
             None => println!("No session to add commit to!"),
         }
-        self.update_end();
         self.save_to_file();
     }
 
@@ -434,4 +415,12 @@ fn git_author() -> Option<String> {
     } else {
         None
     }
+}
+
+pub fn ts_to_date(timestamp: u64) {
+
+    println!("{}", UTC.datetime_from_str("12-11", "%R").unwrap());
+    println!("Current date: {}",
+             Local.timestamp(timestamp as i64, 0).to_string());
+
 }
