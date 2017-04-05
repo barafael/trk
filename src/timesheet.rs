@@ -62,7 +62,12 @@ impl Session {
     }
 
     fn finalize(&mut self) {
-        self.running = false;
+        if self.is_running() {
+            if self.is_paused() {
+                self.push_event(Event::Resume { time: get_seconds() });
+            }
+            self.running = false;
+        }
     }
 
     fn status(&self) -> String {
@@ -518,9 +523,7 @@ impl Timesheet {
         let n_sessions = self.sessions.len();
         match n_sessions {
             0 => None,
-            n => {
-                Some(self.sessions[n - 1].status())
-            }
+            n => Some(self.sessions[n - 1].status()),
         }
     }
 }
