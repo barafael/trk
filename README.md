@@ -48,11 +48,8 @@ trk is supposed to generate time sheets based on its inputs and the git history.
 }
 ```
 
-TODO: This json string should be converted to a nice representation as time sheet output.
-
 ### Notes and TODO items ###
 
-* TODO: Convert unix timestamps to date strings (locale?)
 * TODO: Find a way to add an event in the past
 * TODO: Find a way to query time sheets from certain time periods (one week, since=date, or maybe place pins...)
 * Which options should trk status take and what should it output? Open a browser window with report?
@@ -61,4 +58,3 @@ TODO: This json string should be converted to a nice representation as time shee
 * How to handle branches? Like commits? Assume they are feature branches and append "... started working on topic x"?
 * The session struct is a list of sequential events with timestamps. A session struct is identified by it's starting time (and maybe git author?).
 * The Timesheet struct is deserialized on every run, worked on, and then serialized again. It has a tohtml impl.
-* Timeout after [commit or branch change] without meta? NO
