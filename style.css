@@ -1,0 +1,25 @@
+body
+{
+  background-color: #333;
+}
+
+h1.sessionheading {
+  margin-left: 30px;
+  color: #555;
+}
+section.session {
+  background-color: #F8971C;
+  border: 3px solid #8A8A8C;
+  padding: 10px;
+  border-radius: 10px;
+  margin: 20px;
+}
+
+div.entry {
+  margin-left: 60px;
+}
+
+div {
+  margin: 10px;
+  margin-left: 0px;
+}

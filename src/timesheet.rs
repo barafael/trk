@@ -5,7 +5,7 @@ use std::io::prelude::*;
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use chrono::{Local, UTC, TimeZone};
+use chrono::{Local, TimeZone};
 
 use std::fs;
 use std::path::Path;
@@ -13,6 +13,16 @@ use std::error::Error;
 use std::fs::OpenOptions;
 
 use std::process::Command;
+
+use std::fmt::Write as strwrite;
+
+trait HasTEX {
+    fn to_tex(&self) -> String;
+}
+
+trait HasHTML {
+    fn to_html(&self) -> String;
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Event {
@@ -141,6 +151,65 @@ impl Session {
     }
 }
 
+impl HasHTML for Event {
+    fn to_html(&self) -> String {
+        match self {
+            &Event::Pause { time } => {
+                format!("<div class=\"entry pause\">{}:\tStarted a pause</div>",
+                        ts_to_date(time))
+            }
+            &Event::MetaPause { time, ref meta_info } => {
+                format!("<div class=\"entry metapause\">{}:\t{}</div>",
+                        ts_to_date(time),
+                        meta_info)
+            }
+            &Event::Resume { time } => {
+                format!("<div class=\"entry resume\">{}:\tResumed work</div>",
+                        ts_to_date(time))
+            }
+            &Event::Meta { time, ref text } => {
+                format!("<div class=\"entry meta\">{}:\tNote: {}</div>",
+                        ts_to_date(time),
+                        text)
+            }
+            &Event::Commit { time, hash } => {
+                format!("<div class=\"entry commit\">{}:\tCommit id: {}</div>",
+                        ts_to_date(time),
+                        hash)
+            }
+            &Event::Branch { time, ref name } => {
+                format!("<div class=\"entry branch\">{}:\tBranch name: {}</div>",
+                        ts_to_date(time),
+                        name)
+            }
+        }
+    }
+}
+
+impl HasHTML for Session {
+    fn to_html(&self) -> String {
+        let mut html = String::from(format!("<section class=\"session\">\n<h1 class=\"sessionheading\">Session on {}</h1>\n",
+                                            ts_to_date(self.start)));
+        for event in &self.events {
+            write!(&mut html, "{}\n", event.to_html()).unwrap();
+        }
+        write!(&mut html, "</section>").unwrap();
+        html
+    }
+}
+
+impl HasHTML for Timesheet {
+    fn to_html(&self) -> String {
+        let mut html = String::from("<!DOCTYPE html>\n");
+        write!(&mut html, "<html>\n<head>\n<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\n</head>").unwrap();
+        write!(&mut html, "<body>\n").unwrap();
+        for session in &self.sessions {
+            write!(&mut html, "{}\n", session.to_html()).unwrap();
+        }
+        write!(&mut html, "</body>\n</html>").unwrap();
+        html
+    }
+}
 // Maybe every event added to a session should set the end date? And begin just always opens a new
 // session?
 #[derive(Serialize, Deserialize, Debug)]
@@ -194,7 +263,15 @@ impl Timesheet {
         }
     }
 
-    fn get_last_session(&mut self) -> Option<&mut Session> {
+    // TODO: Check if this function could be used in more places
+    fn get_last_session(&self) -> Option<&Session> {
+        match self.sessions.len() {
+            0 => None,
+            n => Some(&self.sessions[n - 1]),
+        }
+    }
+
+    fn get_last_session_mut(&mut self) -> Option<&mut Session> {
         match self.sessions.len() {
             0 => None,
             n => Some(&mut self.sessions[n - 1]),
@@ -222,7 +299,7 @@ impl Timesheet {
     }
 
     pub fn end_session(&mut self) {
-        match self.get_last_session() {
+        match self.get_last_session_mut() {
             Some(session) => {
                 session.update_end();
                 session.finalize();
@@ -233,7 +310,7 @@ impl Timesheet {
     }
 
     pub fn pause(&mut self, metatext: Option<String>) {
-        match self.get_last_session() {
+        match self.get_last_session_mut() {
             Some(session) => {
                 let now = get_seconds();
                 match metatext {
@@ -254,7 +331,7 @@ impl Timesheet {
     }
 
     pub fn resume(&mut self) {
-        match self.get_last_session() {
+        match self.get_last_session_mut() {
             Some(session) => {
                 let now = get_seconds();
                 session.push_event(Event::Resume { time: now });
@@ -265,7 +342,7 @@ impl Timesheet {
     }
 
     pub fn push_meta(&mut self, metatext: String) {
-        match self.get_last_session() {
+        match self.get_last_session_mut() {
             Some(session) => {
                 let now = get_seconds();
                 session.push_event(Event::Meta {
@@ -279,7 +356,7 @@ impl Timesheet {
     }
 
     pub fn push_commit(&mut self, hash: u64) {
-        match self.get_last_session() {
+        match self.get_last_session_mut() {
             Some(session) => {
                 let now = get_seconds();
                 session.push_event(Event::Commit {
@@ -293,7 +370,7 @@ impl Timesheet {
     }
 
     pub fn push_branch(&mut self, name: String) {
-        match self.get_last_session() {
+        match self.get_last_session_mut() {
             Some(session) => {
                 let now = get_seconds();
                 session.push_event(Event::Branch {
@@ -304,6 +381,57 @@ impl Timesheet {
             None => println!("No session to change branch in!"),
         }
         self.save_to_file();
+    }
+
+    pub fn report(&self) -> bool {
+        /* TODO: avoid time-of-check-to-time-of-use race risk */
+        /* TODO: make all commands run regardless of where trk is executed
+         * (and not just in root which is assumed here */
+
+        let path = Path::new("./timesheet.html");
+        let file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .create(true)
+            .open(&path);
+
+        match file {
+            Ok(mut file) => {
+                file.write_all(self.to_html().as_bytes()).unwrap();
+                /* save was successful */
+                true
+            }
+            Err(why) => {
+                println!("{}", why.description());
+                false
+            }
+        }
+    }
+
+    pub fn last_session_report(&self) -> bool {
+        let path = Path::new("./session.html");
+        let file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .create(true)
+            .open(&path);
+
+        match file {
+            Ok(mut file) => {
+                match self.get_last_session() {
+                    Some(session) => {
+                        file.write_all(session.to_html().as_bytes()).unwrap();
+                        /* save was successful */
+                        true
+                    }
+                    None => false,
+                }
+            }
+            Err(why) => {
+                println!("{}", why.description());
+                false
+            }
+        }
     }
 
     fn save_to_file(&self) -> bool {
@@ -390,7 +518,9 @@ impl Timesheet {
         let n_sessions = self.sessions.len();
         match n_sessions {
             0 => None,
-            n => Some(self.sessions[n - 1].status()),
+            n => {
+                Some(self.sessions[n - 1].status())
+            }
         }
     }
 }
@@ -417,10 +547,7 @@ fn git_author() -> Option<String> {
     }
 }
 
-pub fn ts_to_date(timestamp: u64) {
-
-    println!("{}", UTC.datetime_from_str("12-11", "%R").unwrap());
-    println!("Current date: {}",
-             Local.timestamp(timestamp as i64, 0).to_string());
+pub fn ts_to_date(timestamp: u64) -> String {
+    Local.timestamp(timestamp as i64, 0).to_string()
 
 }

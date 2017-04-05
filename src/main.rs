@@ -100,6 +100,12 @@ fn main() {
                 (author: "mediumendian@gmail.com")
                 (@arg which: +required "session or sheet")
                 )
+            (@subcommand report =>
+                (about: "Generate html report for entire sheet or current session")
+                (version: "0.1")
+                (author: "mediumendian@gmail.com")
+                (@arg which: +required "session or sheet")                
+            )
             (@subcommand clear =>
                 (about: "Temporary: clears all sessions and updates all timestamps")
                 (version: "0.1")
@@ -169,6 +175,7 @@ fn main() {
         }
         ("commit", Some(arg)) => {
             let commit_hash = arg.value_of("hash").unwrap();
+            // TODO: improve error case, don't just chicken out
             let hash_parsed = u64::from_str_radix(commit_hash, 16).unwrap();
             sheet.push_commit(hash_parsed);
         }
@@ -176,11 +183,19 @@ fn main() {
             let branch_name = arg.value_of("name").unwrap();
             sheet.push_branch(branch_name.to_string());
         }
-        ("status", Some(which)) => {
-            match which.value_of("which") {
+        ("status", Some(arg)) => {
+            match arg.value_of("which") {
                 Some("session") => println!("{:?}", sheet.last_session_status()),
                 Some("sheet") => println!("{:?}", sheet.timesheet_status()),
-                Some(text) => println!("What do you mean by {}?", text),
+                Some(text) => println!("What do you mean by {}? Should be either 'sheet' or 'session'.", text),
+                None => {}
+            }
+        }
+        ("report", Some(arg)) => {
+            match arg.value_of("which") {
+                Some("session") => println!("{:?}", sheet.last_session_report()),
+                Some("sheet") => println!("{:?}", sheet.report()),
+                Some(text) => println!("What do you mean by {}? Should be either 'sheet' or 'session'.", text),
                 None => {}
             }
         }
