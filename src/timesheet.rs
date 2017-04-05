@@ -16,13 +16,6 @@ use std::process::Command;
 
 use std::fmt::Write as strwrite;
 
-trait HasTEX {
-    fn to_tex(&self) -> String;
-}
-
-trait HasHTML {
-    fn to_html(&self) -> String;
-}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Event {
@@ -154,69 +147,32 @@ impl Session {
             }
         }
     }
-}
 
-impl HasHTML for Event {
-    fn to_html(&self) -> String {
-        match self {
-            &Event::Pause { time } => {
-                format!("<div class=\"entry pause\">{}:\tStarted a pause</div>",
-                        ts_to_date(time))
-            }
-            &Event::MetaPause { time, ref meta_info } => {
-                format!("<div class=\"entry metapause\">{}:\t{}</div>",
-                        ts_to_date(time),
-                        meta_info)
-            }
-            &Event::Resume { time } => {
-                format!("<div class=\"entry resume\">{}:\tResumed work</div>",
-                        ts_to_date(time))
-            }
-            &Event::Meta { time, ref text } => {
-                format!("<div class=\"entry meta\">{}:\tNote: {}</div>",
-                        ts_to_date(time),
-                        text)
-            }
-            &Event::Commit { time, hash } => {
-                format!("<div class=\"entry commit\">{}:\tCommit id: {}</div>",
-                        ts_to_date(time),
-                        hash)
-            }
-            &Event::Branch { time, ref name } => {
-                format!("<div class=\"entry branch\">{}:\tBranch name: {}</div>",
-                        ts_to_date(time),
-                        name)
-            }
-        }
-    }
-}
-
-impl HasHTML for Session {
-    fn to_html(&self) -> String {
-        let mut html = String::from(format!("<section class=\"session\">\n<h1 class=\"sessionheading\">Session on {}</h1>\n",
-                                            ts_to_date(self.start)));
+    pub fn pause_time(&self) -> u64 {
+        let mut pt = 0;
+        let mut last_pause_ts = 0;
         for event in &self.events {
-            write!(&mut html, "{}\n", event.to_html()).unwrap();
+            match event {
+                &Event::Pause { time } |
+                    &Event::MetaPause { time, .. } => {
+                        last_pause_ts = time;
+                    }
+                &Event::Resume { time } => {
+                    pt += time - last_pause_ts;
+                }
+                _ => {}
+            }
         }
-        write!(&mut html, "</section>").unwrap();
-        html
+        pt
+    }
+
+    pub fn working_time(&self) -> u64 {
+        let pt = self.pause_time();
+        let wt = self.end - self.start;
+        wt - pt
     }
 }
 
-impl HasHTML for Timesheet {
-    fn to_html(&self) -> String {
-        let mut html = String::from("<!DOCTYPE html>\n");
-        write!(&mut html, "<html>\n<head>\n<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\n</head>").unwrap();
-        write!(&mut html, "<body>\n").unwrap();
-        for session in &self.sessions {
-            write!(&mut html, "{}\n", session.to_html()).unwrap();
-        }
-        write!(&mut html, "</body>\n</html>").unwrap();
-        html
-    }
-}
-// Maybe every event added to a session should set the end date? And begin just always opens a new
-// session?
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Timesheet {
     start: u64,
@@ -523,8 +479,80 @@ impl Timesheet {
         let n_sessions = self.sessions.len();
         match n_sessions {
             0 => None,
-            n => Some(self.sessions[n - 1].status()),
+            n => {
+                println!("{}", self.sessions[n-1].working_time());
+                Some(self.sessions[n - 1].status())
+            }
         }
+    }
+}
+
+trait HasTEX {
+    fn to_tex(&self) -> String;
+}
+
+trait HasHTML {
+    fn to_html(&self) -> String;
+}
+
+impl HasHTML for Event {
+    fn to_html(&self) -> String {
+        match self {
+            &Event::Pause { time } => {
+                format!("<div class=\"entry pause\">{}:\tStarted a pause</div>",
+                        ts_to_date(time))
+            }
+            &Event::MetaPause { time, ref meta_info } => {
+                format!("<div class=\"entry metapause\">{}:\t{}</div>",
+                        ts_to_date(time),
+                        meta_info)
+            }
+            &Event::Resume { time } => {
+                format!("<div class=\"entry resume\">{}:\tResumed work</div>",
+                        ts_to_date(time))
+            }
+            &Event::Meta { time, ref text } => {
+                format!("<div class=\"entry meta\">{}:\tNote: {}</div>",
+                        ts_to_date(time),
+                        text)
+            }
+            &Event::Commit { time, hash } => {
+                format!("<div class=\"entry commit\">{}:\tCommit id: {}</div>",
+                        ts_to_date(time),
+                        hash)
+            }
+            &Event::Branch { time, ref name } => {
+                format!("<div class=\"entry branch\">{}:\tBranch name: {}</div>",
+                        ts_to_date(time),
+                        name)
+            }
+        }
+    }
+}
+
+impl HasHTML for Session {
+    fn to_html(&self) -> String {
+        let mut html = String::from(format!("<section class=\"session\">\n<h1 class=\"sessionheading\">Session on {}</h1>\n",
+                                            ts_to_date(self.start)));
+        for event in &self.events {
+            write!(&mut html, "{}\n", event.to_html()).unwrap();
+        }
+        write!(&mut html, "</section>").unwrap();
+        html
+    }
+}
+
+impl HasHTML for Timesheet {
+    fn to_html(&self) -> String {
+        let mut html = String::from("<!DOCTYPE html>\n");
+        // TODO: non-hardcode that name!
+        write!(&mut html, "<html>\n<head>\n<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\n<title>Timesheet for Rafael Bachmann</title></head>").unwrap();
+        write!(&mut html, "<body>\n").unwrap();
+        for session in &self.sessions {
+            write!(&mut html, "{}\n", session.to_html()).unwrap();
+        }
+        write!(&mut html, "</body>\n</html>").unwrap();
+        html
     }
 }
 

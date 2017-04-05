@@ -187,7 +187,10 @@ fn main() {
             match arg.value_of("which") {
                 Some("session") => println!("{:?}", sheet.last_session_status()),
                 Some("sheet") => println!("{:?}", sheet.timesheet_status()),
-                Some(text) => println!("What do you mean by {}? Should be either 'sheet' or 'session'.", text),
+                Some(text) => {
+                    println!("What do you mean by {}? Should be either 'sheet' or 'session'.",
+                             text)
+                }
                 None => {}
             }
         }
@@ -195,7 +198,10 @@ fn main() {
             match arg.value_of("which") {
                 Some("session") => println!("{:?}", sheet.last_session_report()),
                 Some("sheet") => println!("{:?}", sheet.report()),
-                Some(text) => println!("What do you mean by {}? Should be either 'sheet' or 'session'.", text),
+                Some(text) => {
+                    println!("What do you mean by {}? Should be either 'sheet' or 'session'.",
+                             text)
+                }
                 None => {}
             }
         }
