@@ -48,6 +48,37 @@ trk is supposed to generate time sheets based on its inputs and the git history.
 }
 ```
 
+Turns into something like this:
+
+```html
+<!DOCTYPE html>
+<html>
+   <head>
+      <title>Timesheet for Rafael Bachmann</title>
+      <link rel="stylesheet" type="text/css" href="style.css">
+   </head>
+   <body>
+      <section class="session">
+         <h1 class="sessionheading">Session on 2017-04-05 14:03:25 +02:00</h1>
+         <div class="entry pause">2017-04-05 14:03:30 +02:00:	Started a pause</div>
+         <div class="entry resume">2017-04-05 14:03:37 +02:00:	Resumed work</div>
+         <div class="entry commit">2017-04-05 14:03:55 +02:00:	Commit id: 213141</div>
+         <div class="entry commit">2017-04-05 14:04:47 +02:00:	Commit id: 213141</div>
+         <div class="entry pause">2017-04-05 14:04:56 +02:00:	Started a pause</div>
+         <div class="entry resume">2017-04-05 14:04:59 +02:00:	Resumed work</div>
+      </section>
+      <section class="session">
+         <h1 class="sessionheading">Session on 2017-04-05 17:50:50 +02:00</h1>
+         <div class="entry meta">2017-04-05 17:51:02 +02:00:	Note: test content bla</div>
+         <div class="entry metapause">2017-04-05 17:51:20 +02:00:	test meta pause</div>
+         <div class="entry resume">2017-04-05 17:51:43 +02:00:	Resumed work</div>
+         <div class="entry commit">2017-04-05 17:51:49 +02:00:	Commit id: 213141</div>
+      </section>
+   </body>
+</html>
+```
+Which can be styled by style.css.
+
 ### Notes and TODO items ###
 
 * TODO: Find a way to add an event in the past
