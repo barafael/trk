@@ -14,7 +14,7 @@ h2.sessionfooter {
   margin-left: 30px;
   color: #555;
   font-family: Candara,Calibri,Segoe,Segoe UI,Optima,Arial,sans-serif;
-  font-weight: normal
+  font-weight: normal;
 }
 
 section.session {
@@ -27,7 +27,7 @@ section.session {
 
 div.entry {
   margin-left: 60px;
-  border-left: 2px solid #333;
+  border-left: 4px solid #333;
   font-family: Tahoma, Geneva, sans-serif;
 }
 
@@ -40,10 +40,9 @@ p.pausenote {
 
 div.entry.pause {
   margin-left: 60px;
-  border-left: 2px solid #777;
+  border-left: 4px solid #777;
 }
 
 div {
   padding: 10px;
-  margin-left: 0px;
 }

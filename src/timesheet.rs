@@ -1,4 +1,3 @@
-extern crate time;
 extern crate serde_json;
 
 use std::io::prelude::*;
@@ -12,29 +11,30 @@ use std::path::Path;
 use std::error::Error;
 use std::fs::OpenOptions;
 
+/* for running git */
 use std::process::Command;
 
-use std::fmt::Write as strwrite;
-
+/* Alias to avoid naming conflict for write_all!() */
+use std::fmt::Write as stdwrite;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Event {
     Pause {
         time: u64,
-        note_info: Option<String>,
+        note: Option<String>,
     },
     Resume { time: u64 },
-    Note { time: u64, text: String },
+    Note   { time: u64, text: String },
     Commit { time: u64, hash: u64 },
     Branch { time: u64, name: String },
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Session {
-    start: u64,
-    end: u64,
-    running: bool,
-    events: Vec<Event>,
+    start   : u64,
+    end     : u64,
+    running : bool,
+    events  : Vec<Event>,
 }
 
 impl Session {
@@ -115,13 +115,13 @@ impl Session {
                     let len = self.events.len();
                     let pause = &mut self.events[len - 1];
                     match *pause {
-                        Event::Pause { ref mut note_info, .. } => {
-                            match *note_info {
+                        Event::Pause { ref mut note, .. } => {
+                            match *note {
                                 Some(ref mut already) => {
                                     already.push_str("\n");
                                     already.push_str(note_text);
                                 }
-                                None => *note_info = Some(note_text.clone()),
+                                None => *note = Some(note_text.clone()),
                             }
                         }
                         _ => unreachable!(),
@@ -172,10 +172,10 @@ impl Session {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Timesheet {
-    start: u64,
-    end: u64,
-    user: String,
-    sessions: Vec<Session>,
+    start    : u64,
+    end      : u64,
+    user     : String,
+    sessions : Vec<Session>,
 }
 
 impl Timesheet {
@@ -273,7 +273,7 @@ impl Timesheet {
                 let now = get_seconds();
                 session.push_event(Event::Pause {
                                        time: now,
-                                       note_info: note_text,
+                                       note: note_text,
                                    });
             }
             None => println!("No session to pause!"),
@@ -488,8 +488,8 @@ trait HasHTML {
 impl HasHTML for Event {
     fn to_html(&self) -> String {
         match self {
-            &Event::Pause { time, ref note_info } => {
-                match note_info {
+            &Event::Pause { time, ref note } => {
+                match note {
                     &Some(ref info) => {
                         format!("<div class=\"entry pause\">{}:\tStarted a pause<p class=\"pausenote\">{}</p></div>",
                                 ts_to_date(time),
