@@ -19,9 +19,12 @@ use std::fmt::Write as strwrite;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Event {
-    Pause { time: u64, meta_info: Option<String> },
+    Pause {
+        time: u64,
+        note_info: Option<String>,
+    },
     Resume { time: u64 },
-    Meta { time: u64, text: String },
+    Note { time: u64, text: String },
     Commit { time: u64, hash: u64 },
     Branch { time: u64, name: String },
 }
@@ -106,27 +109,27 @@ impl Session {
                     false
                 }
             }
-            Event::Meta { time: ref metatime, text: ref meta_text /* TODO: rename */} => {
+            Event::Note { time: ref note_time, text: ref note_text /* TODO: rename */ } => {
                 if self.is_paused() {
-                    /* Add metatext to pause (last elem of events vec) */
+                    /* Add note_text to pause (last elem of events vec) */
                     let len = self.events.len();
                     let pause = &mut self.events[len - 1];
                     match *pause {
-                        Event::Pause { ref mut meta_info, .. } => {
-                            match *meta_info {
+                        Event::Pause { ref mut note_info, .. } => {
+                            match *note_info {
                                 Some(ref mut already) => {
                                     already.push_str("\n");
-                                    already.push_str(meta_text);
+                                    already.push_str(note_text);
                                 }
-                                None => *meta_info = Some(meta_text.clone()),
+                                None => *note_info = Some(note_text.clone()),
                             }
                         }
                         _ => unreachable!(),
                     };
                 } else {
-                    self.events.push(Event::Meta {
-                                         time: *metatime,
-                                         text: meta_text.clone(),
+                    self.events.push(Event::Note {
+                                         time: *note_time,
+                                         text: note_text.clone(),
                                      })
                 };
                 true
@@ -264,11 +267,14 @@ impl Timesheet {
         self.save_to_file();
     }
 
-    pub fn pause(&mut self, metatext: Option<String>) {
+    pub fn pause(&mut self, note_text: Option<String>) {
         match self.get_last_session_mut() {
             Some(session) => {
                 let now = get_seconds();
-                session.push_event(Event::Pause { time: now, meta_info: metatext });
+                session.push_event(Event::Pause {
+                                       time: now,
+                                       note_info: note_text,
+                                   });
             }
             None => println!("No session to pause!"),
         }
@@ -286,16 +292,16 @@ impl Timesheet {
         self.save_to_file();
     }
 
-    pub fn push_meta(&mut self, metatext: String) {
+    pub fn push_note(&mut self, note_text: String) {
         match self.get_last_session_mut() {
             Some(session) => {
                 let now = get_seconds();
-                session.push_event(Event::Meta {
+                session.push_event(Event::Note {
                                        time: now,
-                                       text: metatext,
+                                       text: note_text,
                                    });
             }
-            None => println!("No session to add meta to!"),
+            None => println!("No session to add note to!"),
         }
         self.save_to_file();
     }
@@ -482,20 +488,25 @@ trait HasHTML {
 impl HasHTML for Event {
     fn to_html(&self) -> String {
         match self {
-            &Event::Pause { time, ref meta_info } => {
-                match meta_info {
-                    &Some( ref info) => format!("<div class=\"entry pause\">{}:\tStarted a pause<p>{}</p></div>",
-                        ts_to_date(time), info.clone()),
-                    &None => format!("<div class=\"entry pause\">{}:\tStarted a pause</div>",
-                        ts_to_date(time)),
+            &Event::Pause { time, ref note_info } => {
+                match note_info {
+                    &Some(ref info) => {
+                        format!("<div class=\"entry pause\">{}:\tStarted a pause<p class=\"pausenote\">{}</p></div>",
+                                ts_to_date(time),
+                                info.clone())
+                    }
+                    &None => {
+                        format!("<div class=\"entry pause\">{}:\tStarted a pause</div>",
+                                ts_to_date(time))
+                    }
                 }
             }
             &Event::Resume { time } => {
                 format!("<div class=\"entry resume\">{}:\tResumed work</div>",
                         ts_to_date(time))
             }
-            &Event::Meta { time, ref text } => {
-                format!("<div class=\"entry meta\">{}:\tNote: {}</div>",
+            &Event::Note { time, ref text } => {
+                format!("<div class=\"entry note\">{}:\tNote: {}</div>",
                         ts_to_date(time),
                         text)
             }
@@ -515,11 +526,13 @@ impl HasHTML for Event {
 
 impl HasHTML for Session {
     fn to_html(&self) -> String {
-        let mut html = String::from(format!("<section class=\"session\">\n<h1 class=\"sessionheading\">Session on {}</h1>\n",
+        let mut html = String::from(
+            format!("<section class=\"session\">\n<h1 class=\"sessionheader\">Session on {}</h1>\n",
                                             ts_to_date(self.start)));
         for event in &self.events {
             write!(&mut html, "{}\n", event.to_html()).unwrap();
         }
+        write!(&mut html, "<h2 class=\"sessionfooter\">Ended on {}<h2>", ts_to_date(self.end)).unwrap();
         write!(&mut html, "</section>").unwrap();
         html
     }
@@ -562,6 +575,6 @@ fn git_author() -> Option<String> {
 }
 
 pub fn ts_to_date(timestamp: u64) -> String {
-    Local.timestamp(timestamp as i64, 0).format("%Y-%m-%d, %H:%M:%S%z").to_string()
+    Local.timestamp(timestamp as i64, 0).format("%Y-%m-%d, %H:%M:%S").to_string()
 
 }

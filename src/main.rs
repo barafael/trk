@@ -41,10 +41,10 @@ fn main() {
             /* (@arg debug: -d ... "[UNUSED] Sets the level of debugging information") */
 
             (@subcommand init =>
-                (about: "Initialise trk in this directory")
+                (about: "Initialise trk in this directory and give name (should match git user name)")
                 (version: "0.1")
                 (author:  "Rafael B. <mediumendian@gmail.com>")
-                (@arg name: "User name. Default is git user name if set, empty otherwise.")
+                (@arg name: "Optional: user name. Default is git user name if set, empty otherwise.")
             )
             (@subcommand begin =>
                 (about: "Begin session")
@@ -61,30 +61,25 @@ fn main() {
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
             )
-            // TODO: needed or covered by meta handling for pause?
-            (@subcommand metapause =>
-                (about: "Pause current session and give meta info about the pause")
-                (version: "0.1")
-                (author: "mediumendian@gmail.com")
-                (@arg metatext: +required "Meta information about pause")
-            )
+            // TODO: make this unnecessary by making it possible to add any command with a time
+            // offset
             (@subcommand retropause =>
                 (about: "Pause current session after the fact (set length of break)")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
                 (@arg length: +required "How long the pause was")
-                (@arg metatext: "Meta information about pause")
+                (@arg note_text: "Note about pause")
             )
             (@subcommand resume =>
                 (about: "Resume currently paused session")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
             )
-            (@subcommand meta =>
-                (about: "Give meta info about current work or started pause")
+            (@subcommand note =>
+                (about: "Add a note about current work or pause")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
-                (@arg metatext: +required "Meta information about work")
+                (@arg note_text: +required "Note text")
             )
             (@subcommand commit =>
                 (about: "Add a commit to the event list")
@@ -105,7 +100,7 @@ fn main() {
                 (@arg which: +required "session or sheet")
                 )
             (@subcommand report =>
-                (about: "Generate html report for current session or entire sheet")
+                (about: "Generate html report for current session or entire sheet and save it to {timesheet|session}.html")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
                 (@arg which: +required "session or sheet")                
@@ -158,25 +153,21 @@ fn main() {
         ("pause", Some(..)) => {
             sheet.pause(None);
         }
-        ("metapause", Some(arg)) => {
-            let metatext = arg.value_of("metatext").unwrap();
-            sheet.pause(Some(metatext.to_string()));
-        }
         /*("retropause", Some(arg)) => {
             println!("{:?}", parse_to_seconds("30:00"));
             let length_in_seconds = parse_to_seconds(arg.value_of("length").unwrap());
-            let metatext = arg.value_of("metatext");
-            match metatext {
-                Some(metatext) => sheet.retropause(length_in_seconds, Some(metatext.to_string())),
+            let note_text = arg.value_of("note_text");
+            match note_text {
+                Some(note_text) => sheet.retropause(length_in_seconds, Some(note_text.to_string())),
                 None => sheet.retropause(length_in_seconds, None),
             }
         }*/
         ("resume", Some(..)) => {
             sheet.resume();
         }
-        ("meta", Some(arg)) => {
-            let metatext = arg.value_of("metatext").unwrap();
-            sheet.push_meta(metatext.to_string());
+        ("note", Some(arg)) => {
+            let note_text = arg.value_of("note_text").unwrap();
+            sheet.push_note(note_text.to_string());
         }
         ("commit", Some(arg)) => {
             let commit_hash = arg.value_of("hash").unwrap();
