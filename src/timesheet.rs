@@ -562,6 +562,6 @@ fn git_author() -> Option<String> {
 }
 
 pub fn ts_to_date(timestamp: u64) -> String {
-    Local.timestamp(timestamp as i64, 0).to_string()
+    Local.timestamp(timestamp as i64, 0).format("%Y-%m-%d, %H:%M:%S%z").to_string()
 
 }
