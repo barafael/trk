@@ -11,7 +11,7 @@ use std::path::Path;
 use std::error::Error;
 use std::fs::OpenOptions;
 
-/* for running git */
+/* for running git and tidy */
 use std::process::Command;
 
 /* Alias to avoid naming conflict for write_all!() */
@@ -19,14 +19,11 @@ use std::fmt::Write as stdwrite;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Event {
-    Pause {
-        time: u64,
-        note: Option<String>,
-    },
-    Resume { time: u64 },
-    Note   { time: u64, text: String },
-    Commit { time: u64, hash: u64 },
-    Branch { time: u64, name: String },
+    Pause   { time : u64, note : Option<String> },
+    Resume  { time : u64 },
+    Note    { time : u64, text : String },
+    Commit  { time : u64, hash : u64 },
+    Branch  { time : u64, name : String },
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -39,12 +36,12 @@ struct Session {
 
 impl Session {
     fn new() -> Session {
-        let seconds = get_seconds();
+        let now = get_seconds();
         Session {
-            start: seconds,
-            end: seconds - 1,
-            running: true,
-            events: Vec::<Event>::new(),
+            start   : now,
+            end     : now - 1,
+            running : true,
+            events  : Vec::<Event>::new(),
         }
     }
 
@@ -89,7 +86,7 @@ impl Session {
             return false;
         }
         self.update_end();
-        /* TODO: add logic */
+        /* TODO: improve logic */
         match event {
             Event::Pause { .. } => {
                 if !self.is_paused() {
@@ -109,7 +106,7 @@ impl Session {
                     false
                 }
             }
-            Event::Note { time: ref note_time, text: ref note_text /* TODO: rename */ } => {
+            Event::Note { time: ref note_time, text: ref note_text } => {
                 if self.is_paused() {
                     /* Add note_text to pause (last elem of events vec) */
                     let len = self.events.len();
@@ -212,7 +209,7 @@ impl Timesheet {
         if Path::new("./.trk/timesheet.json").exists() {
             match Timesheet::load_from_file() {
                 Some(..) => true,
-                /* else, loading failed */
+                /* Else, loading failed */
                 None => false,
             }
         } else {
@@ -349,7 +346,8 @@ impl Timesheet {
         match file {
             Ok(mut file) => {
                 file.write_all(self.to_html().as_bytes()).unwrap();
-                /* save was successful */
+                format_file("timesheet.html");
+                /* Save was successful */
                 true
             }
             Err(why) => {
@@ -371,8 +369,19 @@ impl Timesheet {
             Ok(mut file) => {
                 match self.get_last_session() {
                     Some(session) => {
-                        file.write_all(session.to_html().as_bytes()).unwrap();
-                        /* save was successful */
+                        let html = format!(r#"<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <title>{} for {}</title>
+</head>
+<body>{}
+</body>
+</html>
+"#, "Session", "Rafael Bachmann", session.to_html());
+                        file.write_all(html.as_bytes()).unwrap();
+                        format_file("session.html");
+                        /* Save was successful */
                         true
                     }
                     None => false,
@@ -403,7 +412,7 @@ impl Timesheet {
                 let serialized =
                     serde_json::to_string(&self).expect("Could not write serialized time sheet!");
                 file.write_all(serialized.as_bytes()).unwrap();
-                /* save was successful */
+                /* Save was successful */
                 true
             }
             Err(why) => {
@@ -526,13 +535,15 @@ impl HasHTML for Event {
 
 impl HasHTML for Session {
     fn to_html(&self) -> String {
-        let mut html = String::from(
-            format!("<section class=\"session\">\n<h1 class=\"sessionheader\">Session on {}</h1>\n",
+        let mut html = String::from(format!("<section class=\"session\">\n<h1 class=\"sessionheader\">Session on {}</h1>\n",
                                             ts_to_date(self.start)));
         for event in &self.events {
             write!(&mut html, "{}\n", event.to_html()).unwrap();
         }
-        write!(&mut html, "<h2 class=\"sessionfooter\">Ended on {}<h2>", ts_to_date(self.end)).unwrap();
+        write!(&mut html,
+               "<h2 class=\"sessionfooter\">Ended on {}</h2>",
+               ts_to_date(self.end))
+                .unwrap();
         write!(&mut html, "</section>").unwrap();
         html
     }
@@ -540,14 +551,20 @@ impl HasHTML for Session {
 
 impl HasHTML for Timesheet {
     fn to_html(&self) -> String {
-        let mut html = String::from("<!DOCTYPE html>\n");
-        // TODO: non-hardcode that name!
-        write!(&mut html, "<html>\n<head>\n<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\n<title>Timesheet for Rafael Bachmann</title></head>").unwrap();
-        write!(&mut html, "<body>\n").unwrap();
+                let mut sessions_html = String::new();
         for session in &self.sessions {
-            write!(&mut html, "{}\n", session.to_html()).unwrap();
+            write!(&mut sessions_html, "{}\n", session.to_html()).unwrap();
         }
-        write!(&mut html, "</body>\n</html>").unwrap();
+                let html = format!(r#"<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <title>{} for {}</title>
+</head>
+<body>{}
+</body>
+</html>
+"#, "Timesheet", "Rafael Bachmann", sessions_html);
         html
     }
 }
@@ -571,6 +588,11 @@ fn git_author() -> Option<String> {
         }
     } else {
         None
+    }
+}
+
+fn format_file(filename: &str) {
+    if let Ok(_) = Command::new("tidy").arg("-i").arg("-m").arg(filename).output() {
     }
 }
 

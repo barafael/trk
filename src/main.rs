@@ -192,8 +192,12 @@ fn main() {
         }
         ("report", Some(arg)) => {
             match arg.value_of("which") {
-                Some("session") => { sheet.last_session_report(); }
-                Some("sheet") => { sheet.report(); }
+                Some("session") => {
+                    sheet.last_session_report();
+                }
+                Some("sheet") => {
+                    sheet.report();
+                }
                 Some(text) => {
                     println!("What do you mean by {}? Should be either 'sheet' or 'session'.",
                              text)
