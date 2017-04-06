@@ -1,3 +1,4 @@
+/* Command Line Argument Parser */
 #[macro_use]
 extern crate clap;
 use clap::AppSettings::SubcommandRequiredElseHelp;
@@ -5,15 +6,19 @@ use clap::AppSettings::SubcommandRequiredElseHelp;
 #[macro_use]
 extern crate serde_derive;
 
+/* For parsing time */
 #[macro_use]
 extern crate nom;
 use nom::IResult::Done;
 
+/* For time handling */
 extern crate chrono;
 use chrono::Duration;
 
+/* For from::utf8 */
 use std::str;
 
+/* For parsing time in HH:MM format. TODO: extend to other formats or find better solution */
 named!(duration(&[u8]) -> Duration,
     do_parse!(
         hour: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
@@ -32,9 +37,8 @@ fn main() {
         (version: "0.1")
         (author: "Rafael B. <mediumendian@gmail.com>")
         (about: "Create timesheets from git history and meta info")
-            (@arg CONFIG: -c --config +takes_value "[UNUSED] Sets a custom config file")
-            (@arg debug: -d ... "[UNUSED] Sets the level of debugging information")
-
+            /* (@arg CONFIG: -c --config +takes_value "[UNUSED] Sets a custom config file") */
+            /* (@arg debug: -d ... "[UNUSED] Sets the level of debugging information") */
 
             (@subcommand init =>
                 (about: "Initialise trk in this directory")
@@ -65,7 +69,7 @@ fn main() {
                 (@arg metatext: +required "Meta information about pause")
             )
             (@subcommand retropause =>
-                (about: "Pause current session after taking a break, (set length of break)")
+                (about: "Pause current session after the fact (set length of break)")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
                 (@arg length: +required "How long the pause was")
@@ -95,13 +99,13 @@ fn main() {
                 (@arg name: +required "The branch's name")
             )
             (@subcommand status =>
-                (about: "Prints the current WIP for session or sheet (eventually as html/latex)")
+                (about: "Prints the current WIP for session or sheet")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
                 (@arg which: +required "session or sheet")
                 )
             (@subcommand report =>
-                (about: "Generate html report for entire sheet or current session")
+                (about: "Generate html report for current session or entire sheet")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
                 (@arg which: +required "session or sheet")                
@@ -115,8 +119,8 @@ fn main() {
             .get_matches();
 
     /* Gets a value for config if supplied by user, or defaults to "default.conf" */
-    // let config = matches.value_of("config").unwrap_or("default.conf");
-    // println!("[UNUSED] Value for config: {}", config);
+    /* let config = matches.value_of("config").unwrap_or("default.conf");
+    println!("[UNUSED] Value for config: {}", config); */
 
     let sheet_opt: Option<timesheet::Timesheet> = timesheet::Timesheet::load_from_file();
 
@@ -131,14 +135,15 @@ fn main() {
                 }
             }
         }
+        /* Nothing left to do. TODO: Continue instead? So that `trk init begin` is possible */
         return;
     }
 
-    /* Unwrap the timesheet and continue only if sessions file exists */
+    /* Unwrap the timesheet and continue only if timesheet file exists */
     let mut sheet = match sheet_opt {
         Some(file) => file,
         None => {
-            println!("No sessions file! You might have to init first.");
+            println!("No timesheet file! You might have to init first.");
             return;
         }
     };
@@ -206,8 +211,8 @@ fn main() {
             }
         }
         ("clear", Some(..)) => {
-            println!("Clearing sessions!");
-            timesheet::Timesheet::clear_sessions();
+            println!("Clearing timesheet!");
+            timesheet::Timesheet::clear();
         }
         _ => unreachable!(),
     }

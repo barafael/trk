@@ -19,8 +19,7 @@ use std::fmt::Write as strwrite;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Event {
-    Pause { time: u64 },
-    MetaPause { time: u64, meta_info: String },
+    Pause { time: u64, meta_info: Option<String> },
     Resume { time: u64 },
     Meta { time: u64, text: String },
     Commit { time: u64, hash: u64 },
@@ -59,6 +58,7 @@ impl Session {
             if self.is_paused() {
                 self.push_event(Event::Resume { time: get_seconds() });
             }
+
             self.running = false;
         }
     }
@@ -72,8 +72,7 @@ impl Session {
             0 => false,
             n => {
                 match self.events[n - 1] {
-                    Event::Pause { .. } |
-                    Event::MetaPause { .. } => true,
+                    Event::Pause { .. } => true,
                     _ => false,
                 }
             }
@@ -89,8 +88,7 @@ impl Session {
         self.update_end();
         /* TODO: add logic */
         match event {
-            Event::Pause { .. } |
-            Event::MetaPause { .. } => {
+            Event::Pause { .. } => {
                 if !self.is_paused() {
                     self.events.push(event);
                     true
@@ -108,30 +106,27 @@ impl Session {
                     false
                 }
             }
-            Event::Meta { time: ref metatime, text: ref metatext } => {
+            Event::Meta { time: ref metatime, text: ref meta_text /* TODO: rename */} => {
                 if self.is_paused() {
-                    /* morph last pause into a MetaPause */
-                    let pause = self.events.pop().unwrap();
-                    match pause {
-                        Event::Pause { time: pausetime } => {
-                            self.push_event(Event::MetaPause {
-                                                time: pausetime,
-                                                meta_info: metatext.to_string(),
-                                            })
-                        }
-                        Event::MetaPause { time: pausetime, meta_info } => {
-                            let meta_info = meta_info + "\n" + metatext;
-                            self.push_event(Event::MetaPause {
-                                                time: pausetime,
-                                                meta_info: meta_info.to_string(),
-                                            })
+                    /* Add metatext to pause (last elem of events vec) */
+                    let len = self.events.len();
+                    let pause = &mut self.events[len - 1];
+                    match *pause {
+                        Event::Pause { ref mut meta_info, .. } => {
+                            match *meta_info {
+                                Some(ref mut already) => {
+                                    already.push_str("\n");
+                                    already.push_str(meta_text);
+                                }
+                                None => *meta_info = Some(meta_text.clone()),
+                            }
                         }
                         _ => unreachable!(),
                     };
                 } else {
                     self.events.push(Event::Meta {
                                          time: *metatime,
-                                         text: metatext.clone(),
+                                         text: meta_text.clone(),
                                      })
                 };
                 true
@@ -153,10 +148,9 @@ impl Session {
         let mut last_pause_ts = 0;
         for event in &self.events {
             match event {
-                &Event::Pause { time } |
-                    &Event::MetaPause { time, .. } => {
-                        last_pause_ts = time;
-                    }
+                &Event::Pause { time, .. } => {
+                    last_pause_ts = time;
+                }
                 &Event::Resume { time } => {
                     pt += time - last_pause_ts;
                 }
@@ -182,7 +176,7 @@ pub struct Timesheet {
 }
 
 impl Timesheet {
-    /** Initializes the .trk/sessions.trk file which holds
+    /** Initializes the .trk/timesheet.json file which holds
      * the serialized timesheet
      * Returns Some(newTimesheet) if operation succeeded */
     pub fn init(author_name: Option<&str>) -> Option<Timesheet> {
@@ -212,7 +206,7 @@ impl Timesheet {
     }
 
     fn is_init() -> bool {
-        if Path::new("./.trk/sessions.trk").exists() {
+        if Path::new("./.trk/timesheet.json").exists() {
             match Timesheet::load_from_file() {
                 Some(..) => true,
                 /* else, loading failed */
@@ -274,17 +268,7 @@ impl Timesheet {
         match self.get_last_session_mut() {
             Some(session) => {
                 let now = get_seconds();
-                match metatext {
-                    Some(meta_info) => {
-                        session.push_event(Event::MetaPause {
-                                               time: now,
-                                               meta_info: meta_info.to_string(),
-                                           });
-                    }
-                    None => {
-                        session.push_event(Event::Pause { time: now });
-                    }
-                }
+                session.push_event(Event::Pause { time: now, meta_info: metatext });
             }
             None => println!("No session to pause!"),
         }
@@ -400,7 +384,7 @@ impl Timesheet {
         /* TODO: make all commands run regardless of where trk is executed
          * (and not just in root which is assumed here */
 
-        let path = Path::new("./.trk/sessions.trk");
+        let path = Path::new("./.trk/timesheet.json");
         let file = OpenOptions::new()
             .write(true)
             .truncate(true)
@@ -423,12 +407,12 @@ impl Timesheet {
         }
     }
 
-    /** Return a Some(Timesheet) struct if a sessions.trk file is present and valid
+    /** Return a Some(Timesheet) struct if a timesheet.json file is present and valid
      * in the .trk directory, and None otherwise.
      * TODO: improve error handling
      * */
     pub fn load_from_file() -> Option<Timesheet> {
-        let path = Path::new("./.trk/sessions.trk");
+        let path = Path::new("./.trk/timesheet.json");
         let file = OpenOptions::new().read(true).open(&path);
         match file {
             Ok(mut file) => {
@@ -448,12 +432,12 @@ impl Timesheet {
         }
     }
 
-    pub fn clear_sessions() {
+    pub fn clear() {
         /* Try to get name */
         let sheet = Timesheet::load_from_file();
         let name: Option<String> = sheet.map(|s| s.user.clone());
 
-        let path = Path::new("./.trk/sessions.trk");
+        let path = Path::new("./.trk/timesheet.json");
         if path.exists() {
             match fs::remove_file(&path) {
                 Ok(..) => {}
@@ -480,7 +464,7 @@ impl Timesheet {
         match n_sessions {
             0 => None,
             n => {
-                println!("{}", self.sessions[n-1].working_time());
+                println!("{}", self.sessions[n - 1].working_time());
                 Some(self.sessions[n - 1].status())
             }
         }
@@ -498,14 +482,13 @@ trait HasHTML {
 impl HasHTML for Event {
     fn to_html(&self) -> String {
         match self {
-            &Event::Pause { time } => {
-                format!("<div class=\"entry pause\">{}:\tStarted a pause</div>",
-                        ts_to_date(time))
-            }
-            &Event::MetaPause { time, ref meta_info } => {
-                format!("<div class=\"entry metapause\">{}:\t{}</div>",
-                        ts_to_date(time),
-                        meta_info)
+            &Event::Pause { time, ref meta_info } => {
+                match meta_info {
+                    &Some( ref info) => format!("<div class=\"entry pause\">{}:\tStarted a pause<p>{}</p></div>",
+                        ts_to_date(time), info.clone()),
+                    &None => format!("<div class=\"entry pause\">{}:\tStarted a pause</div>",
+                        ts_to_date(time)),
+                }
             }
             &Event::Resume { time } => {
                 format!("<div class=\"entry resume\">{}:\tResumed work</div>",
