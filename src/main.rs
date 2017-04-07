@@ -134,6 +134,24 @@ fn main() {
         return;
     }
 
+    /* Special case for clear because t_sheet can be None when clearing (corrupt file) */
+    if let Some(command) = arguments.subcommand_matches("clear") {
+        match sheet_opt {
+            Some(..) => {
+                println!("Clearing timesheet!");
+                timesheet::Timesheet::clear();
+            }
+            None => {
+                match timesheet::Timesheet::init(command.value_of("name")) {
+                    Some(..) => println!("Reinitialised timesheet"),
+                    None => println!("Could not initialize."),
+                }
+            }
+        }
+        /* Nothing left to do. TODO: Continue instead? */
+        return;
+    }
+
     /* Unwrap the timesheet and continue only if timesheet file exists */
     let mut sheet = match sheet_opt {
         Some(file) => file,
@@ -203,10 +221,7 @@ fn main() {
                 None => {}
             }
         }
-        ("clear", Some(..)) => {
-            println!("Clearing timesheet!");
-            timesheet::Timesheet::clear();
-        }
+
         _ => unreachable!(),
     }
 }
