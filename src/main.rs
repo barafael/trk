@@ -153,6 +153,7 @@ fn main() {
         }
     };
 
+    // TODO: extend command line arguments so that timestamp can be given
     match arguments.subcommand() {
         ("begin", Some(..)) => {
             sheet.new_session();
@@ -161,7 +162,7 @@ fn main() {
             sheet.end_session();
         }
         ("pause", Some(..)) => {
-            sheet.pause(None);
+            sheet.pause(None, None);
         }
         /*("retropause", Some(arg)) => {
             println!("{:?}", parse_to_seconds("30:00"));
@@ -173,11 +174,11 @@ fn main() {
             }
         }*/
         ("resume", Some(..)) => {
-            sheet.resume();
+            sheet.resume(None);
         }
         ("note", Some(arg)) => {
             let note_text = arg.value_of("note_text").unwrap();
-            sheet.push_note(note_text.to_string());
+            sheet.push_note(None, note_text.to_string());
         }
         ("commit", Some(arg)) => {
             let commit_hash = arg.value_of("hash").unwrap();
