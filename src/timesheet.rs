@@ -22,7 +22,7 @@ pub enum Event {
     Pause   { time : u64, note : Option<String> },
     Resume  { time : u64 },
     Note    { time : u64, text : String },
-    Commit  { time : u64, hash : u64 },
+    Commit  { time : u64, hash : String, message: String },
     Branch  { time : u64, name : String },
 }
 
@@ -303,13 +303,15 @@ impl Timesheet {
         self.save_to_file();
     }
 
-    pub fn push_commit(&mut self, hash: u64) {
+    pub fn push_commit(&mut self, hash: String) {
         match self.get_last_session_mut() {
             Some(session) => {
                 let now = get_seconds();
+                let message = git_commit_info(&hash).unwrap_or(String::new());
                 session.push_event(Event::Commit {
                                        time: now,
                                        hash: hash,
+                                       message: message,
                                    });
             }
             None => println!("No session to add commit to!"),
@@ -519,10 +521,11 @@ impl HasHTML for Event {
                         ts_to_date(time),
                         text)
             }
-            &Event::Commit { time, hash } => {
-                format!("<div class=\"entry commit\">{}:\tCommit id: {}</div>",
+            &Event::Commit { time, ref hash, ref message } => {
+                format!("<div class=\"entry commit\">{}:\tCommit id: {}\nmessage: {}</div>",
                         ts_to_date(time),
-                        hash)
+                        hash,
+                        message)
             }
             &Event::Branch { time, ref name } => {
                 format!("<div class=\"entry branch\">{}:\tBranch name: {}</div>",
@@ -584,6 +587,21 @@ fn git_author() -> Option<String> {
         } else {
             let output = String::from_utf8_lossy(&output.stderr);
             println!("git config user.name failed! {}", output);
+            None
+        }
+    } else {
+        None
+    }
+}
+
+fn git_commit_info(hash: &str) -> Option<String> {
+    if let Ok(output) = Command::new("git").arg("log").arg("--format=%B").arg("-n").arg("1").arg(hash).output() {
+        if output.status.success() {
+            let output = String::from_utf8_lossy(&output.stdout);
+            Some(output.to_string())
+        } else {
+            let output = String::from_utf8_lossy(&output.stderr);
+            println!("git log --format=%B -n 1 <hash> failed! {}", output);
             None
         }
     } else {

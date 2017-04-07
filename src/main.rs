@@ -130,7 +130,7 @@ fn main() {
                 }
             }
         }
-        /* Nothing left to do. TODO: Continue instead? So that `trk init begin` is possible */
+        /* Nothing left to do. TODO: Continue instead? */
         return;
     }
 
@@ -171,9 +171,7 @@ fn main() {
         }
         ("commit", Some(arg)) => {
             let commit_hash = arg.value_of("hash").unwrap();
-            // TODO: improve error case, don't just chicken out
-            let hash_parsed = u64::from_str_radix(commit_hash, 16).unwrap();
-            sheet.push_commit(hash_parsed);
+            sheet.push_commit(commit_hash.to_string());
         }
         ("branch", Some(arg)) => {
             let branch_name = arg.value_of("name").unwrap();
