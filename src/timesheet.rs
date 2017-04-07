@@ -180,6 +180,7 @@ impl Timesheet {
      * the serialized timesheet
      * Returns Some(newTimesheet) if operation succeeded */
     pub fn init(author_name: Option<&str>) -> Option<Timesheet> {
+        // TODO: mkdir
         /* Check if file already exists (no init permitted) */
         if Timesheet::is_init() {
             None
@@ -397,15 +398,6 @@ impl Timesheet {
         /* TODO: avoid time-of-check-to-time-of-use race risk */
         /* TODO: make all commands run regardless of where trk is executed
          * (and not just in root which is assumed here */
-
-        if !Path::new("./.trk").exists() {
-            match fs::create_dir("./.trk") {
-                Ok(_) => {}
-                _ => {
-                    println!("Could not create .trk directory!");
-                }
-            }
-        }
 
         let path = Path::new("./.trk/timesheet.json");
         let file = OpenOptions::new()
