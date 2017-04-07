@@ -83,7 +83,9 @@ Turns into something like this:
 </html>
 ```
 
-Which can be styled by style.css.
+Which can be styled by style.css:
+
+![sheet.png](https://github.com/medium-endian/trk/blob/master/sheet.png)
 
 ### Dependencies
 
