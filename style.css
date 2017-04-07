@@ -46,3 +46,10 @@ div.entry.pause {
 div {
   padding: 10px;
 }
+
+div.summary {
+  margin-left: 60px;
+  font-family: Tahoma, Geneva, sans-serif;
+  color: #555;
+
+}
