@@ -88,6 +88,7 @@ impl Session {
         self.update_end();
         /* TODO: improve logic */
         match event {
+            // TODO: add `trk pause "info"`
             Event::Pause { .. } => {
                 if !self.is_paused() {
                     self.events.push(event);
@@ -115,7 +116,7 @@ impl Session {
                         Event::Pause { ref mut note, .. } => {
                             match *note {
                                 Some(ref mut already) => {
-                                    already.push_str("\n");
+                                    already.push_str("<br>");
                                     already.push_str(note_text);
                                 }
                                 None => *note = Some(note_text.clone()),
@@ -180,7 +181,6 @@ impl Timesheet {
      * the serialized timesheet
      * Returns Some(newTimesheet) if operation succeeded */
     pub fn init(author_name: Option<&str>) -> Option<Timesheet> {
-        // TODO: mkdir
         /* Check if file already exists (no init permitted) */
         if Timesheet::is_init() {
             None
@@ -398,6 +398,15 @@ impl Timesheet {
         /* TODO: avoid time-of-check-to-time-of-use race risk */
         /* TODO: make all commands run regardless of where trk is executed
          * (and not just in root which is assumed here */
+
+       if !Path::new("./.trk").exists() {
+            match fs::create_dir("./.trk") {
+                Ok(_) => {}
+                _ => {
+                    println!("Could not create .trk directory!");
+                }
+            }
+        }
 
         let path = Path::new("./.trk/timesheet.json");
         let file = OpenOptions::new()

@@ -130,6 +130,7 @@ fn main() {
                 }
             }
         }
+        return
     }
 
     /* Special case for clear because t_sheet can be None when clearing (corrupt file) */
@@ -146,6 +147,7 @@ fn main() {
                 }
             }
         }
+        return
     }
 
     /* Unwrap the timesheet and continue only if timesheet file exists */
