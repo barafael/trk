@@ -217,6 +217,7 @@ impl Timesheet {
         }
     }
 
+    // TODO: Check if this function could be used in more places
     fn get_last_session(&self) -> Option<&Session> {
         match self.sessions.len() {
             0 => None,
@@ -232,10 +233,11 @@ impl Timesheet {
     }
 
     pub fn new_session(&mut self) -> bool {
-        let push = match self.get_last_session_mut() {
-            None => true,
-            Some(session) => {
-                if session.is_running() {
+        let n_sessions = self.sessions.len();
+        let push = match n_sessions {
+            0 => true,
+            _ => {
+                if self.sessions[n_sessions - 1].is_running() {
                     println!("Last session is still running!");
                     false
                 } else {
@@ -483,9 +485,14 @@ impl Timesheet {
     }
 
     pub fn last_session_status(&self) -> Option<String> {
-        self.get_last_session().map(|session| {
-                session.status()
-        })
+        let n_sessions = self.sessions.len();
+        match n_sessions {
+            0 => None,
+            n => {
+                println!("{}", self.sessions[n - 1].working_time());
+                Some(self.sessions[n - 1].status())
+            }
+        }
     }
 }
 
