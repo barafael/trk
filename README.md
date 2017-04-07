@@ -1,50 +1,57 @@
 # trk
-Make time sheets with git integration.
+Track time with annotated pauses, notes, and git commits. It is meant to run in a git directory but can run without it. When running in a git directory, commits are automatically added to the time sheet. trk will generate a html report.
 
-trk is supposed to generate time sheets based on its inputs and the git history. For example:
+For example:
+
+```
+10:00 $> trk init # do this only once
+Init successful.
 
 10:00 $> trk begin
 
-10:01 $> trk meta 'blablabla'
-
-10:10 $> trk commit 56345636 #automated, via git hook
+10:01 $> trk note 'blablabla'
 
 10:11 $> trk pause
 
-10:15 $> trk proceed
+10:12 $> trk note "coffee" # automatically added as note on the pause
 
-...
+10:15 $> trk resume
 
 18:00 $> trk end
 
+```
+
 ```json
 {
-  "start": 1491231869,
-  "end": 1491231868,
-  "user": "Rafael Bachmann",
+  "end": 1491549156,
   "sessions": [
     {
-      "end": 1491232120,
+      "end": 1491549238,
       "events": [
         {
-          "Commit": {
-            "hash": 1446270518
+          "Note": {
+            "text": "blablabla",
+            "time": 1491549186
           }
         },
         {
           "Pause": {
-            "time": 1491232022
+            "note": "coffee",
+            "time": 1491549190
           }
         },
         {
-          "Proceed": {
-            "time": 1491232027
+          "Resume": {
+            "time": 1491549212
           }
         }
       ],
-      "start": 1491231897
+      "running": false,
+      "start": 1491549174
     }
-  ]
+  ],
+  "start": 1491549157,
+  "user": "Rafael Bachmann"
 }
 ```
 
@@ -53,37 +60,39 @@ Turns into something like this:
 ```html
 <!DOCTYPE html>
 <html>
-   <head>
-      <title>Timesheet for Rafael Bachmann</title>
-      <link rel="stylesheet" type="text/css" href="style.css">
-   </head>
-   <body>
-      <section class="session">
-         <h1 class="sessionheading">Session on 2017-04-05 14:03:25 +02:00</h1>
-         <div class="entry pause">2017-04-05 14:03:30 +02:00:	Started a pause</div>
-         <div class="entry resume">2017-04-05 14:03:37 +02:00:	Resumed work</div>
-         <div class="entry commit">2017-04-05 14:03:55 +02:00:	Commit id: 213141</div>
-         <div class="entry commit">2017-04-05 14:04:47 +02:00:	Commit id: 213141</div>
-         <div class="entry pause">2017-04-05 14:04:56 +02:00:	Started a pause</div>
-         <div class="entry resume">2017-04-05 14:04:59 +02:00:	Resumed work</div>
-      </section>
-      <section class="session">
-         <h1 class="sessionheading">Session on 2017-04-05 17:50:50 +02:00</h1>
-         <div class="entry meta">2017-04-05 17:51:02 +02:00:	Note: test content bla</div>
-         <div class="entry metapause">2017-04-05 17:51:20 +02:00:	test meta pause</div>
-         <div class="entry resume">2017-04-05 17:51:43 +02:00:	Resumed work</div>
-         <div class="entry commit">2017-04-05 17:51:49 +02:00:	Commit id: 213141</div>
-      </section>
-   </body>
+<head>
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <title>Timesheet for Rafael Bachmann</title>
+</head>
+<body>
+  <section class="session">
+    <h1 class="sessionheader">Session on 2017-04-07, 09:12:54</h1>
+    <div class="entry note">
+      2017-04-07, 09:13:06: Note: blablabla
+    </div>
+    <div class="entry pause">
+      2017-04-07, 09:13:10: Started a pause
+      <p class="pausenote">coffee</p>
+    </div>
+    <div class="entry resume">
+      2017-04-07, 09:13:32: Resumed work
+    </div>
+    <h2 class="sessionfooter">Ended on 2017-04-07, 09:13:58</h2>
+  </section>
+  </body>
 </html>
 ```
+
 Which can be styled by style.css.
+
+### Dependencies
+
+Soft dependencies are html-tidy and git, but trk works without them too. TODO: ensure this is true.
 
 ### Notes and TODO items ###
 
 * TODO: Find a way to add an event in the past
 * TODO: Find a way to query time sheets from certain time periods (one week, since=date, or maybe place pins...)
-* Which options should trk status take and what should it output? Open a browser window with report?
 * TODO: Format output - leave out commits and branches, for example
 * TODO/nicetohave: Run this on a server instead of the local machine. What happens to git commits and the like?
 * How to handle branches? Like commits? Assume they are feature branches and append "... started working on topic x"?
