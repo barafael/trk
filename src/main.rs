@@ -87,12 +87,6 @@ fn main() {
                 (author: "mediumendian@gmail.com")
                 (@arg hash: +required "Commit hash id")
             )
-            (@subcommand branch =>
-                (about: "Add a branch change to the event list")
-                (version: "0.1")
-                (author: "mediumendian@gmail.com")
-                (@arg name: +required "The branch's name")
-            )
             (@subcommand status =>
                 (about: "Prints the current WIP for session or sheet")
                 (version: "0.1")
@@ -188,10 +182,6 @@ fn main() {
         ("commit", Some(arg)) => {
             let commit_hash = arg.value_of("hash").unwrap();
             sheet.push_commit(commit_hash.to_string());
-        }
-        ("branch", Some(arg)) => {
-            let branch_name = arg.value_of("name").unwrap();
-            sheet.push_branch(branch_name.to_string());
         }
         ("status", Some(arg)) => {
             match arg.value_of("which") {

@@ -23,7 +23,6 @@ pub enum Event {
     Resume  { time : u64 },
     Note    { time : u64, text : String },
     Commit  { time : u64, hash : String, message: String },
-    Branch  { time : u64, name : String },
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -45,25 +44,8 @@ impl Session {
         }
     }
 
-    fn update_end(&mut self) {
-        self.end = get_seconds();
-    }
-
     pub fn is_running(&self) -> bool {
         self.running
-    }
-
-    fn finalize(&mut self) {
-        if self.is_running() {
-            if self.is_paused() {
-                self.push_event(Event::Resume { time: get_seconds() });
-            }
-            self.running = false;
-        }
-    }
-
-    fn status(&self) -> String {
-        format!("{:?}", self)
     }
 
     fn is_paused(&self) -> bool {
@@ -75,6 +57,19 @@ impl Session {
                     _ => false,
                 }
             }
+        }
+    }
+
+    fn update_end(&mut self) {
+        self.end = get_seconds();
+    }
+
+    fn finalize(&mut self) {
+        if self.is_running() {
+            if self.is_paused() {
+                self.push_event(Event::Resume { time: get_seconds() });
+            }
+            self.running = false;
         }
     }
 
@@ -134,8 +129,7 @@ impl Session {
                 };
                 true
             }
-            Event::Commit { .. } |
-            Event::Branch { .. } => {
+            Event::Commit { .. } => {
                 if self.is_paused() {
                     let now = get_seconds();
                     self.push_event(Event::Resume { time: now });
@@ -167,6 +161,10 @@ impl Session {
         let pt = self.pause_time();
         let wt = self.end - self.start;
         wt - pt
+    }
+
+    fn status(&self) -> String {
+        format!("{:?}", self)
     }
 }
 
@@ -315,20 +313,6 @@ impl Timesheet {
                                    });
             }
             None => println!("No session to add commit to!"),
-        }
-        self.save_to_file();
-    }
-
-    pub fn push_branch(&mut self, name: String) {
-        match self.get_last_session_mut() {
-            Some(session) => {
-                let now = get_seconds();
-                session.push_event(Event::Branch {
-                                       time: now,
-                                       name: name,
-                                   });
-            }
-            None => println!("No session to change branch in!"),
         }
         self.save_to_file();
     }
@@ -532,11 +516,6 @@ impl HasHTML for Event {
                         ts_to_date(time),
                         hash,
                         message)
-            }
-            &Event::Branch { time, ref name } => {
-                format!(r#"<div class="entry branch">{}: Branch name: {}</div>"#,
-                        ts_to_date(time),
-                        name)
             }
         }
     }
