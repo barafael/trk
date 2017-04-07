@@ -130,8 +130,6 @@ fn main() {
                 }
             }
         }
-        /* Nothing left to do. TODO: Continue instead? */
-        return;
     }
 
     /* Special case for clear because t_sheet can be None when clearing (corrupt file) */
@@ -148,8 +146,6 @@ fn main() {
                 }
             }
         }
-        /* Nothing left to do. TODO: Continue instead? */
-        return;
     }
 
     /* Unwrap the timesheet and continue only if timesheet file exists */

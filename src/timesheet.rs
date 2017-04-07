@@ -611,7 +611,7 @@ fn git_commit_info(hash: &str) -> Option<String> {
 }
 
 fn format_file(filename: &str) {
-    if let Ok(_) = Command::new("tidy").arg("-i").arg("-m").arg(filename).output() {
+    if let Ok(_) = Command::new("tidy").arg("tidy-mark=0").arg("-i").arg("-m").arg(filename).output() {
     }
 }
 
