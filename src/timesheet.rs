@@ -39,7 +39,7 @@ impl Session {
         let now = get_seconds();
         Session {
             start   : now,
-            end     : now - 1,
+            end     : now + 1,
             running : true,
             events  : Vec::<Event>::new(),
         }
@@ -195,7 +195,7 @@ impl Timesheet {
             };
             let sheet = Timesheet {
                 start: get_seconds(),
-                end: get_seconds() - 1,
+                end: get_seconds() + 1,
                 user: author_name.to_string(),
                 sessions: Vec::<Session>::new(),
             };
