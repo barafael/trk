@@ -11,7 +11,7 @@ use std::path::Path;
 use std::error::Error;
 use std::fs::OpenOptions;
 
-/* for running git and tidy */
+/* For running git and tidy */
 use std::process::Command;
 
 /* Alias to avoid naming conflict for write_all!() */
@@ -58,7 +58,6 @@ impl Session {
             if self.is_paused() {
                 self.push_event(Event::Resume { time: get_seconds() });
             }
-
             self.running = false;
         }
     }
@@ -122,6 +121,9 @@ impl Session {
                                 None => *note = Some(note_text.clone()),
                             }
                         }
+                        /* Unreachable because as per check above,
+                         * the last element must be a pause
+                         * */
                         _ => unreachable!(),
                     };
                 } else {
@@ -450,14 +452,13 @@ impl Timesheet {
                 }
             }
             Err(..) => {
-                // println!("{}", why.description());
                 None
             }
         }
     }
 
     pub fn clear() {
-        /* Try to get name */
+        /* Try to get user name */
         let sheet = Timesheet::load_from_file();
         let name: Option<String> = sheet.map(|s| s.user.clone());
 
@@ -470,7 +471,7 @@ impl Timesheet {
         }
         match name {
             Some(name) => {
-                /* Will overwrite file */
+                /* Overwrite file */
                 Timesheet::init(Some(&name));
             }
             None => {
@@ -504,33 +505,36 @@ impl HasHTML for Event {
             &Event::Pause { time, ref note } => {
                 match note {
                     &Some(ref info) => {
-                        format!("<div class=\"entry pause\">{}:\tStarted a pause<p class=\"pausenote\">{}</p></div>",
-                                ts_to_date(time),
-                                info.clone())
+                        format!(r#"
+<div class="entry pause">{}:Started a pause
+    <p class="pausenote">{}</p>
+</div>"#,
+                ts_to_date(time), info.clone())
                     }
                     &None => {
-                        format!("<div class=\"entry pause\">{}:\tStarted a pause</div>",
+                        format!(r#"
+<div class="entry pause">{}:Started a pause</div>"#,
                                 ts_to_date(time))
                     }
                 }
             }
             &Event::Resume { time } => {
-                format!("<div class=\"entry resume\">{}:\tResumed work</div>",
+                format!(r#"<div class="entry resume">{}:Resumed work</div>"#,
                         ts_to_date(time))
             }
             &Event::Note { time, ref text } => {
-                format!("<div class=\"entry note\">{}:\tNote: {}</div>",
+                format!(r#"<div class="entry note">{}: Note: {}</div>"#,
                         ts_to_date(time),
                         text)
             }
             &Event::Commit { time, ref hash, ref message } => {
-                format!("<div class=\"entry commit\">{}:\tCommit id: {}\nmessage: {}</div>",
+                format!(r#"<div class="entry commit">{}: Commit id: {} message: {}</div>"#,
                         ts_to_date(time),
                         hash,
                         message)
             }
             &Event::Branch { time, ref name } => {
-                format!("<div class=\"entry branch\">{}:\tBranch name: {}</div>",
+                format!(r#"<div class="entry branch">{}: Branch name: {}</div>"#,
                         ts_to_date(time),
                         name)
             }
@@ -540,15 +544,27 @@ impl HasHTML for Event {
 
 impl HasHTML for Session {
     fn to_html(&self) -> String {
-        let mut html = String::from(format!("<section class=\"session\">\n<h1 class=\"sessionheader\">Session on {}</h1>\n",
-                                            ts_to_date(self.start)));
+        let mut html = format!(r#"
+<section class="session">
+    <h1 class="sessionheader">Session on {}</h1>"#,
+    ts_to_date(self.start));
+
         for event in &self.events {
-            write!(&mut html, "{}\n", event.to_html()).unwrap();
+            write!(&mut html, "{}", event.to_html()).unwrap();
         }
-        write!(&mut html,
-               "<h2 class=\"sessionfooter\">Ended on {}</h2>",
-               ts_to_date(self.end))
-                .unwrap();
+
+        write!(&mut html, r#"
+<h2 class="sessionfooter">Ended on {}</h2>"#,
+               ts_to_date(self.end)).unwrap();
+
+        write!(&mut html, r#"
+<div class="summary">
+    <p>Worked for {} </p>
+    <p>Paused for {}</p>
+</div></section>"#,
+    sec_to_hms_string(self.working_time()),
+    sec_to_hms_string(self.pause_time())).unwrap();
+
         write!(&mut html, "</section>").unwrap();
         html
     }
@@ -558,19 +574,18 @@ impl HasHTML for Timesheet {
     fn to_html(&self) -> String {
                 let mut sessions_html = String::new();
         for session in &self.sessions {
-            write!(&mut sessions_html, "{}\n", session.to_html()).unwrap();
+            write!(&mut sessions_html, "{}", session.to_html()).unwrap();
         }
-                let html = format!(r#"<!DOCTYPE html>
+                format!(r#"
+<!DOCTYPE html>
 <html>
-<head>
-  <link rel="stylesheet" type="text/css" href="style.css">
-  <title>{} for {}</title>
-</head>
-<body>{}
-</body>
-</html>
-"#, "Timesheet", "Rafael Bachmann", sessions_html);
-        html
+    <head>
+        <link rel="stylesheet" type="text/css" href="style.css">
+        <title>{} for {}</title>
+    </head>
+    <body>{}</body>
+</html>"#,
+                "Timesheet", "Rafael Bachmann", sessions_html)
     }
 }
 
@@ -582,7 +597,7 @@ fn git_author() -> Option<String> {
     if let Ok(output) = Command::new("git").arg("config").arg("user.name").output() {
         if output.status.success() {
             let output = String::from_utf8_lossy(&output.stdout);
-            /* remove trailing newline character */
+            /* Remove trailing newline character */
             let mut output = output.to_string();
             output.pop().expect("Empty name in git config!?!");
             Some(output)
@@ -597,7 +612,8 @@ fn git_author() -> Option<String> {
 }
 
 fn git_commit_info(hash: &str) -> Option<String> {
-    if let Ok(output) = Command::new("git").arg("log").arg("--format=%B").arg("-n").arg("1").arg(hash).output() {
+    if let Ok(output) = Command::new("git").arg("log")
+            .arg("--format=%B").arg("-n").arg("1").arg(hash).output() {
         if output.status.success() {
             let output = String::from_utf8_lossy(&output.stdout);
             Some(output.to_string())
@@ -612,11 +628,29 @@ fn git_commit_info(hash: &str) -> Option<String> {
 }
 
 fn format_file(filename: &str) {
-    if let Ok(_) = Command::new("tidy").arg("tidy-mark=0").arg("-i").arg("-m").arg(filename).output() {
+    if let Ok(_) = Command::new("tidy").arg("--tidy-mark").arg("no")
+            .arg("-i").arg("-m").arg(filename).output() {
     }
 }
 
 pub fn ts_to_date(timestamp: u64) -> String {
-    Local.timestamp(timestamp as i64, 0).format("%Y-%m-%d, %H:%M:%S").to_string()
+    Local.timestamp(timestamp as i64, 0)
+        .format("%Y-%m-%d, %H:%M:%S").to_string()
+}
 
+pub fn sec_to_hms_string(seconds: u64) -> String {
+    let hours = seconds / 3600;
+    let minutes = (seconds - hours * 3600) / 60;
+    let seconds = seconds - minutes * 60 - hours * 3600;
+    match (hours, minutes, seconds) {
+        (0, 0, 1) => format!("1 second"),
+        (0, 0, s) => format!("{} seconds", s),
+        (0, 1, _) => format!("1 minute"),
+        (0, m, _) => format!("{} minutes", m),
+        /* Range matching: slightly dubious feature here */
+        (1, 0...4, _) => format!("1 hour"),
+        (h, 0...4, _) => format!("{} hours", h),
+        (h, 56...59, _) => format!("{} hours", h + 1),
+        (h, m, _) => format!("{} hours and {} minutes", h, m),
+    }
 }
