@@ -93,6 +93,7 @@ Soft dependencies are html-tidy and git, but trk works without them too. TODO: e
 
 ### Notes and TODO items ###
 
+* TODO: If a commit is pushed when no session is running, a new session should be opened. A subsequent begin should just finalize the previous session?
 * TODO: Find a way to add an event in the past
 * TODO: Find a way to query time sheets from certain time periods (one week, since=date, or maybe place pins...)
 * TODO: Format output - leave out commits and branches, for example

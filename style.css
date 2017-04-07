@@ -15,6 +15,7 @@ h2.sessionfooter {
   color: #555;
   font-family: Candara,Calibri,Segoe,Segoe UI,Optima,Arial,sans-serif;
   font-weight: normal;
+  margin-bottom: 0px;
 }
 
 section.session {
