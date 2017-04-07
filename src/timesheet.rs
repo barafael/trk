@@ -180,7 +180,7 @@ impl Timesheet {
      * the serialized timesheet
      * Returns Some(newTimesheet) if operation succeeded */
     pub fn init(author_name: Option<&str>) -> Option<Timesheet> {
-        // ts_to_date(get_seconds());
+        // TODO: mkdir
         /* Check if file already exists (no init permitted) */
         if Timesheet::is_init() {
             None
