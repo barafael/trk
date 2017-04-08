@@ -53,13 +53,24 @@ struct Session {
 }
 
 impl Session {
-    fn new() -> Session {
-        let now = get_seconds();
-        Session {
-            start   : now,
-            end     : now + 1,
-            running : true,
-            events  : Vec::<Event>::new(),
+    fn new(timestamp: Option<u64>) -> Session {
+        match timestamp {
+            Some(timestamp) =>
+                Session {
+                    start   : timestamp,
+                    end     : timestamp + 1,
+                    running : true,
+                    events  : Vec::<Event>::new(),
+                },
+            None => {
+                let now = get_seconds();
+                Session {
+                    start   : now,
+                    end     : now + 1,
+                    running : true,
+                    events  : Vec::<Event>::new(),
+                }
+            }
         }
     }
 
@@ -255,6 +266,7 @@ impl Timesheet {
     pub fn init(author_name: Option<&str>) -> Option<Timesheet> {
         /* Check if file already exists (no init permitted) */
         if Timesheet::is_init() {
+            println!("Timesheet is already initialized!");
             None
         } else {
             /* File does not exist, initialize */
@@ -278,6 +290,7 @@ impl Timesheet {
                 sessions : Vec::<Session>::new(),
             };
             if sheet.write_files() {
+                println!("Writing files!");
                 Some(sheet)
             } else {
                 None
@@ -298,7 +311,7 @@ impl Timesheet {
         }
     }
 
-    pub fn new_session(&mut self) -> bool {
+    pub fn new_session(&mut self, timestamp: Option<u64>) -> bool {
         let possible = match self.get_last_session_mut() {
             None => true,
             Some(session) => {
@@ -311,7 +324,27 @@ impl Timesheet {
             }
         };
         if possible {
-            self.sessions.push(Session::new());
+            match timestamp {
+                Some(timestamp) => {
+                    let timestamp_ok =
+                        match self.get_last_session() {
+                            None => timestamp > self.start,
+                            Some(last_session) =>
+                                timestamp > last_session.end,
+                    };
+                    if timestamp_ok {
+                        self.sessions
+                            .push(Session::new(Some(timestamp)));
+                    } else {
+                        println!("That timestamp is invalid.");
+                        process::exit(0);
+                    }
+                }
+                None => {
+                    self.sessions.push(Session::new(None));
+                }
+            };
+
             self.write_files();
         }
         possible
@@ -380,7 +413,7 @@ impl Timesheet {
             None => true,
         };
         if new_needed {
-            self.new_session();
+            self.new_session(None);
             self.write_files();
         }
         match self.get_last_session_mut() {
@@ -403,7 +436,7 @@ impl Timesheet {
             None => true,
         };
         if new_needed {
-            self.new_session();
+            self.new_session(None);
             self.write_files();
         }
         match self.get_last_session_mut() {
@@ -544,10 +577,14 @@ r#"<!DOCTYPE html>
                     }
                 }
             }
-            Err(..) => None,
+            Err(why) => {
+                println!("{}", why.description());
+                None
+            }
         }
     }
 
+    /* TODO: Check why timestamps aren't overwritten */
     pub fn clear() {
         /* Try to get user name */
         let sheet = Timesheet::load_from_file();

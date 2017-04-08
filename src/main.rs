@@ -42,25 +42,29 @@ fn main() {
                 (about: "Begin session")
                 (version: "0.1")
                 (author:  "Rafael B. <mediumendian@gmail.com>")
+                (@arg ago: "Optional: begin in the past, specify how long ago.
+                    Time must be after the last event though.")
             )
             (@subcommand end =>
                 (about: "End session")
                 (version: "0.1")
                 (author:  "Rafael B. <mediumendian@gmail.com>")
-            )
+                (@arg ago: "Optional: end in the past, specify how long ago.
+                    Time must be after the last event though.")
+                )
             (@subcommand pause =>
                 (about: "Pause current session")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
                 (@arg note_text: "Optional: Pause note")
-                (@arg ago: "Optional: Add an event in the past, specifying how long ago.
+                (@arg ago: "Optional: Add a pause in the past, specify how long ago.
                     Time must be after the last event though.")
             )
             (@subcommand resume =>
                 (about: "Resume currently paused session")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
-                (@arg ago: "Optional: Add an event in the past, specifying how long ago.
+                (@arg ago: "Optional: resume in the past, specify how long ago.
                     Time must be after the last event though.")
             )
             (@subcommand note =>
@@ -68,7 +72,7 @@ fn main() {
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
                 (@arg note_text: +required "Note text")
-                (@arg ago: "Optional: Add an event in the past, specifying how long ago.
+                (@arg ago: "Optional: Add a note in the past, specify how long ago.
                     Time must be after the last event though.")
             )
             (@subcommand commit =>
@@ -161,8 +165,10 @@ fn main() {
     };
 
     match arguments.subcommand() {
-        ("begin", Some(..)) => {
-            sheet.new_session();
+        ("begin", Some(arg)) => {
+            let timestamp: Option<u64> = parse_to_seconds(arg.value_of("ago").unwrap_or(""))
+                .map(|ago| timesheet::get_seconds() - ago);
+            sheet.new_session(timestamp);
         }
         ("end", Some(..)) => {
             sheet.end_session();
