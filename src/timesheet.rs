@@ -23,6 +23,7 @@ enum EventType {
     Resume,
     Note,
     Commit { hash: String },
+    Branch { name: String },
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -190,6 +191,18 @@ impl Session {
                           });
                 true
             }
+            EventType::Branch { name } => {
+                if self.is_paused() {
+                    self.push_event(None, None, EventType::Resume);
+                }
+                self.events
+                    .push(Event {
+                              time    : get_seconds(),
+                              note    : note_opt,
+                              ev_type : EventType::Branch { name },
+                          });
+                true
+            }
         }
     }
 
@@ -350,6 +363,16 @@ impl Timesheet {
                 session.push_event(None, Some(message), EventType::Commit { hash });
             }
             None => println!("No session to add commit to."),
+        }
+        self.save_to_file();
+    }
+
+    pub fn branch(&mut self, name: String) {
+        match self.get_last_session_mut() {
+            Some(session) => {
+                session.push_event(None, None, EventType::Branch { name });
+            }
+            None => println!("No session to add branch change to."),
         }
         self.save_to_file();
     }
@@ -552,7 +575,7 @@ r#"
 <div class="entry pause">{}: Started a pause
     <p class="pausenote">{}</p>
 </div>
-"#, 
+"#,
             ts_to_date(self.time),
             info.clone())
                     }
@@ -582,7 +605,8 @@ r#"
                 match self.note {
                     Some(ref text) => {
                         format!(
-r#"<div class="entry note">{}: Note: {}</div>
+r#"
+<div class="entry note">{}: Note: {}</div>
 "#,
             ts_to_date(self.time),
             text)
@@ -597,13 +621,34 @@ r#"<div class="entry note">{}: Note: {}</div>
             EventType::Commit { ref hash } => {
                 match self.note {
                     Some(ref text) => format!(
-r#"<div class="entry commit">{}: Commit id: {}
-<br>message: {}</div>
-"#, 
+r#"
+<div class="entry commit">{}: Commit id: {}
+  <br>    message: {}
+</div>
+"#,
             ts_to_date(self.time),
             hash,
             text),
                     None => unreachable!(),
+                }
+            }
+            EventType::Branch { ref name } => {
+                match self.note {
+                    Some(ref text) => format!(
+r#"
+<div class="entry branch">{}: Checked out branch: {}
+  <br>    message: {}
+</div
+"#, 
+            ts_to_date(self.time),
+            name,
+            text),
+                    None => format!(
+r#"
+<div class="entry branch">{}: Checked out branch: {}
+"#,
+            ts_to_date(self.time),
+            name),
                 }
             }
         }

@@ -46,6 +46,7 @@ fn main() {
                 (version: "0.1")
                 (author:  "Rafael B. <mediumendian@gmail.com>")
             )
+            /* TODO: inline note? */
             (@subcommand pause =>
                 (about: "Pause current session")
                 (version: "0.1")
@@ -62,14 +63,20 @@ fn main() {
                 (about: "Add a note about current work or pause")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
-                (@arg time: "Optional: Time in the past (after the last event though!) which note should be added.")
                 (@arg note_text: +required "Note text")
+                (@arg time: "Optional: Time in the past (after the last event though!) which note should be added.")
             )
             (@subcommand commit =>
                 (about: "Add a commit to the event list")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
                 (@arg hash: +required "Commit hash id")
+            )
+            (@subcommand branch =>
+                (about: "Add a commit to the event list")
+                (version: "0.1")
+                (author: "mediumendian@gmail.com")
+                (@arg name: +required "branch name")
             )
             (@subcommand status =>
                 (about: "Prints the current WIP for session or sheet")
@@ -164,6 +171,10 @@ fn main() {
         ("commit", Some(arg)) => {
             let commit_hash = arg.value_of("hash").unwrap();
             sheet.commit(commit_hash.to_string());
+        }
+        ("branch", Some(arg)) => {
+            let branch_name = arg.value_of("name").unwrap();
+            sheet.branch(branch_name.to_string());
         }
         ("status", Some(arg)) => {
             match arg.value_of("which") {
