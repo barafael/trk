@@ -50,16 +50,19 @@ fn main() {
                 (about: "Pause current session")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
+                (@arg time: "Optional: Time in the past (after the last event though!) which pause should be added.")
             )
             (@subcommand resume =>
                 (about: "Resume currently paused session")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
+                (@arg time: "Optional: Time in the past (after the last event though!) which resume should be added.")
             )
             (@subcommand note =>
                 (about: "Add a note about current work or pause")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
+                (@arg time: "Optional: Time in the past (after the last event though!) which note should be added.")
                 (@arg note_text: +required "Note text")
             )
             (@subcommand commit =>
@@ -105,7 +108,7 @@ fn main() {
                 }
             }
         }
-        return
+        return;
     }
 
     /* Special case for clear because t_sheet can be None when clearing (corrupt file) */
@@ -122,7 +125,7 @@ fn main() {
                 }
             }
         }
-        return
+        return;
     }
 
     /* Unwrap the timesheet and continue only if timesheet file exists */
@@ -134,7 +137,6 @@ fn main() {
         }
     };
 
-    // TODO: extend command line arguments so that timestamp can be given
     match arguments.subcommand() {
         ("begin", Some(..)) => {
             sheet.new_session();
@@ -142,24 +144,22 @@ fn main() {
         ("end", Some(..)) => {
             sheet.end_session();
         }
-        ("pause", Some(..)) => {
-            sheet.pause(None, None);
+        ("pause", Some(arg)) => {
+            let timestamp: Option<u64> = parse_to_seconds(arg.value_of("time").unwrap_or(""))
+                .map(|ago| timesheet::get_seconds() - ago);
+            sheet.pause(timestamp, None);
         }
-        /*("retropause", Some(arg)) => {
-            println!("{:?}", parse_to_seconds("30:00"));
-            let length_in_seconds = parse_to_seconds(arg.value_of("length").unwrap());
-            let note_text = arg.value_of("note_text");
-            match note_text {
-                Some(note_text) => sheet.retropause(length_in_seconds, Some(note_text.to_string())),
-                None => sheet.retropause(length_in_seconds, None),
-            }
-        }*/
-        ("resume", Some(..)) => {
-            sheet.resume(None);
+
+        ("resume", Some(arg)) => {
+            let timestamp: Option<u64> = parse_to_seconds(arg.value_of("time").unwrap_or(""))
+                .map(|ago| timesheet::get_seconds() - ago);
+            sheet.resume(timestamp);
         }
         ("note", Some(arg)) => {
+            let timestamp: Option<u64> = parse_to_seconds(arg.value_of("time").unwrap_or(""))
+                .map(|ago| timesheet::get_seconds() - ago);
             let note_text = arg.value_of("note_text").unwrap();
-            sheet.note(None, note_text.to_string());
+            sheet.note(timestamp, note_text.to_string());
         }
         ("commit", Some(arg)) => {
             let commit_hash = arg.value_of("hash").unwrap();
@@ -196,13 +196,15 @@ fn main() {
     }
 }
 
-/* For parsing time in HH:MM format. TODO: extend to other formats or find better solution */
+/* For parsing time in HH:MM:SS format. TODO: extend to other formats or find better solution */
 named!(duration(&[u8]) -> Duration,
     do_parse!(
         hour: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
         tag!(":") >>
         min: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
-        (Duration::minutes(hour * 60 + min))
+        tag!(":") >>
+        sec: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
+        (Duration::seconds(hour * 60 * 60 + min * 60 + sec))
     )
 );
 
