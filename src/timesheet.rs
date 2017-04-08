@@ -4,6 +4,8 @@ use std::io::prelude::*;
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use std::process;
+
 use chrono::{Local, TimeZone};
 
 use std::fs;
@@ -250,7 +252,14 @@ impl Timesheet {
             let git_author_name = &git_author().unwrap_or("".to_string());
             let author_name = match author_name {
                 Some(name) => name,
-                None => git_author_name,
+                None => {
+                    if git_author_name == "" {
+                        println!("Empty name not permitted.
+    Please run with 'trk init <name>'");
+                        process::exit(0);
+                    }
+                    git_author_name
+                }
             };
             let now = get_seconds();
             let sheet = Timesheet {
@@ -743,7 +752,7 @@ fn git_author() -> Option<String> {
             let output = String::from_utf8_lossy(&output.stdout);
             /* Remove trailing newline character */
             let mut output = output.to_string();
-            output.pop().expect("Empty name in git config!?!");
+            output.pop().expect("Empty name in git config? Not even a newline?!?");
             Some(output)
         } else {
             let output = String::from_utf8_lossy(&output.stderr);
@@ -784,6 +793,9 @@ fn format_file(filename: &str) {
            .arg("-m")
            .arg(filename)
            .output() {}
+    else {
+        println!("tidy-html not found!");
+    }
 }
 
 pub fn ts_to_date(timestamp: u64) -> String {
