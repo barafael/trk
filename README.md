@@ -89,7 +89,7 @@ Which can be styled by style.css:
 
 ### Dependencies
 
-Soft dependencies are html-tidy and git, but trk works without them too. TODO: ensure this is true.
+Soft dependencies are html-tidy and git, but trk works without them too.
 
 ### Notes and TODO items ###
 * TODO: flush to html every load? And just open browser on report.
