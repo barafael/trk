@@ -92,12 +92,10 @@ Which can be styled by style.css:
 Soft dependencies are html-tidy and git, but trk works without them too. TODO: ensure this is true.
 
 ### Notes and TODO items ###
-
-* TODO: If a commit is pushed when no session is running, a new session should be opened. A subsequent begin should just finalize the previous session?
-* TODO: Find a way to add an event in the past
+* TODO: flush to html every load? And just open browser on report.
+* TODO: If a commit or branch is pushed when no session is running, a new session should be opened. A subsequent begin should just finalize the previous session?
 * TODO: Find a way to query time sheets from certain time periods (one week, since=date, or maybe place pins...)
 * TODO: Format output - leave out commits and branches, for example
 * TODO/nicetohave: Run this on a server instead of the local machine. What happens to git commits and the like?
-* How to handle branches? Like commits? Assume they are feature branches and append "... started working on topic x"?
 * The session struct is a list of sequential events with timestamps. A session struct is identified by it's starting time (and maybe git author?).
 * The Timesheet struct is deserialized on every run, worked on, and then serialized again. It has a tohtml impl.

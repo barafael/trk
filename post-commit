@@ -6,6 +6,5 @@
 # To track commits with trk, it is recommended to do either of the following:
 # * Copy this file to ./.git/hooks/post-commit
 # * Append the below lines to ./.git/hooks/post-commit
-# * Create a symlink of this file and move it to ./.git/hooks/post-commit
 
 trk commit $(git rev-parse HEAD)
