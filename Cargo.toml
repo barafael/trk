@@ -11,3 +11,7 @@ serde_derive = "0.9.11"
 serde_json = "0.9.9"
 chrono = { version = "0.3", features = ["serde", "rustc-serialize"] }
 nom = "2.2.1"
+url = "*"
+
+[dependencies.url_open]
+git = "https://github.com/overdrivenpotato/url_open.git"

@@ -200,7 +200,7 @@ fn main() {
                     sheet.last_session_report();
                 }
                 Some("sheet") => {
-                    sheet.report();
+                    sheet.report_sheet();
                 }
                 Some(text) => {
                     println!("What do you mean by {}? Should be either 'sheet' or 'session'.",

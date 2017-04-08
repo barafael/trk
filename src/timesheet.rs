@@ -6,6 +6,14 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use std::process;
 
+use std::env;
+
+extern crate url;
+use self::url::Url;
+
+extern crate url_open;
+use self::url_open::UrlOpen;
+
 use chrono::{Local, TimeZone};
 
 use std::fs;
@@ -268,7 +276,7 @@ impl Timesheet {
                 user     : author_name.to_string(),
                 sessions : Vec::<Session>::new(),
             };
-            if sheet.save_to_file() {
+            if sheet.write_files() {
                 Some(sheet)
             } else {
                 None
@@ -303,7 +311,7 @@ impl Timesheet {
         };
         if possible {
             self.sessions.push(Session::new());
-            self.save_to_file();
+            self.write_files();
         }
         possible
     }
@@ -318,7 +326,7 @@ impl Timesheet {
             }
             None => println!("No session to finalize."),
         }
-        self.save_to_file();
+        self.write_files();
     }
 
     fn get_last_session(&self) -> Option<&Session> {
@@ -342,7 +350,7 @@ impl Timesheet {
             }
             None => println!("No session to pause."),
         }
-        self.save_to_file();
+        self.write_files();
     }
 
     pub fn resume(&mut self, timestamp_opt: Option<u64>) {
@@ -352,7 +360,7 @@ impl Timesheet {
             }
             None => println!("No session to pause."),
         }
-        self.save_to_file();
+        self.write_files();
     }
 
     pub fn note(&mut self, timestamp_opt: Option<u64>, note_text: String) {
@@ -362,7 +370,7 @@ impl Timesheet {
             }
             None => println!("No session to add note to."),
         }
-        self.save_to_file();
+        self.write_files();
     }
 
     pub fn commit(&mut self, hash: String) {
@@ -373,7 +381,7 @@ impl Timesheet {
             }
             None => println!("No session to add commit to."),
         }
-        self.save_to_file();
+        self.write_files();
     }
 
     pub fn branch(&mut self, name: String) {
@@ -383,10 +391,10 @@ impl Timesheet {
             }
             None => println!("No session to add branch change to."),
         }
-        self.save_to_file();
+        self.write_files();
     }
 
-    pub fn report(&self) -> bool {
+    pub fn write_to_html(&self) -> bool {
         /* TODO: avoid time-of-check-to-time-of-use race risk */
         /* TODO: make all commands run regardless of where trk is executed
          * (and not just in root which is assumed here */
@@ -412,7 +420,7 @@ impl Timesheet {
         }
     }
 
-    pub fn last_session_report(&self) -> bool {
+    pub fn write_last_session_html(&self) -> bool {
         let path = Path::new("./session.html");
         let file = OpenOptions::new()
             .write(true)
@@ -455,11 +463,7 @@ r#"<!DOCTYPE html>
         }
     }
 
-    fn save_to_file(&self) -> bool {
-        /* TODO: avoid time-of-check-to-time-of-use race risk */
-        /* TODO: make all commands run regardless of where trk is executed
-         * (and not just in root which is assumed here */
-
+    fn write_to_json(&self) -> bool {
         if !Path::new("./.trk").exists() {
             match fs::create_dir("./.trk") {
                 Ok(_) => {}
@@ -492,6 +496,13 @@ r#"<!DOCTYPE html>
                 false
             }
         }
+    }
+
+    fn write_files(&self) -> bool {
+        /* TODO: avoid time-of-check-to-time-of-use race risk */
+        /* TODO: make all commands run regardless of where trk is executed
+         * (and not just in root which is assumed here */
+        self.write_to_json() && self.write_to_html() && self.write_last_session_html()
     }
 
     /** Return a Some(Timesheet) struct if a timesheet.json file
@@ -548,7 +559,27 @@ r#"<!DOCTYPE html>
         self.get_last_session().map(|session| session.status())
     }
 
-    pub fn pause_time(&self) -> u64 {
+    pub fn last_session_report(&self) {
+        // We assume that we are in a valid directory.
+        let mut p = env::current_dir().unwrap();
+        p.push("session.html");
+        let path = p.as_path();
+        let mut path_str = "file://".to_string();
+        path_str.push_str(path.to_str().unwrap());
+        Url::parse(&path_str).unwrap().open();
+    }
+
+    pub fn report_sheet(&self) {
+        // We assume that we are in a valid directory.
+        let mut p = env::current_dir().unwrap();
+        p.push("timesheet.html");
+        let path = p.as_path();
+        let mut path_str = "file://".to_string();
+        path_str.push_str(path.to_str().unwrap());
+        Url::parse(&path_str).unwrap().open();
+   }
+
+   pub fn pause_time(&self) -> u64 {
         let mut pause_time = 0;
         for session in &self.sessions {
             pause_time += session.pause_time();

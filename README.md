@@ -92,7 +92,6 @@ Which can be styled by style.css:
 Soft dependencies are html-tidy and git, but trk works without them too.
 
 ### Notes and TODO items ###
-* TODO: flush to html every load? And just open browser on report.
 * TODO: If a commit or branch is pushed when no session is running, a new session should be opened. A subsequent begin should just finalize the previous session?
 * TODO: Find a way to query time sheets from certain time periods (one week, since=date, or maybe place pins...)
 * TODO: Format output - leave out commits and branches, for example
