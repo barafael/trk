@@ -48,9 +48,13 @@ div {
   padding: 10px;
 }
 
-div.summary {
+section.summary {
   margin-left: 60px;
   font-family: Tahoma, Geneva, sans-serif;
   color: #555;
-
+  background-color: #F8971C;
+  border: 3px solid #8A8A8C;
+  padding-left: 20px;
+  border-radius: 10px;
+  margin: 20px;
 }
