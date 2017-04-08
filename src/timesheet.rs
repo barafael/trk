@@ -33,14 +33,15 @@ enum EventType {
     Resume,
     Note,
     Commit { hash: String },
-    Branch { name: String },
+    Branch { name: String }
 }
+
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Event {
     time    : u64,
     note    : Option<String>,
-    ev_type : EventType,
+    ev_type : EventType
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -374,10 +375,22 @@ impl Timesheet {
     }
 
     pub fn commit(&mut self, hash: String) {
+        let new_needed = match self.get_last_session() {
+            Some(session) => !session.is_running(),
+            None => true,
+        };
+        if new_needed {
+            self.new_session();
+            self.write_files();
+        }
         match self.get_last_session_mut() {
             Some(session) => {
-                let message = git_commit_message(&hash).unwrap_or(String::new());
-                session.push_event(None, Some(message), EventType::Commit { hash });
+                let message = git_commit_message(&hash)
+                    .unwrap_or(String::new());
+                session.push_event(
+                    None,
+                    Some(message),
+                    EventType::Commit { hash });
             }
             None => println!("No session to add commit to."),
         }
@@ -385,6 +398,14 @@ impl Timesheet {
     }
 
     pub fn branch(&mut self, name: String) {
+        let new_needed = match self.get_last_session() {
+            Some(session) => !session.is_running(),
+            None => true,
+        };
+        if new_needed {
+            self.new_session();
+            self.write_files();
+        }
         match self.get_last_session_mut() {
             Some(session) => {
                 session.push_event(None, None, EventType::Branch { name });
@@ -442,8 +463,7 @@ r#"<!DOCTYPE html>
 <body>
 {}
 </body>
-</html>
-"#,
+</html>"#,
             "Session",
             "Rafael Bachmann",
             session.to_html());
@@ -559,7 +579,7 @@ r#"<!DOCTYPE html>
         self.get_last_session().map(|session| session.status())
     }
 
-    pub fn last_session_report(&self) {
+    pub fn report_last_session(&self) {
         // We assume that we are in a valid directory.
         let mut p = env::current_dir().unwrap();
         p.push("session.html");
@@ -611,30 +631,24 @@ impl HasHTML for Event {
                 match self.note {
                     Some(ref info) => {
                         format!(
-r#"
-<div class="entry pause">{}: Started a pause
+r#"<div class="entry pause">{}: Started a pause
     <p class="pausenote">{}</p>
-</div>
-"#,
+</div>"#,
             ts_to_date(self.time),
             info.clone())
                     }
                     None => {
                         format!(
-r#"
-<div class="entry pause">{}: Started a pause
-</div>
-"#,
+r#"<div class="entry pause">{}: Started a pause
+</div>"#,
             ts_to_date(self.time))
                     }
                 }
             }
             EventType::Resume => {
                 format!(
-r#"
-<div class="entry resume">{}: Resumed work
-</div>
-"#,
+r#"<div class="entry resume">{}: Resumed work
+</div>"#,
             ts_to_date(self.time))
             }
             /* An EventType::Note note is a Some because it's
@@ -645,9 +659,8 @@ r#"
                 match self.note {
                     Some(ref text) => {
                         format!(
-r#"
-<div class="entry note">{}: Note: {}</div>
-"#,
+r#"<div class="entry note">{}: Note: {
+}</div>"#,
             ts_to_date(self.time),
             text)
                     }
@@ -661,11 +674,9 @@ r#"
             EventType::Commit { ref hash } => {
                 match self.note {
                     Some(ref text) => format!(
-r#"
-<div class="entry commit">{}: Commit id: {}
+r#"<div class="entry commit">{}: Commit id: {}
   <br>    message: {}
-</div>
-"#,
+</div>"#,
             ts_to_date(self.time),
             hash,
             text),
@@ -675,18 +686,15 @@ r#"
             EventType::Branch { ref name } => {
                 match self.note {
                     Some(ref text) => format!(
-r#"
-<div class="entry branch">{}: Checked out branch: {}
+r#"<div class="entry branch">{}: Checked out branch: {}
   <br>    message: {}
-</div
-"#, 
+</div>"#,
             ts_to_date(self.time),
             name,
             text),
                     None => format!(
-r#"
-<div class="entry branch">{}: Checked out branch: {}
-"#,
+r#"<div class="entry branch">{}: Checked out branch: {}
+</div>"#,
             ts_to_date(self.time),
             name),
                 }
@@ -699,8 +707,7 @@ impl HasHTML for Session {
     fn to_html(&self) -> String {
         let mut html = format!(
 r#"<section class="session">
-    <h1 class="sessionheader">Session on {}</h1>
-"#,
+    <h1 class="sessionheader">Session on {}</h1>"#,
                                ts_to_date(self.start));
 
         for event in &self.events {
@@ -709,19 +716,15 @@ r#"<section class="session">
         }
 
         write!(&mut html,
-r#"
-<h2 class="sessionfooter">Ended on {}</h2>
-"#,
+r#"<h2 class="sessionfooter">Ended on {}</h2>"#,
            ts_to_date(self.end)
         ).unwrap();
 
         write!(&mut html,
-r#"
-<section class="summary">
+r#"<section class="summary">
     <p>Worked for {} </p>
     <p>Paused for {}</p>
-</div></section>
-"#,
+</div></section>"#,
             sec_to_hms_string(self.working_time()),
             sec_to_hms_string(self.pause_time())
         ).unwrap();
@@ -738,27 +741,24 @@ impl HasHTML for Timesheet {
             write!(&mut sessions_html, "{}", session.to_html()
                    ).unwrap();
         }
-        let mut html = format!(r#"
-<!DOCTYPE html>
+        let mut html = format!(
+r#"<!DOCTYPE html>
 <html>
     <head>
         <link rel="stylesheet" type="text/css" href="style.css">
         <title>{} for {}</title>
     </head>
     <body>
-    {}
-"#,
+    {}"#,
             "Timesheet",
             "Rafael Bachmann",
             sessions_html);
 
         write!(&mut html,
-r#"
-<section class="summary">
+r#"<section class="summary">
     <p>Worked for {} </p>
     <p>Paused for {}</p>
-</div></section>
-"#,
+</div></section>"#,
            sec_to_hms_string(self.working_time()),
            sec_to_hms_string(self.pause_time())
         ).unwrap();
@@ -832,7 +832,7 @@ fn format_file(filename: &str) {
 pub fn ts_to_date(timestamp: u64) -> String {
     Local
         .timestamp(timestamp as i64, 0)
-        .format("%Y-%m-%d, %H:%M:%S")
+        .format("%Y-%m-%d, %H:%M")
         .to_string()
 }
 

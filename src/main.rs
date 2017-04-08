@@ -15,6 +15,8 @@ use nom::IResult::Done;
 extern crate chrono;
 use chrono::Duration;
 
+use std::process;
+
 /* For from::utf8 */
 use std::str;
 
@@ -138,6 +140,17 @@ fn main() {
         return;
     }
 
+    /* Catch commit or branch on uninitialised trk,
+     * which occur when post-commit/post-checkout hooks run
+     */
+    if arguments.subcommand_matches("commit").is_some() ||
+       arguments.subcommand_matches("branch").is_some() {
+        match sheet_opt {
+            Some(..) => {}
+            None =>  process::exit(0),
+        }
+    }
+
     /* Unwrap the timesheet and continue only if timesheet file exists */
     let mut sheet = match sheet_opt {
         Some(file) => file,
@@ -197,7 +210,7 @@ fn main() {
         ("report", Some(arg)) => {
             match arg.value_of("sheet_or_session") {
                 Some("session") => {
-                    sheet.last_session_report();
+                    sheet.report_last_session();
                 }
                 Some("sheet") => {
                     sheet.report_sheet();
@@ -214,15 +227,13 @@ fn main() {
     }
 }
 
-/* For parsing time in HH:MM:SS format. TODO: extend to other formats or find better solution */
+/* For parsing time in HH:MM format. */
 named!(duration(&[u8]) -> Duration,
     do_parse!(
         hour: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
         tag!(":") >>
         min: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
-        tag!(":") >>
-        sec: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
-        (Duration::seconds(hour * 60 * 60 + min * 60 + sec))
+        (Duration::minutes(hour * 60 + min * 60))
     )
 );
 
