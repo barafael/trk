@@ -18,16 +18,6 @@ use chrono::Duration;
 /* For from::utf8 */
 use std::str;
 
-/* For parsing time in HH:MM format. TODO: extend to other formats or find better solution */
-named!(duration(&[u8]) -> Duration,
-    do_parse!(
-        hour: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
-        tag!(":") >>
-        min: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
-        (Duration::minutes(hour * 60 + min))
-    )
-);
-
 mod timesheet;
 
 fn main() {
@@ -60,15 +50,6 @@ fn main() {
                 (about: "Pause current session")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
-            )
-            // TODO: make this unnecessary by making it possible to add any command with a time
-            // offset
-            (@subcommand retropause =>
-                (about: "Pause current session after the fact (set length of break)")
-                (version: "0.1")
-                (author: "mediumendian@gmail.com")
-                (@arg length: +required "How long the pause was")
-                (@arg note_text: "Note about pause")
             )
             (@subcommand resume =>
                 (about: "Resume currently paused session")
@@ -116,7 +97,7 @@ fn main() {
     /* Special case for init because t_sheet can and should be None before initialisation */
     if let Some(command) = arguments.subcommand_matches("init") {
         match sheet_opt {
-            Some(..) => println!("Already initialised!"),
+            Some(..) => println!("Already initialised."),
             None => {
                 match timesheet::Timesheet::init(command.value_of("name")) {
                     Some(..) => println!("Init successful."),
@@ -131,12 +112,12 @@ fn main() {
     if let Some(command) = arguments.subcommand_matches("clear") {
         match sheet_opt {
             Some(..) => {
-                println!("Clearing timesheet!");
+                println!("Clearing timesheet.");
                 timesheet::Timesheet::clear();
             }
             None => {
                 match timesheet::Timesheet::init(command.value_of("name")) {
-                    Some(..) => println!("Reinitialised timesheet"),
+                    Some(..) => println!("Reinitialised timesheet."),
                     None => println!("Could not initialize."),
                 }
             }
@@ -148,7 +129,7 @@ fn main() {
     let mut sheet = match sheet_opt {
         Some(file) => file,
         None => {
-            println!("No timesheet file! You might have to init first.");
+            println!("No or corrupt timesheet file! You might have to init first.");
             return;
         }
     };
@@ -178,11 +159,11 @@ fn main() {
         }
         ("note", Some(arg)) => {
             let note_text = arg.value_of("note_text").unwrap();
-            sheet.push_note(None, note_text.to_string());
+            sheet.note(None, note_text.to_string());
         }
         ("commit", Some(arg)) => {
             let commit_hash = arg.value_of("hash").unwrap();
-            sheet.push_commit(commit_hash.to_string());
+            sheet.commit(commit_hash.to_string());
         }
         ("status", Some(arg)) => {
             match arg.value_of("which") {
@@ -214,6 +195,16 @@ fn main() {
         _ => unreachable!(),
     }
 }
+
+/* For parsing time in HH:MM format. TODO: extend to other formats or find better solution */
+named!(duration(&[u8]) -> Duration,
+    do_parse!(
+        hour: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
+        tag!(":") >>
+        min: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
+        (Duration::minutes(hour * 60 + min))
+    )
+);
 
 fn parse_to_seconds(timestr: &str) -> Option<u64> {
     match duration(timestr.as_bytes()) {

@@ -29,7 +29,7 @@ enum EventType {
 struct Event {
     time       : u64,
     note       : Option<String>,
-    event_type : EventType,
+    ev_type : EventType,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -59,7 +59,7 @@ impl Session {
         match self.events.len() {
             0 => false,
             n => {
-                match self.events[n - 1].event_type {
+                match self.events[n - 1].ev_type {
                     EventType::Pause => true,
                     _ => false,
                 }
@@ -81,16 +81,15 @@ impl Session {
     }
 
     fn push_event(&mut self,
-                  timestamp     : Option<u64>,
+                  timestamp_opt        : Option<u64>,
                   note_opt      : Option<String>,
-                  type_of_event : EventType)
-                  -> bool {
-        /* Cannot push if session is already finalized! */
+                  type_of_event : EventType) -> bool {
+        /* Cannot push if session is already finalized. */
         if !self.is_running() {
-            println!("Already finalized, cannot push event");
+            println!("Already finalized, cannot push event.");
             return false;
         }
-        let timestamp = match timestamp {
+        let timestamp_opt = match timestamp_opt {
             None => {
                 self.update_end();
                 get_seconds()
@@ -109,7 +108,7 @@ impl Session {
                     self.end = ts + 1;
                     ts
                 } else {
-                    println!("That timestamp is before the start of the session!");
+                    println!("That timestamp is before the start of the session.");
                     println!("I am going to panic.");
                     panic!()
                 }
@@ -122,28 +121,28 @@ impl Session {
         match type_of_event {
             // TODO: add `trk pause "info"`
             EventType::Pause => {
-                if !self.is_paused() {
+                if self.is_paused() {
+                    println!("Already paused.");
+                    false
+                } else {
                     self.events.push(Event {
-                                         time: timestamp,
-                                         note: note_opt,
-                                         event_type: EventType::Pause,
+                                         time    : timestamp_opt,
+                                         note    : note_opt,
+                                         ev_type : EventType::Pause,
                                      });
                     true
-                } else {
-                    println!("Already paused!");
-                    false
                 }
             }
             EventType::Resume => {
                 if self.is_paused() {
                     self.events.push(Event {
-                                         time: timestamp,
-                                         note: note_opt,
-                                         event_type: EventType::Resume,
+                                         time    : timestamp_opt,
+                                         note    : note_opt,
+                                         ev_type : EventType::Resume,
                                      });
                     true
                 } else {
-                    println!("Currently not paused!");
+                    println!("Currently not paused.");
                     false
                 }
             }
@@ -155,6 +154,7 @@ impl Session {
                     let pause = &mut self.events[len - 1];
                     match pause.note {
                         Some(ref mut already) => {
+                            // TODO: handle long strings (also in other types)
                             // TODO: there must be another way other than <br>
                             already.push_str("<br>");
                             already.push_str(&note_opt.unwrap());
@@ -163,9 +163,9 @@ impl Session {
                     }
                 } else {
                     self.events.push(Event {
-                                         time: timestamp,
-                                         note: note_opt,
-                                         event_type: EventType::Note,
+                                         time    : timestamp_opt,
+                                         note    : note_opt,
+                                         ev_type : EventType::Note,
                                      })
                 };
                 true
@@ -177,12 +177,12 @@ impl Session {
                 }
                 /* Commit message must be provided */
                 if note_opt.is_none() {
-                    println!("No commit message found for commit {}!", hash);
+                    println!("No commit message found for commit {}.", hash);
                 }
                 self.events.push(Event {
-                                     time: get_seconds(),
-                                     note: note_opt,
-                                     event_type: EventType::Commit { hash: hash },
+                                     time    : get_seconds(),
+                                     note    : note_opt,
+                                     ev_type : EventType::Commit { hash },
                                  });
                 true
             }
@@ -193,7 +193,7 @@ impl Session {
         let mut pause_time = 0;
         let mut last_pause_ts = 0;
         for event in &self.events {
-            match event.event_type {
+            match event.ev_type {
                 EventType::Pause => last_pause_ts = event.time,
                 EventType::Resume => pause_time += event.time - last_pause_ts,
                 _ => {}
@@ -235,9 +235,10 @@ impl Timesheet {
                 Some(name) => name,
                 None => git_author_name,
             };
+            let now = get_seconds();
             let sheet = Timesheet {
-                start: get_seconds(),
-                end: get_seconds() + 1,
+                start: now,
+                end: now + 1,
                 user: author_name.to_string(),
                 sessions: Vec::<Session>::new(),
             };
@@ -263,25 +264,38 @@ impl Timesheet {
     }
 
     pub fn new_session(&mut self) -> bool {
-        let push = match self.get_last_session_mut() {
+        let possible = match self.get_last_session_mut() {
             None => true,
             Some(session) => {
                 if session.is_running() {
-                    println!("Last session is still running!");
+                    println!("Last session is still running.");
                     false
                 } else {
                     true
                 }
             }
         };
-        if push {
+        if possible {
             self.sessions.push(Session::new());
             self.save_to_file();
         }
-        push
+        possible
     }
 
-    fn get_last_session(&self) -> Option<&Session> {
+    pub fn end_session(&mut self) {
+       match self.get_last_session_mut() {
+           Some(session) => {
+               // TODO: should it be possible to end a session multiple times?
+               // Each time sets the end date later...
+               session.update_end();
+               session.finalize();
+           }
+           None => println!("No session to finalize."),
+       }
+       self.save_to_file();
+   }
+
+   fn get_last_session(&self) -> Option<&Session> {
         match self.sessions.len() {
             0 => None,
             n => Some(&self.sessions[n - 1]),
@@ -295,61 +309,43 @@ impl Timesheet {
         }
     }
 
-    /*
-    pub fn push_event(event: Event, timestamp: Option<u64>) -> bool {
-        let time = timestamp.unwrap_or(get_seconds());
-        event.time = time;
-    }
-    */
-    pub fn end_session(&mut self) {
+    pub fn pause(&mut self, timestamp_opt: Option<u64>, note_opt: Option<String>) {
         match self.get_last_session_mut() {
             Some(session) => {
-                session.update_end();
-                session.finalize();
+                session.push_event(timestamp_opt, note_opt, EventType::Pause);
             }
-            None => println!("No session to finalize!"),
+            None => println!("No session to pause."),
         }
         self.save_to_file();
     }
 
-    pub fn pause(&mut self, timestamp: Option<u64>, note_text: Option<String>) {
+    pub fn resume(&mut self, timestamp_opt: Option<u64>) {
         match self.get_last_session_mut() {
             Some(session) => {
-                session.push_event(timestamp, note_text, EventType::Pause);
+                session.push_event(timestamp_opt, None, EventType::Resume);
             }
-            None => println!("No session to pause!"),
+            None => println!("No session to pause."),
         }
         self.save_to_file();
     }
 
-    pub fn resume(&mut self, timestamp: Option<u64>) {
+    pub fn note(&mut self, timestamp_opt: Option<u64>, note_text: String) {
         match self.get_last_session_mut() {
             Some(session) => {
-                session.push_event(timestamp, None, EventType::Resume);
+                session.push_event(timestamp_opt, Some(note_text), EventType::Note);
             }
-            None => println!("No session to pause!"),
+            None => println!("No session to add note to."),
         }
         self.save_to_file();
     }
 
-    /* TODO: rename */
-    pub fn push_note(&mut self, timestamp: Option<u64>, note_text: String) {
-        match self.get_last_session_mut() {
-            Some(session) => {
-                session.push_event(timestamp, Some(note_text), EventType::Note);
-            }
-            None => println!("No session to add note to!"),
-        }
-        self.save_to_file();
-    }
-
-    pub fn push_commit(&mut self, hash: String) {
+    pub fn commit(&mut self, hash: String) {
         match self.get_last_session_mut() {
             Some(session) => {
                 let message = git_commit_message(&hash).unwrap_or(String::new());
                 session.push_event(None, Some(message), EventType::Commit { hash });
             }
-            None => println!("No session to add commit to!"),
+            None => println!("No session to add commit to."),
         }
         self.save_to_file();
     }
@@ -374,7 +370,7 @@ impl Timesheet {
                 true
             }
             Err(why) => {
-                println!("{}", why.description());
+                println!("Could not report sheet! {}", why.description());
                 false
             }
         }
@@ -414,7 +410,7 @@ impl Timesheet {
                 }
             }
             Err(why) => {
-                println!("{}", why.description());
+                println!("Could not report session! {}", why.description());
                 false
             }
         }
@@ -429,7 +425,7 @@ impl Timesheet {
             match fs::create_dir("./.trk") {
                 Ok(_) => {}
                 _ => {
-                    println!("Could not create .trk directory!");
+                    println!("Could not create .trk directory.");
                 }
             }
         }
@@ -445,13 +441,13 @@ impl Timesheet {
             Ok(mut file) => {
                 /* Convert the sheet to a JSON string. */
                 let serialized =
-                    serde_json::to_string(&self).expect("Could not write serialized time sheet!");
+                    serde_json::to_string(&self).expect("Could not write serialized time sheet.");
                 file.write_all(serialized.as_bytes()).unwrap();
                 /* Save was successful */
                 true
             }
             Err(why) => {
-                println!("{}", why.description());
+                println!("Could not open timesheet.json file: {}", why.description());
                 false
             }
         }
@@ -470,7 +466,7 @@ impl Timesheet {
                 match file.read_to_string(&mut serialized) {
                     Ok(..) => serde_json::from_str(&serialized).unwrap_or(None),
                     Err(..) => {
-                        println!("Reading the string failed!");
+                        println!("Reading the string failed.");
                         None
                     }
                 }
@@ -509,6 +505,22 @@ impl Timesheet {
     pub fn last_session_status(&self) -> Option<String> {
         self.get_last_session().map(|session| session.status())
     }
+
+    pub fn pause_time(&self) -> u64 {
+        let mut pause_time = 0;
+        for session in &self.sessions {
+            pause_time += session.pause_time();
+        }
+        pause_time
+    }
+
+    pub fn working_time(&self) -> u64 {
+        let mut work_time = 0;
+        for session in &self.sessions {
+            work_time += session.working_time();
+        }
+        work_time
+    }
 }
 
 trait HasTEX {
@@ -521,12 +533,12 @@ trait HasHTML {
 
 impl HasHTML for Event {
     fn to_html(&self) -> String {
-        match self.event_type {
+        match self.ev_type {
             EventType::Pause => {
                 match self.note {
                     Some(ref info) => {
                         format!(r#"
-<div class="entry pause">{}:Started a pause
+<div class="entry pause">{}: Started a pause
     <p class="pausenote">{}</p>
 </div>"#,
                                 ts_to_date(self.time),
@@ -534,17 +546,17 @@ impl HasHTML for Event {
                     }
                     None => {
                         format!(r#"
-<div class="entry pause">{}:Started a pause</div>"#,
+<div class="entry pause">{}: Started a pause</div>"#,
                                 ts_to_date(self.time))
                     }
                 }
             }
             EventType::Resume => {
-                format!(r#"<div class="entry resume">{}:Resumed work</div>"#,
+                format!(r#"<div class="entry resume">{}: Resumed work</div>"#,
                         ts_to_date(self.time))
             }
-            /* It is safe to unwrap an EventType::Note note because the
-             * 'constructor' function takes a String and puts it in a Some
+            /* An EventType::Note note is a Some because it's
+             * 'constructor' function takes a String (and not Option<String>)
              */
             EventType::Note => {
                 match self.note {
@@ -560,7 +572,7 @@ impl HasHTML for Event {
              */
             EventType::Commit { ref hash } => {
                 match self.note {
-                    Some(ref text) => format!(r#"<div class="entry commit">{}: Commit id: {} message: {}</div>"#,
+                    Some(ref text) => format!(r#"<div class="entry commit">{}: Commit id: {}<br>message: {}</div>"#,
                         ts_to_date(self.time),
                         hash,
                         text),
@@ -590,7 +602,7 @@ impl HasHTML for Session {
 
         write!(&mut html,
                r#"
-<div class="summary">
+<section class="summary">
     <p>Worked for {} </p>
     <p>Paused for {}</p>
 </div></section>"#,
@@ -609,18 +621,29 @@ impl HasHTML for Timesheet {
         for session in &self.sessions {
             write!(&mut sessions_html, "{}", session.to_html()).unwrap();
         }
-        format!(r#"
+        let mut html = format!(r#"
 <!DOCTYPE html>
 <html>
     <head>
         <link rel="stylesheet" type="text/css" href="style.css">
         <title>{} for {}</title>
     </head>
-    <body>{}</body>
-</html>"#,
+    <body>{}"#,
                 "Timesheet",
                 "Rafael Bachmann",
-                sessions_html)
+                sessions_html);
+
+        write!(&mut html,
+               r#"
+<section class="summary">
+    <p>Worked for {} </p>
+    <p>Paused for {}</p>
+</div></section>"#,
+               sec_to_hms_string(self.working_time()),
+               sec_to_hms_string(self.pause_time()))
+                .unwrap();
+        write!(&mut html, "</body></html>").unwrap();
+        html
     }
 }
 
@@ -638,7 +661,7 @@ fn git_author() -> Option<String> {
             Some(output)
         } else {
             let output = String::from_utf8_lossy(&output.stderr);
-            println!("git config user.name failed! {}", output);
+            println!("git config user.name failed. {}", output);
             None
         }
     } else {
@@ -659,7 +682,7 @@ fn git_commit_message(hash: &str) -> Option<String> {
             Some(output.to_string())
         } else {
             let output = String::from_utf8_lossy(&output.stderr);
-            println!("git log --format=%B -n 1 <hash> failed! {}", output);
+            println!("git log --format=%B -n 1 <hash> failed. {}", output);
             None
         }
     } else {
@@ -686,14 +709,14 @@ pub fn sec_to_hms_string(seconds: u64) -> String {
     let minutes = (seconds - hours * 3600) / 60;
     let seconds = seconds - minutes * 60 - hours * 3600;
     match (hours, minutes, seconds) {
-        (0, 0, 1) => format!("1 second"),
-        (0, 0, s) => format!("{} seconds", s),
-        (0, 1, _) => format!("1 minute"),
-        (0, m, _) => format!("{} minutes", m),
+        (0, 0, 1)       => format!("1 second"),
+        (0, 0, s)       => format!("{} seconds", s),
+        (0, 1, _)       => format!("1 minute"),
+        (0, m, _)       => format!("{} minutes", m),
         /* Range matching: slightly dubious feature here */
-        (1, 0...4, _) => format!("1 hour"),
-        (h, 0...4, _) => format!("{} hours", h),
+        (1, 0...4, _)   => format!("1 hour"),
+        (h, 0...4, _)   => format!("{} hours", h),
         (h, 56...59, _) => format!("{} hours", h + 1),
-        (h, m, _) => format!("{} hours and {} minutes", h, m),
+        (h, m, _)       => format!("{} hours and {} minutes", h, m),
     }
 }
