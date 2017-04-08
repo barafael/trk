@@ -46,25 +46,28 @@ fn main() {
                 (version: "0.1")
                 (author:  "Rafael B. <mediumendian@gmail.com>")
             )
-            /* TODO: inline note? */
             (@subcommand pause =>
                 (about: "Pause current session")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
-                (@arg time: "Optional: Time in the past (after the last event though!) which pause should be added.")
+                (@arg note_text: "Optional: Pause note")
+                (@arg ago: "Optional: Add an event in the past, specifying how long ago.
+                    Time must be after the last event though.")
             )
             (@subcommand resume =>
                 (about: "Resume currently paused session")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
-                (@arg time: "Optional: Time in the past (after the last event though!) which resume should be added.")
+                (@arg ago: "Optional: Add an event in the past, specifying how long ago.
+                    Time must be after the last event though.")
             )
             (@subcommand note =>
                 (about: "Add a note about current work or pause")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
                 (@arg note_text: +required "Note text")
-                (@arg time: "Optional: Time in the past (after the last event though!) which note should be added.")
+                (@arg ago: "Optional: Add an event in the past, specifying how long ago.
+                    Time must be after the last event though.")
             )
             (@subcommand commit =>
                 (about: "Add a commit to the event list")
@@ -82,14 +85,14 @@ fn main() {
                 (about: "Prints the current WIP for session or sheet")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
-                (@arg which: +required "session or sheet")
+                (@arg sheet_or_session: +required "session or sheet")
                 )
             (@subcommand report =>
                 (about: "Generate html report for current session or entire sheet and save it to {timesheet|session}.html")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
-                (@arg which: +required "session or sheet")                
-            )
+                (@arg sheet_or_session: +required "session or sheet")
+                )
             (@subcommand clear =>
                 (about: "Temporary: clears all sessions and updates all timestamps")
                 (version: "0.1")
@@ -152,18 +155,22 @@ fn main() {
             sheet.end_session();
         }
         ("pause", Some(arg)) => {
-            let timestamp: Option<u64> = parse_to_seconds(arg.value_of("time").unwrap_or(""))
+            let timestamp: Option<u64> = parse_to_seconds(arg.value_of("ago").unwrap_or(""))
                 .map(|ago| timesheet::get_seconds() - ago);
-            sheet.pause(timestamp, None);
+            let note_text = arg.value_of("note_text");
+            match note_text {
+                Some(note_text) => sheet.pause(timestamp, Some(note_text.to_string())),
+                None => sheet.pause(timestamp, None),
+            }
         }
 
         ("resume", Some(arg)) => {
-            let timestamp: Option<u64> = parse_to_seconds(arg.value_of("time").unwrap_or(""))
+            let timestamp: Option<u64> = parse_to_seconds(arg.value_of("ago").unwrap_or(""))
                 .map(|ago| timesheet::get_seconds() - ago);
             sheet.resume(timestamp);
         }
         ("note", Some(arg)) => {
-            let timestamp: Option<u64> = parse_to_seconds(arg.value_of("time").unwrap_or(""))
+            let timestamp: Option<u64> = parse_to_seconds(arg.value_of("ago").unwrap_or(""))
                 .map(|ago| timesheet::get_seconds() - ago);
             let note_text = arg.value_of("note_text").unwrap();
             sheet.note(timestamp, note_text.to_string());
@@ -177,7 +184,7 @@ fn main() {
             sheet.branch(branch_name.to_string());
         }
         ("status", Some(arg)) => {
-            match arg.value_of("which") {
+            match arg.value_of("sheet_or_session") {
                 Some("session") => println!("{:?}", sheet.last_session_status()),
                 Some("sheet") => println!("{:?}", sheet.timesheet_status()),
                 Some(text) => {
@@ -188,7 +195,7 @@ fn main() {
             }
         }
         ("report", Some(arg)) => {
-            match arg.value_of("which") {
+            match arg.value_of("sheet_or_session") {
                 Some("session") => {
                     sheet.last_session_report();
                 }
