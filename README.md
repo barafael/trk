@@ -93,7 +93,6 @@ Soft dependencies are html-tidy and git, but trk works without them too. When yo
 
 ### TODO:
 * TODO: run 'make sync_hook' on init? Make dependency?
-* TODO: better reporting if file is not present xor corrupt
 * TODO: how to test all this automatically?
 * TODO: add past event adding for begin and end
 * TODO: improve status output

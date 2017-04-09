@@ -597,10 +597,14 @@ r#"<!DOCTYPE html>
                 let mut serialized = String::new();
                 match file.read_to_string(&mut serialized) {
                     Ok(..) => serde_json::from_str(&serialized)
-                        .unwrap_or(None),
+                        .unwrap_or({
+                            println!("Corrupt timesheet file!
+                                     Please complain to medium-endian.");
+                            None
+                        }),
                     Err(..) => {
-                        println!("Reading the string failed.");
-                        None
+                        println!("IO error while reading the timesheet file.");
+                        process::exit(0);
                     }
                 }
             }

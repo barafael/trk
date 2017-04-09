@@ -158,10 +158,7 @@ fn main() {
     /* Unwrap the timesheet and continue only if timesheet file exists */
     let mut sheet = match sheet_opt {
         Some(file) => file,
-        None => {
-            println!("No or corrupt timesheet file! You might have to init first.");
-            return;
-        }
+        None => return,
     };
 
     match arguments.subcommand() {
