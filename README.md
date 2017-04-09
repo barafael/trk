@@ -92,6 +92,7 @@ Which can be styled by style.css:
 Soft dependencies are html-tidy and git, but trk works without them too. When you run without git (or rather without a name set in .gitconfig) you have to provide one like 'trk init <name>'.
 
 ### TODO:
+* TODO: run 'make sync_hook' on init? Make dependency?
 * TODO: better reporting if file is not present xor corrupt
 * TODO: how to test all this automatically?
 * TODO: add past event adding for begin and end

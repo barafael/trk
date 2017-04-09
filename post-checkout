@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # A hook script to call trk with the new branch name.
 # This hook is invoked when a git checkout is run after having updated the worktree. The hook is given three parameters: the ref of the previous HEAD, the ref of the new HEAD (which may or may not have changed), and a flag indicating whether the checkout was a  branch checkout (changing branches, flag=1) or a file checkout (retrieving a file from the index, flag=0).
@@ -9,4 +9,21 @@
 # * Copy this file to ./.git/hooks/post-checkout
 # * Append the below lines to ./.git/hooks/post-checkout
 
-trk branch $(git rev-parse --abbrev-ref HEAD)
+dir=$(pwd)
+mkdir -p $dir/.trk # no errors if .trk is present already
+
+branchlist=$dir/.trk/branchlist
+if [ "$3" = 1 ]; then
+    # Checked out a branch - what branch are we on now?
+    # (Skip rest of code if we're on a detached HEAD.)
+    curbranch=$(git symbolic-ref --short HEAD 2>/dev/null) || exit 1
+    # Is $curbranch in our branch list?  Create empty
+    # branch list first if needed.  Can just "touch" but
+    # this avoids changing the mod-time unnecessarily.
+    [ -f $branchlist ] || : > $branchlist
+    if ! grep "^$curbranch$" $branchlist > /dev/null; then
+        # echo "switching to as-yet-unvisited-branch $curbranch"
+        trk branch $(git rev-parse --abbrev-ref HEAD)
+        echo $curbranch >> $branchlist  # now we've visited it
+    fi
+fi
