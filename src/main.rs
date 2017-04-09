@@ -57,7 +57,7 @@ fn main() {
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
                 (@arg note_text: "Optional: Pause note")
-                (@arg ago: "Optional: Add a pause in the past, specify how long ago.
+                (@arg ago: "Optional: pause in the past, specify how long ago.
                     Time must be after the last event though.")
             )
             (@subcommand resume =>
@@ -170,8 +170,10 @@ fn main() {
                 .map(|ago| timesheet::get_seconds() - ago);
             sheet.new_session(timestamp);
         }
-        ("end", Some(..)) => {
-            sheet.end_session();
+        ("end", Some(arg)) => {
+            let timestamp: Option<u64> = parse_to_seconds(arg.value_of("ago").unwrap_or(""))
+                .map(|ago| timesheet::get_seconds() - ago);
+            sheet.end_session(timestamp);
         }
         ("pause", Some(arg)) => {
             let timestamp: Option<u64> = parse_to_seconds(arg.value_of("ago").unwrap_or(""))
@@ -239,7 +241,9 @@ named!(duration(&[u8]) -> Duration,
         hour: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
         tag!(":") >>
         min: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
-        (Duration::minutes(hour * 60 + min * 60))
+        tag!(":") >>
+        sec: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
+        (Duration::minutes(hour * 60 + min))
     )
 );
 

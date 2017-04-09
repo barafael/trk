@@ -91,15 +91,40 @@ impl Session {
     }
 
     fn update_end(&mut self) {
-        self.end = get_seconds();
+        self.end = match self.events.len() {
+            0 => self.end,
+            n => {
+                let event = &self.events[n - 1];
+                event.time + 1
+            }
+        }
     }
 
-    fn finalize(&mut self) {
+    fn finalize(&mut self, timestamp: Option<u64>) {
+        let timestamp = match timestamp {
+            None => get_seconds(),
+            Some(timestamp) => {
+                let ts_ok = match self.events.len() {
+                    0 => timestamp > self.start,
+                    n => {
+                        let last = &self.events[n - 1];
+                        timestamp > last.time
+                    }
+                };
+                if ts_ok {
+                    timestamp
+                } else {
+                    println!("That is not a valid timestamp!");
+                    process::exit(0);
+                }
+            }
+        };
         if self.is_running() {
             if self.is_paused() {
-                self.push_event(Some(get_seconds()), None, EventType::Resume);
+                self.push_event(Some(timestamp), None, EventType::Resume);
             }
             self.running = false;
+            self.end = timestamp + 1;
         }
     }
 
@@ -132,7 +157,7 @@ impl Session {
                     self.end = ts + 1;
                     ts
                 } else {
-                    println!("That timestamp is before the last event. Did not resume.");
+                    println!("That timestamp is before the last event.");
                     return false;
                 }
             }
@@ -290,7 +315,6 @@ impl Timesheet {
                 sessions : Vec::<Session>::new(),
             };
             if sheet.write_files() {
-                println!("Writing files!");
                 Some(sheet)
             } else {
                 None
@@ -350,13 +374,14 @@ impl Timesheet {
         possible
     }
 
-    pub fn end_session(&mut self) {
+    pub fn end_session(&mut self, timestamp: Option<u64>) {
         match self.get_last_session_mut() {
             Some(session) => {
+                // match timestamp {
                 // TODO: should it be possible to end a session multiple times?
                 // Each time sets the end date later...
                 session.update_end();
-                session.finalize();
+                session.finalize(timestamp);
             }
             None => println!("No session to finalize."),
         }
@@ -520,7 +545,7 @@ r#"<!DOCTYPE html>
     fn write_to_json(&self) -> bool {
         if !Path::new("./.trk").exists() {
             match fs::create_dir("./.trk") {
-                Ok(_) => { }
+                Ok(_) => {}
                 _ => {
                     println!("Could not create .trk directory.");
                     process::exit(0);
@@ -579,10 +604,7 @@ r#"<!DOCTYPE html>
                     }
                 }
             }
-            Err(why) => {
-                println!("{}", why.description());
-                None
-            }
+            Err(..) => None,
         }
     }
 

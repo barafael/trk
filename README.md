@@ -92,9 +92,11 @@ Which can be styled by style.css:
 Soft dependencies are html-tidy and git, but trk works without them too. When you run without git (or rather without a name set in .gitconfig) you have to provide one like 'trk init <name>'.
 
 ### TODO:
+* TODO: better reporting if file is not present xor corrupt
+* TODO: how to test all this automatically?
 * TODO: add past event adding for begin and end
 * TODO: improve status output
-* TODO: add a 'set' command, for example to set git_repo_url
+* TODO: add a 'set' command, for example to set git_repo_url (in order to make the commit messages links to the repo)
 * TODO: Find a way to query time sheets from certain time periods (one week, since=date, or maybe place pins...)
 * TODO: Format output - leave out commits and branches, for example
 * TODO/nicetohave: Run this on a server instead of the local machine. What happens to git commits and the like?
