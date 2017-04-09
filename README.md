@@ -89,10 +89,12 @@ Which can be styled by style.css:
 
 ### Dependencies
 
-Soft dependencies are html-tidy and git, but trk works without them too.
+Soft dependencies are html-tidy and git, but trk works without them too. When you run without git (or rather without a name set in .gitconfig) you have to provide one like 'trk init <name>'.
 
-### Notes and TODO items ###
-* TODO: If a commit or branch is pushed when no session is running, a new session should be opened. A subsequent begin should just finalize the previous session?
+### TODO:
+* TODO: add past event adding for begin and end
+* TODO: improve status output
+* TODO: add a 'set' command, for example to set git_repo_url
 * TODO: Find a way to query time sheets from certain time periods (one week, since=date, or maybe place pins...)
 * TODO: Format output - leave out commits and branches, for example
 * TODO/nicetohave: Run this on a server instead of the local machine. What happens to git commits and the like?
