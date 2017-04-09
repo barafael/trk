@@ -94,7 +94,6 @@ Soft dependencies are html-tidy and git, but trk works without them too. When yo
 ### TODO:
 * TODO: run 'make sync_hook' on init? Make dependency?
 * TODO: how to test all this automatically?
-* TODO: improve status output
 * TODO: add a 'set' command, for example to set git_repo_url (in order to make the commit messages links to the repo)
 * TODO: Find a way to query time sheets from certain time periods (one week, since=date, or maybe place pins...)
 * TODO: Format output - leave out commits and branches, for example

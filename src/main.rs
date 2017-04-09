@@ -206,8 +206,8 @@ fn main() {
         }
         ("status", Some(arg)) => {
             match arg.value_of("sheet_or_session") {
-                Some("session") => println!("{:?}", sheet.last_session_status()),
-                Some("sheet") => println!("{:?}", sheet.timesheet_status()),
+                Some("session") => println!("{}", sheet.last_session_status()),
+                Some("sheet") => println!("{}", sheet.timesheet_status()),
                 Some(text) => {
                     println!("What do you mean by {}? Should be either 'sheet' or 'session'.",
                              text)

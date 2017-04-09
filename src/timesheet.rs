@@ -171,7 +171,7 @@ impl Session {
         /* TODO: can the event struct be initialized just once?
          * Set the type only... */
         match type_of_event {
-            // TODO: add `trk pause "info"`
+            // TODO: fix this, so both note and ago work...
             EventType::Pause => {
                 if self.is_paused() {
                     println!("Already paused.");
@@ -270,7 +270,34 @@ impl Session {
     }
 
     fn status(&self) -> String {
-        format!("{:?}", self)
+        let mut status = String::new();
+        write!(&mut status,
+r#"Session running since {}.
+"#,
+            sec_to_hms_string(get_seconds() - self.start)).unwrap();
+        if self.is_paused() {
+            write!(&mut status,
+r#"Session is paused since {}.
+"#,
+    sec_to_hms_string(get_seconds() - self.events[self.events.len() - 1]
+                      .time)).unwrap();
+        } else {
+            let last = match self.events.len() {
+                0 => "No events in this session yet!\n".to_string(),
+                n => format!("Last event: {:?}, {} ago.\n",
+                             self.events[n - 1].ev_type,
+                             sec_to_hms_string(
+                                 get_seconds() - self.events[n - 1].time))
+                };
+            write!(&mut status, "{}", last).unwrap();
+        }
+        let mut branch_str = String::new();
+        for branch in &self.branches {
+            branch_str.push_str(branch);
+            branch_str.push_str(" ");
+        }
+        write!(&mut status, "Worked on branches: {}", branch_str).unwrap();
+        status
     }
 }
 
@@ -375,7 +402,6 @@ impl Timesheet {
     pub fn end_session(&mut self, timestamp: Option<u64>) {
         match self.get_last_session_mut() {
             Some(session) => {
-                // match timestamp {
                 // TODO: should it be possible to end a session multiple times?
                 // Each time sets the end date later...
                 session.update_end();
@@ -608,7 +634,8 @@ r#"<!DOCTYPE html>
         if path.exists() {
             match fs::remove_file(&path) {
                 Ok(..) => {}
-                Err(why) => println!("Could not remove sessions file: {}", why.description()),
+                Err(why) => println!("Could not remove sessions file: {}",
+                                     why.description()),
             }
         }
         match name {
@@ -623,11 +650,26 @@ r#"<!DOCTYPE html>
     }
 
     pub fn timesheet_status(&self) -> String {
-        format!("{:?}", self)
+        let mut status = String::new();
+        write!(&mut status, "Sheet started on {}\n",
+              sec_to_hms_string(get_seconds()
+                                - self.start)).unwrap();
+        match self.sessions.len() {
+            0 => write!(&mut status, "No sessions yet.\n").unwrap(),
+            n => write!(&mut status, "{} sessions so far.\nLast session:\n{}",
+                        n,
+                        self.sessions[n - 1].status()).unwrap(),
+        };
+        status
     }
 
-    pub fn last_session_status(&self) -> Option<String> {
-        self.get_last_session().map(|session| session.status())
+    pub fn last_session_status(&self) -> String {
+        let status = self.get_last_session()
+            .map(|session| session.status());
+        match status {
+            None => "No session yet.".to_string(),
+            Some(status) => status,
+        }
     }
 
     pub fn report_last_session(&self) {
@@ -758,7 +800,7 @@ r#"<h2 class="sessionfooter">Ended on {}</h2>"#,
         let mut branch_str = String::new();
         for branch in &self.branches {
             branch_str.push_str(branch);
-            branch_str.push_str(", ");
+            branch_str.push_str(" ");
         }
         write!(&mut html,
 r#"<section class="summary">
