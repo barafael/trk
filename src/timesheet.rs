@@ -1,4 +1,5 @@
 extern crate serde_json;
+extern crate url;
 
 use std::io::prelude::*;
 
@@ -8,7 +9,6 @@ use std::process;
 
 use std::env;
 
-extern crate url;
 use self::url::Url;
 
 extern crate url_open;
@@ -20,6 +20,8 @@ use std::fs;
 use std::path::Path;
 use std::error::Error;
 use std::fs::OpenOptions;
+
+use std::collections::HashSet;
 
 /* For running git and tidy */
 use std::process::Command;
@@ -33,7 +35,6 @@ enum EventType {
     Resume,
     Note,
     Commit { hash: String },
-    Branch { name: String }
 }
 
 
@@ -46,10 +47,11 @@ struct Event {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Session {
-    start   : u64,
-    end     : u64,
-    running : bool,
-    events  : Vec<Event>,
+    start    : u64,
+    end      : u64,
+    running  : bool,
+    branches : HashSet<String>,
+    events   : Vec<Event>,
 }
 
 impl Session {
@@ -57,18 +59,20 @@ impl Session {
         match timestamp {
             Some(timestamp) =>
                 Session {
-                    start   : timestamp,
-                    end     : timestamp + 1,
-                    running : true,
-                    events  : Vec::<Event>::new(),
+                    start    : timestamp,
+                    end      : timestamp + 1,
+                    running  : true,
+                    branches : HashSet::<String>::new(),
+                    events   : Vec::<Event>::new(),
                 },
             None => {
                 let now = get_seconds();
                 Session {
-                    start   : now,
-                    end     : now + 1,
-                    running : true,
-                    events  : Vec::<Event>::new(),
+                    start    : now,
+                    end      : now + 1,
+                    running  : true,
+                    branches : HashSet::<String>::new(),
+                    events   : Vec::<Event>::new(),
                 }
             }
         }
@@ -238,18 +242,6 @@ impl Session {
                           });
                 true
             }
-            EventType::Branch { name } => {
-                if self.is_paused() {
-                    self.push_event(None, None, EventType::Resume);
-                }
-                self.events
-                    .push(Event {
-                              time    : get_seconds(),
-                              note    : note_opt,
-                              ev_type : EventType::Branch { name },
-                          });
-                true
-            }
         }
     }
 
@@ -269,6 +261,12 @@ impl Session {
     pub fn working_time(&self) -> u64 {
         let pause_time = self.pause_time();
         self.end - self.start - pause_time
+    }
+
+    fn add_branch(&mut self, name: String) {
+        if self.is_running() {
+            self.branches.insert(name);
+        }
     }
 
     fn status(&self) -> String {
@@ -456,19 +454,11 @@ impl Timesheet {
     }
 
     pub fn branch(&mut self, name: String) {
-        let new_needed = match self.get_last_session() {
-            Some(session) => !session.is_running(),
-            None => true,
-        };
-        if new_needed {
-            self.new_session(None);
-            self.write_files();
-        }
         match self.get_last_session_mut() {
             Some(session) => {
-                session.push_event(None, None, EventType::Branch { name });
+                session.add_branch(name);
             }
-            None => println!("No session to add branch change to."),
+            None => {},
         }
         self.write_files();
     }
@@ -597,11 +587,7 @@ r#"<!DOCTYPE html>
                 let mut serialized = String::new();
                 match file.read_to_string(&mut serialized) {
                     Ok(..) => serde_json::from_str(&serialized)
-                        .unwrap_or({
-                            println!("Corrupt timesheet file!
-                                     Please complain to medium-endian.");
-                            None
-                        }),
+                        .unwrap_or(None),
                     Err(..) => {
                         println!("IO error while reading the timesheet file.");
                         process::exit(0);
@@ -748,22 +734,6 @@ r#"<div class="entry commit">{}: Commit id: {}
                     None => unreachable!(),
                 }
             }
-            EventType::Branch { ref name } => {
-                match self.note {
-                    Some(ref text) => format!(
-r#"<div class="entry branch">{}: Checked out branch: {}
-  <br>    message: {}
-</div>"#,
-            ts_to_date(self.time),
-            name,
-            text),
-                    None => format!(
-r#"<div class="entry branch">{}: Checked out branch: {}
-</div>"#,
-            ts_to_date(self.time),
-            name),
-                }
-            }
         }
     }
 }
@@ -785,11 +755,18 @@ r#"<h2 class="sessionfooter">Ended on {}</h2>"#,
            ts_to_date(self.end)
         ).unwrap();
 
+        let mut branch_str = String::new();
+        for branch in &self.branches {
+            branch_str.push_str(branch);
+            branch_str.push_str(", ");
+        }
         write!(&mut html,
 r#"<section class="summary">
+    <p>Worked on branches: {}</p>
     <p>Worked for {} </p>
     <p>Paused for {}</p>
 </div></section>"#,
+            branch_str,
             sec_to_hms_string(self.working_time()),
             sec_to_hms_string(self.pause_time())
         ).unwrap();

@@ -82,7 +82,7 @@ fn main() {
                 (@arg hash: +required "Commit hash id")
             )
             (@subcommand branch =>
-                (about: "Add a commit to the event list")
+                (about: "Add a branch to the session's branch list")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
                 (@arg name: +required "branch name")
@@ -158,7 +158,10 @@ fn main() {
     /* Unwrap the timesheet and continue only if timesheet file exists */
     let mut sheet = match sheet_opt {
         Some(file) => file,
-        None => return,
+        None => {
+            println!("No file! You might have to init first.");
+            return;
+        }
     };
 
     match arguments.subcommand() {
