@@ -505,7 +505,8 @@ r#"<!DOCTYPE html>
                         /* Save was successful */
                         true
                     }
-                    None => false,
+                    /* TODO: write empty file anyway? */
+                    None => true,
                 }
             }
             Err(why) => {
@@ -519,9 +520,10 @@ r#"<!DOCTYPE html>
     fn write_to_json(&self) -> bool {
         if !Path::new("./.trk").exists() {
             match fs::create_dir("./.trk") {
-                Ok(_) => {}
+                Ok(_) => { }
                 _ => {
                     println!("Could not create .trk directory.");
+                    process::exit(0);
                 }
             }
         }
