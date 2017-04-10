@@ -167,9 +167,6 @@ impl Session {
             }
         };
         /* TODO: improve logic */
-        /* TODO: binding names */
-        /* TODO: can the event struct be initialized just once?
-         * Set the type only... */
         match type_of_event {
             // TODO: fix this, so both note and ago work...
             EventType::Pause => {
@@ -296,17 +293,30 @@ r#"Session is paused since {}.
             branch_str.push_str(branch);
             branch_str.push_str(" ");
         }
-        write!(&mut status, "Worked on branches: {}", branch_str).unwrap();
+        match self.branches.len() {
+            0 => {},
+            n => {
+                let mut branch_str = String::new();
+                for branch in &self.branches {
+                    branch_str.push_str(branch);
+                    branch_str.push_str(" ");
+                    write!(&mut status, "Worked on {} branches: {}",
+                           n,
+                           branch_str).unwrap();
+                }
+            }
+        }
         status
     }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Timesheet {
-    start    : u64,
-    end      : u64,
-    user     : String,
-    sessions : Vec<Session>,
+    start        : u64,
+    end          : u64,
+    user         : String,
+    show_commits : bool,
+    sessions     : Vec<Session>,
 }
 
 impl Timesheet {
@@ -334,10 +344,11 @@ impl Timesheet {
             };
             let now = get_seconds();
             let sheet = Timesheet {
-                start    : now,
-                end      : now + 1,
-                user     : author_name.to_string(),
-                sessions : Vec::<Session>::new(),
+                start        : now,
+                end          : now + 1,
+                user         : author_name.to_string(),
+                show_commits : true,
+                sessions     : Vec::<Session>::new(),
             };
             if sheet.write_files() {
                 Some(sheet)
@@ -733,6 +744,7 @@ r#"<div class="entry pause">{}: Started a pause
                     None => {
                         format!(
 r#"<div class="entry pause">{}: Started a pause
+<hr>
 </div>"#,
             ts_to_date(self.time))
                     }
@@ -741,6 +753,7 @@ r#"<div class="entry pause">{}: Started a pause
             EventType::Resume => {
                 format!(
 r#"<div class="entry resume">{}: Resumed work
+<hr>
 </div>"#,
             ts_to_date(self.time))
             }
@@ -753,7 +766,9 @@ r#"<div class="entry resume">{}: Resumed work
                     Some(ref text) => {
                         format!(
 r#"<div class="entry note">{}: Note: {
-}</div>"#,
+}
+<hr>
+</div>"#,
             ts_to_date(self.time),
             text)
                     }
@@ -769,6 +784,7 @@ r#"<div class="entry note">{}: Note: {
                     Some(ref text) => format!(
 r#"<div class="entry commit">{}: Commit id: {}
   <br>    message: {}
+  <hr>
 </div>"#,
             ts_to_date(self.time),
             hash,
@@ -805,7 +821,7 @@ r#"<h2 class="sessionfooter">Ended on {}</h2>"#,
         write!(&mut html,
 r#"<section class="summary">
     <p>Worked on branches: {}</p>
-    <p>Worked for {} </p>
+    <p>Worked for {}</p>
     <p>Paused for {}</p>
 </div></section>"#,
             branch_str,
@@ -822,9 +838,18 @@ impl HasHTML for Timesheet {
     fn to_html(&self) -> String {
         let mut sessions_html = String::new();
         for session in &self.sessions {
-            write!(&mut sessions_html, "{}", session.to_html()
+            write!(&mut sessions_html, "{}<hr>", session.to_html()
                    ).unwrap();
         }
+        let mut stylesheets =
+r#"<link rel="stylesheet" type="text/css" href="style.css">
+"#.to_string();
+
+        if !self.show_commits {
+            stylesheets.push_str(
+r#"<link rel="stylesheet" type="text/css" href="no_commit.css">"#);
+        }
+
         let mut html = format!(
 r#"<!DOCTYPE html>
 <html>
@@ -840,7 +865,7 @@ r#"<!DOCTYPE html>
 
         write!(&mut html,
 r#"<section class="summary">
-    <p>Worked for {} </p>
+    <p>Worked for {}</p>
     <p>Paused for {}</p>
 </div></section>"#,
            sec_to_hms_string(self.working_time()),
