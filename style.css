@@ -10,6 +10,12 @@ h1.sessionheader {
   font-weight: normal;
 }
 
+hr {
+    border: 0;
+    height: 2px;
+    background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+}
+
 h2.sessionfooter {
   margin-left: 30px;
   color: #555;
@@ -28,7 +34,7 @@ section.session {
 
 div.entry {
   margin-left: 60px;
-  border-left: 4px solid #333;
+  margin-right: 60px;
   font-family: Tahoma, Geneva, sans-serif;
 }
 
@@ -36,12 +42,6 @@ p.pausenote {
   text-align: justify;
   padding-left: 20px;
   margin-left: 20px;
-  border-left: 2px solid #777;
-}
-
-div.entry.pause {
-  margin-left: 60px;
-  border-left: 4px solid #777;
 }
 
 div {
