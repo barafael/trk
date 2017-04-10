@@ -288,22 +288,16 @@ r#"Session is paused since {}.
                 };
             write!(&mut status, "{}", last).unwrap();
         }
-        let mut branch_str = String::new();
-        for branch in &self.branches {
-            branch_str.push_str(branch);
-            branch_str.push_str(" ");
-        }
         match self.branches.len() {
             0 => {},
             n => {
                 let mut branch_str = String::new();
                 for branch in &self.branches {
-                    branch_str.push_str(branch);
-                    branch_str.push_str(" ");
-                    write!(&mut status, "Worked on {} branches: {}",
-                           n,
-                           branch_str).unwrap();
+                    write!(&mut branch_str, "{} ", branch)
+                        .unwrap();
                 }
+                write!(&mut status, "Worked on {} branches: {}",
+                       n, branch_str).unwrap();
             }
         }
         status
@@ -824,7 +818,7 @@ r#"<h2 class="sessionfooter">Ended on {}</h2>"#,
                 write!(&mut branch_str,
                        "Worked on {} branches: ", n).unwrap();
                 for branch in &self.branches {
-                    write!(&mut branch_str, "{}", branch)
+                    write!(&mut branch_str, "{} ", branch)
                         .unwrap();
                 }
             }
