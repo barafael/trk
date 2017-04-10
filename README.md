@@ -96,7 +96,6 @@ Soft dependencies are html-tidy and git, but trk works without them too. When yo
 * TODO: how to test all this automatically?
 * TODO: add a 'set' command, for example to set git_repo_url (in order to make the commit messages links to the repo)
 * TODO: Find a way to query time sheets from certain time periods (one week, since=date, or maybe place pins...)
-* TODO: Format output - leave out commits and branches, for example
 * TODO/nicetohave: Run this on a server instead of the local machine. What happens to git commits and the like?
 * The session struct is a list of sequential events with timestamps. A session struct is identified by it's starting time (and maybe git author?).
 * The Timesheet struct is deserialized on every run, worked on, and then serialized again. It has a tohtml impl.

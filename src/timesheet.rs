@@ -744,7 +744,6 @@ r#"<div class="entry pause">{}: Started a pause
                     None => {
                         format!(
 r#"<div class="entry pause">{}: Started a pause
-<hr>
 </div>"#,
             ts_to_date(self.time))
                     }
@@ -814,13 +813,21 @@ r#"<h2 class="sessionfooter">Ended on {}</h2>"#,
         ).unwrap();
 
         let mut branch_str = String::new();
-        for branch in &self.branches {
-            branch_str.push_str(branch);
-            branch_str.push_str(" ");
-        }
+        match self.branches.len() {
+            0 => {},
+            n => {
+                write!(&mut branch_str,
+                       "Worked on {} branches: ", n).unwrap();
+                for branch in &self.branches {
+                    write!(&mut branch_str, "{}", branch)
+                        .unwrap();
+                }
+            }
+        };
+
         write!(&mut html,
 r#"<section class="summary">
-    <p>Worked on branches: {}</p>
+    <p>{}</p>
     <p>Worked for {}</p>
     <p>Paused for {}</p>
 </div></section>"#,
@@ -841,24 +848,27 @@ impl HasHTML for Timesheet {
             write!(&mut sessions_html, "{}<hr>", session.to_html()
                    ).unwrap();
         }
-        let mut stylesheets =
-r#"<link rel="stylesheet" type="text/css" href="style.css">
-"#.to_string();
 
-        if !self.show_commits {
-            stylesheets.push_str(
-r#"<link rel="stylesheet" type="text/css" href="no_commit.css">"#);
-        }
+        let stylesheets = match self.show_commits {
+            true  => r#"<link rel="stylesheet" type="text/css" href="style.css">
+"#.to_string(),
+            false => 
+r#"
+<link rel="stylesheet" type="text/css" href="style.css">
+<link rel="stylesheet" type="text/css" href="no_commit.css">
+"#.to_string()
+        };
 
         let mut html = format!(
 r#"<!DOCTYPE html>
 <html>
     <head>
-        <link rel="stylesheet" type="text/css" href="style.css">
+        {}
         <title>{} for {}</title>
     </head>
     <body>
     {}"#,
+            stylesheets,
             "Timesheet",
             "Rafael Bachmann",
             sessions_html);
