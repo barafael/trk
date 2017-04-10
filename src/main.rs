@@ -87,6 +87,17 @@ fn main() {
                 (author: "mediumendian@gmail.com")
                 (@arg name: +required "branch name")
             )
+            (@subcommand set =>
+                (about: "Set different options")
+                (version: "0.1")
+                (author: "mediumendian@gmail.com")
+                (@subcommand show_git_info =>
+                    (about: "Show information about git commits/branches in the report")
+                    (version: "0.1")
+                    (author: "mediumendian@gmail.com")
+                    (@arg on_off: +required "on or off")
+                    )
+            )
             (@subcommand status =>
                 (about: "Prints the current WIP for session or sheet")
                 (version: "0.1")
@@ -217,20 +228,31 @@ fn main() {
         }
         ("report", Some(arg)) => {
             match arg.value_of("sheet_or_session") {
-                Some("session") => {
-                    sheet.report_last_session();
-                }
-                Some("sheet") => {
-                    sheet.report_sheet();
-                }
-                Some(text) => {
+                Some("session") => sheet.report_last_session(),
+                Some("sheet") => sheet.report_sheet(),
+                Some(text) => 
                     println!("What do you mean by {}? Should be either 'sheet' or 'session'.",
-                             text)
-                }
-                None => {}
+                             text),
+                None => unreachable!()
             }
         }
+        ("set", Some(sub_arg)) => {
+            match sub_arg.subcommand() {
+                ("show_git_info", Some(arg)) => {
+                    match arg.value_of("on_off") {
+                        Some("on")   => sheet.toggle_show_git_info(true),
+                        Some("off")  => sheet.toggle_show_git_info(false),
+                        Some(text) => 
+                            println!("What do you mean by {}? Should be either 'on' or 'off'.",
+                                text),
+                        None => unreachable!()
+                    }
 
+                }
+                _ => {}
+            }
+
+        }
         _ => unreachable!(),
     }
 }

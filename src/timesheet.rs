@@ -312,11 +312,11 @@ r#"Session is paused since {}.
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Timesheet {
-    start        : u64,
-    end          : u64,
-    user         : String,
-    show_commits : bool,
-    sessions     : Vec<Session>,
+    start            : u64,
+    end              : u64,
+    user             : String,
+    pub show_commits : bool,
+    sessions         : Vec<Session>,
 }
 
 impl Timesheet {
@@ -701,6 +701,11 @@ r#"<!DOCTYPE html>
         let mut path_str = "file://".to_string();
         path_str.push_str(path.to_str().unwrap());
         Url::parse(&path_str).unwrap().open();
+   }
+
+   pub fn toggle_show_git_info(&mut self, setting: bool) {
+       self.show_commits = setting;
+       self.write_files();
    }
 
    pub fn pause_time(&self) -> u64 {
