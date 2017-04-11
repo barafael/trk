@@ -15,6 +15,7 @@ use nom::IResult::Done;
 extern crate chrono;
 use chrono::Duration;
 
+/* for process termination */
 use std::process;
 
 /* For from::utf8 */
@@ -155,7 +156,7 @@ fn main() {
         return;
     }
 
-    /* Catch commit or branch on uninitialised trk,
+    /* Ignore commit or branch on uninitialised trk,
      * which occur when post-commit/post-checkout hooks run
      */
     if arguments.subcommand_matches("commit").is_some() ||
@@ -209,11 +210,11 @@ fn main() {
         }
         ("commit", Some(arg)) => {
             let commit_hash = arg.value_of("hash").unwrap();
-            sheet.commit(commit_hash.to_string());
+            sheet.add_commit(commit_hash.to_string());
         }
         ("branch", Some(arg)) => {
             let branch_name = arg.value_of("name").unwrap();
-            sheet.branch(branch_name.to_string());
+            sheet.add_branch(branch_name.to_string());
         }
         ("status", Some(arg)) => {
             match arg.value_of("sheet_or_session") {
@@ -223,7 +224,7 @@ fn main() {
                     println!("What do you mean by {}? Should be either 'sheet' or 'session'.",
                              text)
                 }
-                None => {}
+                _ => unreachable!()
             }
         }
         ("report", Some(arg)) => {
@@ -233,7 +234,7 @@ fn main() {
                 Some(text) => 
                     println!("What do you mean by {}? Should be either 'sheet' or 'session'.",
                              text),
-                None => unreachable!()
+                _ => unreachable!()
             }
         }
         ("set", Some(sub_arg)) => {
@@ -245,11 +246,17 @@ fn main() {
                         Some(text) => 
                             println!("What do you mean by {}? Should be either 'on' or 'off'.",
                                 text),
-                        None => unreachable!()
+                        _ => unreachable!()
                     }
-
                 }
-                _ => {}
+                ("set_repo", Some(arg)) => {
+                    match arg.value_of("repo_url") {
+                        Some(repo_url) => sheet.set_repo_url(repo_url.to_string()),
+                        Some(text) => println!("What do you mean by {}?", text),
+                        _ => unreachable!(),
+                    }
+                }
+                _ => println!("What do you mean by {:?}?"),
             }
 
         }
@@ -263,8 +270,8 @@ named!(duration(&[u8]) -> Duration,
         hour: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
         tag!(":") >>
         min: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
-        tag!(":") >>
-        sec: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
+        /*tag!(":") >>
+        sec: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>*/
         (Duration::minutes(hour * 60 + min))
     )
 );
@@ -272,6 +279,9 @@ named!(duration(&[u8]) -> Duration,
 fn parse_to_seconds(timestr: &str) -> Option<u64> {
     match duration(timestr.as_bytes()) {
         Done(_, out) => Some(out.num_seconds() as u64),
-        _ => None,
+        _ => {
+            println!("Error while parsing!");
+            None,
+        }
     }
 }

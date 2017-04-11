@@ -21,9 +21,10 @@ use std::path::Path;
 use std::error::Error;
 use std::fs::OpenOptions;
 
+/* For branch name dedup */
 use std::collections::HashSet;
 
-/* For running git and tidy */
+/* For running git and html-tidy */
 use std::process::Command;
 
 /* Alias to avoid naming conflict for write_all!() */
@@ -36,7 +37,6 @@ enum EventType {
     Note,
     Commit { hash: String },
 }
-
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Event {
@@ -142,24 +142,19 @@ impl Session {
             println!("Already finalized, cannot push event.");
             return false;
         }
-        let timestamp_opt = match timestamp_opt {
+        let timestamp = match timestamp_opt {
             None => {
-                self.update_end();
+                self.end = get_seconds();
                 get_seconds()
             }
-            Some(ts) => {
+            Some(timestamp) => {
                 let valid_ts = match self.events.len() {
-                    0 => if ts > self.start { true } else { false },
-                    n => {
-                        match self.events[n - 1].time {
-                            last_time if last_time < ts => true,
-                            _ => false,
-                        }
-                    }
+                    0 => timestamp > self.start,
+                    n => timestamp > self.events[n - 1].time,
                 };
                 if valid_ts {
-                    self.end = ts + 1;
-                    ts
+                    self.end = timestamp + 1;
+                    timestamp
                 } else {
                     println!("That timestamp is before the last event.");
                     return false;
@@ -176,7 +171,7 @@ impl Session {
                 } else {
                     self.events
                         .push(Event {
-                                  time    : timestamp_opt,
+                                  time    : timestamp,
                                   note    : note_opt,
                                   ev_type : EventType::Pause,
                               });
@@ -184,22 +179,22 @@ impl Session {
                 }
             }
             EventType::Resume => {
-                if self.is_paused() {
+                if !self.is_paused() {
+                    println!("Currently not paused.");
+                    false
+                } else {
                     self.events
                         .push(Event {
-                                  time    : timestamp_opt,
+                                  time    : timestamp,
                                   note    : note_opt,
                                   ev_type : EventType::Resume,
                               });
                     true
-                } else {
-                    println!("Currently not paused.");
-                    false
                 }
             }
             EventType::Note => {
                 if self.is_paused() {
-                    /* Add note.text to previous pause (last of events vec) */
+                    /* Add note to previous pause (last of events vec) */
                     /* If self.is_paused(), then self.len() is always at least 1 */
                     let len = self.events.len();
                     let pause = &mut self.events[len - 1];
@@ -215,14 +210,14 @@ impl Session {
                 } else {
                     self.events
                         .push(Event {
-                                  time    : timestamp_opt,
+                                  time    : timestamp,
                                   note    : note_opt,
                                   ev_type : EventType::Note,
                               })
                 };
                 true
             }
-            /* For now, allow commit adding only in 'real time' */
+            /* Commit adding possible only in present */
             EventType::Commit { hash } => {
                 if self.is_paused() {
                     self.push_event(None, None, EventType::Resume);
@@ -274,19 +269,18 @@ r#"Session running since {}.
             sec_to_hms_string(get_seconds() - self.start)).unwrap();
         if self.is_paused() {
             write!(&mut status,
-r#"Session is paused since {}.
+r#"    Paused since {}.
 "#,
     sec_to_hms_string(get_seconds() - self.events[self.events.len() - 1]
                       .time)).unwrap();
         } else {
-            let last = match self.events.len() {
-                0 => "No events in this session yet!\n".to_string(),
-                n => format!("Last event: {:?}, {} ago.\n",
+            match self.events.len() {
+                0 => write!(&mut status, "    No events in this session yet!\n").unwrap(),
+                n => write!(&mut status, "    Last event: {:?}, {} ago.\n").unwrap(),
                              self.events[n - 1].ev_type,
                              sec_to_hms_string(
                                  get_seconds() - self.events[n - 1].time))
-                };
-            write!(&mut status, "{}", last).unwrap();
+            }
         }
         match self.branches.len() {
             0 => {},
@@ -313,7 +307,7 @@ pub struct Timesheet {
     sessions         : Vec<Session>,
 }
 
-impl Timesheet {
+impl Timesheet { // TODO: investigate if i can just write_files before the end of main()
     /** Initializes the .trk/timesheet.json file which holds
      * the serialized timesheet
      * Returns Some(newTimesheet) if operation succeeded */
@@ -322,47 +316,41 @@ impl Timesheet {
         if Timesheet::is_init() {
             println!("Timesheet is already initialized!");
             None
-        } else {
-            /* File does not exist, initialize */
-            let git_author_name = &git_author().unwrap_or("".to_string());
-            let author_name = match author_name {
-                Some(name) => name,
-                None => {
-                    if git_author_name == "" {
-                        println!("Empty name not permitted.
-    Please run with 'trk init <name>'");
-                        process::exit(0);
-                    }
-                    git_author_name
+        }
+
+        /* File does not exist, initialize */
+        let git_author_name = &git_author().unwrap_or("".to_string());
+        let author_name = match author_name {
+            Some(name) => name,
+            None => {
+                match git_author() {
+                    Some(git_name) => git_name,
+                    None => {
+                            println!("Empty name not permitted.
+Please run with 'trk init <name>'");
+                            process::exit(0);
+                    }
                 }
-            };
-            let now = get_seconds();
-            let sheet = Timesheet {
-                start        : now,
-                end          : now + 1,
-                user         : author_name.to_string(),
-                show_commits : true,
-                sessions     : Vec::<Session>::new(),
-            };
-            if sheet.write_files() {
-                Some(sheet)
-            } else {
-                None
             }
+        };
+        let now = get_seconds();
+        let sheet = Timesheet {
+            start        : now,
+            end          : now + 1,
+            user         : author_name.to_string(),
+            show_commits : true,
+            sessions     : Vec::<Session>::new(),
+        };
+        if sheet.write_files() {
+            Some(sheet)
+        } else {
+            None // TODO: error message?
         }
     }
 
     fn is_init() -> bool {
-        if Path::new("./.trk/timesheet.json").exists() {
-            match Timesheet::load_from_file() {
-                Some(..) => true,
-                /* Else, loading failed */
-                None => false,
-            }
-        } else {
-            /* File doesn't even exist */
-            false
-        }
+        Path::new("./.trk/timesheet.json").exists() &&
+        Timesheet::load_from_file().is_some()
     }
 
     pub fn new_session(&mut self, timestamp: Option<u64>) -> bool {
@@ -380,13 +368,13 @@ impl Timesheet {
         if possible {
             match timestamp {
                 Some(timestamp) => {
-                    let timestamp_ok =
+                    let valid_ts =
                         match self.get_last_session() {
                             None => timestamp > self.start,
                             Some(last_session) =>
                                 timestamp > last_session.end,
                     };
-                    if timestamp_ok {
+                    if valid_ts {
                         self.sessions
                             .push(Session::new(Some(timestamp)));
                     } else {
@@ -398,7 +386,6 @@ impl Timesheet {
                     self.sessions.push(Session::new(None));
                 }
             };
-
             self.write_files();
         }
         possible
@@ -409,26 +396,12 @@ impl Timesheet {
             Some(session) => {
                 // TODO: should it be possible to end a session multiple times?
                 // Each time sets the end date later...
-                session.update_end();
+                session.update_end(); // TODO This is always problematic - rethink.
                 session.finalize(timestamp);
             }
             None => println!("No session to finalize."),
         }
         self.write_files();
-    }
-
-    fn get_last_session(&self) -> Option<&Session> {
-        match self.sessions.len() {
-            0 => None,
-            n => Some(&self.sessions[n - 1]),
-        }
-    }
-
-    fn get_last_session_mut(&mut self) -> Option<&mut Session> {
-        match self.sessions.len() {
-            0 => None,
-            n => Some(&mut self.sessions[n - 1]),
-        }
     }
 
     pub fn pause(&mut self, timestamp_opt: Option<u64>, note_opt: Option<String>) {
@@ -461,7 +434,7 @@ impl Timesheet {
         self.write_files();
     }
 
-    pub fn commit(&mut self, hash: String) {
+    pub fn add_commit(&mut self, hash: String) {
         let new_needed = match self.get_last_session() {
             Some(session) => !session.is_running(),
             None => true,
@@ -484,7 +457,7 @@ impl Timesheet {
         self.write_files();
     }
 
-    pub fn branch(&mut self, name: String) {
+    pub fn add_branch(&mut self, name: String) {
         match self.get_last_session_mut() {
             Some(session) => {
                 session.add_branch(name);
@@ -492,6 +465,20 @@ impl Timesheet {
             None => {},
         }
         self.write_files();
+    }
+
+    fn get_last_session(&self) -> Option<&Session> {
+        match self.sessions.len() {
+            0 => None,
+            n => Some(&self.sessions[n - 1]),
+        }
+    }
+
+    fn get_last_session_mut(&mut self) -> Option<&mut Session> {
+        match self.sessions.len() {
+            0 => None,
+            n => Some(&mut self.sessions[n - 1]),
+        }
     }
 
     pub fn write_to_html(&self) -> bool {
@@ -532,6 +519,13 @@ impl Timesheet {
             Ok(mut file) => {
                 match self.get_last_session() {
                     Some(session) => {
+                        let stylesheets = match self.show_commits {
+                            true => r#"<link rel="stylesheet" type="text/css" href="style.css">
+"#.to_string(),
+                            false => r#"<link rel="stylesheet" type="text/css" href="style.css">
+<link rel="stylesheet" type="text/css" href="no_commit.css">
+"#.to_string()};
+
                         let html = format!(
 r#"<!DOCTYPE html>
 <html>
@@ -543,6 +537,7 @@ r#"<!DOCTYPE html>
 {}
 </body>
 </html>"#,
+            stylesheets,
             "Session",
             "Rafael Bachmann",
             session.to_html());
