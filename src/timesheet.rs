@@ -55,26 +55,17 @@ struct Session {
 }
 
 impl Session {
-    fn new(timestamp: Option<u64>) -> Session {
-        match timestamp {
-            Some(timestamp) =>
-                Session {
-                    start    : timestamp,
-                    end      : timestamp + 1,
-                    running  : true,
-                    branches : HashSet::<String>::new(),
-                    events   : Vec::<Event>::new(),
-                },
-            None => {
-                let now = get_seconds();
-                Session {
-                    start    : now,
-                    end      : now + 1,
-                    running  : true,
-                    branches : HashSet::<String>::new(),
-                    events   : Vec::<Event>::new(),
-                }
-            }
+    fn new(timestamp_opt: Option<u64>) -> Session {
+        let timestamp = match timestamp_opt {
+            Some(timestamp) => timestamp,
+            None => get_seconds(),
+        }
+        Session {
+            start    : timestamp,
+            end      : timestamp + 1,
+            running  : true,
+            branches : HashSet::<String>::new(),
+            events   : Vec::<Event>::new(),
         }
     }
 
