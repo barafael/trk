@@ -59,7 +59,7 @@ impl Session {
         let timestamp = match timestamp_opt {
             Some(timestamp) => timestamp,
             None => get_seconds(),
-        }
+        };
         Session {
             start    : timestamp,
             end      : timestamp + 1,
@@ -89,8 +89,7 @@ impl Session {
         self.end = match self.events.len() {
             0 => self.end,
             n => {
-                let event = &self.events[n - 1];
-                event.time + 1
+                &self.events[n - 1].time + 1
             }
         }
     }
@@ -99,14 +98,14 @@ impl Session {
         let timestamp = match timestamp {
             None => get_seconds(),
             Some(timestamp) => {
-                let ts_ok = match self.events.len() {
+                let valid_ts = match self.events.len() {
                     0 => timestamp > self.start,
                     n => {
-                        let last = &self.events[n - 1];
-                        timestamp > last.time
+                        let last_ev = &self.events[n - 1];
+                        timestamp > last_ev.time
                     }
                 };
-                if ts_ok {
+                if valid_ts {
                     timestamp
                 } else {
                     println!("That is not a valid timestamp!");
@@ -133,10 +132,12 @@ impl Session {
             println!("Already finalized, cannot push event.");
             return false;
         }
+
         let timestamp = match timestamp_opt {
             None => {
-                self.end = get_seconds();
-                get_seconds()
+                let now = get_seconds();
+                self.end = now;
+                now
             }
             Some(timestamp) => {
                 let valid_ts = match self.events.len() {
@@ -267,10 +268,10 @@ r#"    Paused since {}.
         } else {
             match self.events.len() {
                 0 => write!(&mut status, "    No events in this session yet!\n").unwrap(),
-                n => write!(&mut status, "    Last event: {:?}, {} ago.\n").unwrap(),
-                             self.events[n - 1].ev_type,
+                n => write!(&mut status, "    Last event: {:?}, {} ago.\n",
+                             &self.events[n - 1].ev_type,
                              sec_to_hms_string(
-                                 get_seconds() - self.events[n - 1].time))
+                                 get_seconds() - self.events[n - 1].time)).unwrap(),
             }
         }
         match self.branches.len() {
@@ -317,10 +318,10 @@ impl Timesheet { // TODO: investigate if i can just write_files before the end o
                 match git_author() {
                     Some(git_name) => git_name,
                     None => {
-                            println!("Empty name not permitted.
+                            println!("Empty name not permitted.
 Please run with 'trk init <name>'");
-                            process::exit(0);
-                    }
+                            process::exit(0);
+                    }
                 }
             }
         };
@@ -340,8 +341,8 @@ Please run with 'trk init <name>'");
     }
 
     fn is_init() -> bool {
-        Path::new("./.trk/timesheet.json").exists() &&
-        Timesheet::load_from_file().is_some()
+        Path::new("./.trk/timesheet.json").exists() &&
+        Timesheet::load_from_file().is_some()
     }
 
     pub fn new_session(&mut self, timestamp: Option<u64>) -> bool {
@@ -510,10 +511,10 @@ Please run with 'trk init <name>'");
             Ok(mut file) => {
                 match self.get_last_session() {
                     Some(session) => {
-                        let stylesheets = match self.show_commits {
-                            true => r#"<link rel="stylesheet" type="text/css" href="style.css">
+                        let stylesheets = match self.show_commits {
+                            true => r#"<link rel="stylesheet" type="text/css" href="style.css">
 "#.to_string(),
-                            false => r#"<link rel="stylesheet" type="text/css" href="style.css">
+                            false => r#"<link rel="stylesheet" type="text/css" href="style.css">
 <link rel="stylesheet" type="text/css" href="no_commit.css">
 "#.to_string()};
 
@@ -521,7 +522,7 @@ Please run with 'trk init <name>'");
 r#"<!DOCTYPE html>
 <html>
 <head>
-  <link rel="stylesheet" type="text/css" href="style.css">
+  {}
   <title>{} for {}</title>
 </head>
 <body>

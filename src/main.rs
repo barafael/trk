@@ -98,6 +98,12 @@ fn main() {
                     (author: "mediumendian@gmail.com")
                     (@arg on_off: +required "on or off")
                     )
+                 (@subcommand repo_url =>
+                    (about: "Set git repo url to use for turning commit hashes to links")
+                    (version: "0.1")
+                    (author: "mediumendian@gmail.com")
+                    (@arg on_off: +required "url")
+                    )
             )
             (@subcommand status =>
                 (about: "Prints the current WIP for session or sheet")
@@ -249,14 +255,14 @@ fn main() {
                         _ => unreachable!()
                     }
                 }
-                ("set_repo", Some(arg)) => {
-                    match arg.value_of("repo_url") {
-                        Some(repo_url) => sheet.set_repo_url(repo_url.to_string()),
-                        Some(text) => println!("What do you mean by {}?", text),
-                        _ => unreachable!(),
-                    }
-                }
-                _ => println!("What do you mean by {:?}?"),
+                ("repo_url", Some(arg)) => {
+                    match arg.value_of("repo_url") {
+                        Some(repo_url) => sheet.set_repo_url(repo_url.to_string()),
+                        Some(text) => println!("What do you mean by {}?", text),
+                        _ => unreachable!(),
+                    }
+                }
+                (text, Some(arg)) => println!("What do you mean by {}?", text),
             }
 
         }
@@ -281,7 +287,7 @@ fn parse_to_seconds(timestr: &str) -> Option<u64> {
         Done(_, out) => Some(out.num_seconds() as u64),
         _ => {
             println!("Error while parsing!");
-            None,
+            None
         }
     }
 }
