@@ -1,3 +1,6 @@
+/* For rustfmt skipping */
+#![feature(custom_attribute)]
+
 /* Command Line Argument Parser */
 #[macro_use]
 extern crate clap;
@@ -112,7 +115,8 @@ fn main() {
                 (@arg sheet_or_session: +required "session or sheet")
                 )
             (@subcommand report =>
-                (about: "Generate html report for current session or entire sheet and save it to {timesheet|session}.html")
+                (about:
+"Generate html report for current session or entire sheet and save it to {timesheet|session}.html")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
                 (@arg sheet_or_session: +required "session or sheet")
@@ -169,7 +173,7 @@ fn main() {
        arguments.subcommand_matches("branch").is_some() {
         match sheet_opt {
             Some(..) => {}
-            None =>  process::exit(0),
+            None => process::exit(0),
         }
     }
 
@@ -230,41 +234,42 @@ fn main() {
                     println!("What do you mean by {}? Should be either 'sheet' or 'session'.",
                              text)
                 }
-                _ => unreachable!()
+                _ => unreachable!(),
             }
         }
         ("report", Some(arg)) => {
             match arg.value_of("sheet_or_session") {
                 Some("session") => sheet.report_last_session(),
                 Some("sheet") => sheet.report_sheet(),
-                Some(text) => 
+                Some(text) => {
                     println!("What do you mean by {}? Should be either 'sheet' or 'session'.",
-                             text),
-                _ => unreachable!()
+                             text)
+                }
+                _ => unreachable!(),
             }
         }
         ("set", Some(sub_arg)) => {
             match sub_arg.subcommand() {
                 ("show_git_info", Some(arg)) => {
                     match arg.value_of("on_off") {
-                        Some("on")   => sheet.toggle_show_git_info(true),
-                        Some("off")  => sheet.toggle_show_git_info(false),
-                        Some(text) => 
+                        Some("on") => sheet.toggle_show_git_info(true),
+                        Some("off") => sheet.toggle_show_git_info(false),
+                        Some(text) => {
                             println!("What do you mean by {}? Should be either 'on' or 'off'.",
-                                text),
-                        _ => unreachable!()
+                                     text)
+                        }
+                        _ => unreachable!(),
                     }
                 }
                 ("repo_url", Some(arg)) => {
                     match arg.value_of("repo_url") {
                         Some(repo_url) => sheet.set_repo_url(repo_url.to_string()),
-			None => println!("Could not parse argument of trk set repo_url."),
+                        None => println!("Could not parse argument of trk set repo_url."),
                     }
                 }
                 (text, Some(arg)) => println!("What do you mean by {} {:?}?", text, arg),
                 _ => println!("Could not parse argument of trk set."),
             }
-
         }
         _ => unreachable!(),
     }
@@ -285,8 +290,6 @@ named!(duration(&[u8]) -> Duration,
 fn parse_to_seconds(timestr: &str) -> Option<u64> {
     match duration(timestr.as_bytes()) {
         Done(_, out) => Some(out.num_seconds() as u64),
-        _ => {
-            None
-        }
+        _ => None,
     }
 }

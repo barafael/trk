@@ -88,9 +88,7 @@ impl Session {
     fn update_end(&mut self) {
         self.end = match self.events.len() {
             0 => self.end,
-            n => {
-                &self.events[n - 1].time + 1
-            }
+            n => &self.events[n - 1].time + 1,
         }
     }
 
@@ -126,7 +124,7 @@ impl Session {
                   timestamp_opt : Option<u64>,
                   note_opt      : Option<String>,
                   type_of_event : EventType)
-            -> bool {
+                  -> bool {
         /* Cannot push if session is already finalized. */
         if !self.is_running() {
             println!("Already finalized, cannot push event.");
@@ -256,34 +254,36 @@ impl Session {
     fn status(&self) -> String {
         let mut status = String::new();
         write!(&mut status,
-r#"Session running since {}.
+               r#"Session running since {}.
 "#,
-            sec_to_hms_string(get_seconds() - self.start)).unwrap();
+               sec_to_hms_string(get_seconds() - self.start))
+                .unwrap();
         if self.is_paused() {
             write!(&mut status,
-r#"    Paused since {}.
+                   r#"    Paused since {}.
 "#,
-    sec_to_hms_string(get_seconds() - self.events[self.events.len() - 1]
-                      .time)).unwrap();
+                   sec_to_hms_string(get_seconds() - self.events[self.events.len() - 1].time))
+                    .unwrap();
         } else {
             match self.events.len() {
                 0 => write!(&mut status, "    No events in this session yet!\n").unwrap(),
-                n => write!(&mut status, "    Last event: {:?}, {} ago.\n",
-                             &self.events[n - 1].ev_type,
-                             sec_to_hms_string(
-                                 get_seconds() - self.events[n - 1].time)).unwrap(),
+                n => {
+                    write!(&mut status,
+                           "    Last event: {:?}, {} ago.\n",
+                           &self.events[n - 1].ev_type,
+                           sec_to_hms_string(get_seconds() - self.events[n - 1].time))
+                            .unwrap()
+                }
             }
         }
         match self.branches.len() {
-            0 => {},
+            0 => {}
             n => {
                 let mut branch_str = String::new();
                 for branch in &self.branches {
-                    write!(&mut branch_str, "{} ", branch)
-                        .unwrap();
+                    write!(&mut branch_str, "{} ", branch).unwrap();
                 }
-                write!(&mut status, "Worked on {} branches: {}",
-                       n, branch_str).unwrap();
+                write!(&mut status, "Worked on {} branches: {}", n, branch_str).unwrap();
             }
         }
         status
@@ -300,7 +300,8 @@ pub struct Timesheet {
     sessions         : Vec<Session>,
 }
 
-impl Timesheet { // TODO: check if i can just write_files before the end of main()
+impl Timesheet {
+    // TODO: check if i can just write_files before the end of main()
     /** Initializes the .trk/timesheet.json file which holds
      * the serialized timesheet
      * Returns Some(newTimesheet) if operation succeeded */
@@ -319,9 +320,9 @@ impl Timesheet { // TODO: check if i can just write_files before the end of main
                 match git_author_name {
                     Some(ref git_name) => git_name,
                     None => {
-                            println!("Empty name not permitted.
+                        println!("Empty name not permitted.
 Please run with 'trk init <name>'");
-                            process::exit(0);
+                        process::exit(0);
                     }
                 }
             }
@@ -343,8 +344,7 @@ Please run with 'trk init <name>'");
     }
 
     fn is_init() -> bool {
-        Path::new("./.trk/timesheet.json").exists() &&
-        Timesheet::load_from_file().is_some()
+        Path::new("./.trk/timesheet.json").exists() && Timesheet::load_from_file().is_some()
     }
 
     pub fn new_session(&mut self, timestamp: Option<u64>) -> bool {
@@ -362,15 +362,12 @@ Please run with 'trk init <name>'");
         if possible {
             match timestamp {
                 Some(timestamp) => {
-                    let valid_ts =
-                        match self.get_last_session() {
-                            None => timestamp > self.start,
-                            Some(last_session) =>
-                                timestamp > last_session.end,
+                    let valid_ts = match self.get_last_session() {
+                        None => timestamp > self.start,
+                        Some(last_session) => timestamp > last_session.end,
                     };
                     if valid_ts {
-                        self.sessions
-                            .push(Session::new(Some(timestamp)));
+                        self.sessions.push(Session::new(Some(timestamp)));
                     } else {
                         println!("That timestamp is invalid.");
                         process::exit(0);
@@ -439,12 +436,8 @@ Please run with 'trk init <name>'");
         }
         match self.get_last_session_mut() {
             Some(session) => {
-                let message = git_commit_message(&hash)
-                    .unwrap_or(String::new());
-                session.push_event(
-                    None,
-                    Some(message),
-                    EventType::Commit { hash });
+                let message = git_commit_message(&hash).unwrap_or(String::new());
+                session.push_event(None, Some(message), EventType::Commit { hash });
             }
             None => println!("No session to add commit to."),
         }
@@ -456,7 +449,7 @@ Please run with 'trk init <name>'");
             Some(session) => {
                 session.add_branch(name);
             }
-            None => {},
+            None => {}
         }
         self.write_files();
     }
@@ -514,14 +507,20 @@ Please run with 'trk init <name>'");
                 match self.get_last_session() {
                     Some(session) => {
                         let stylesheets = match self.show_commits {
-                            true => r#"<link rel="stylesheet" type="text/css" href="style.css">
-"#.to_string(),
-                            false => r#"<link rel="stylesheet" type="text/css" href="style.css">
+                            true => {
+                                r#"<link rel="stylesheet" type="text/css" href="style.css">
+"#
+                                        .to_string()
+                            }
+                            false => {
+                                r#"<link rel="stylesheet" type="text/css" href="style.css">
 <link rel="stylesheet" type="text/css" href="no_commit.css">
-"#.to_string()};
+"#
+                                        .to_string()
+                            }
+                        };
 
-                        let html = format!(
-r#"<!DOCTYPE html>
+                        let html = format!(r#"<!DOCTYPE html>
 <html>
 <head>
   {}
@@ -531,10 +530,10 @@ r#"<!DOCTYPE html>
 {}
 </body>
 </html>"#,
-            stylesheets,
-            "Session",
-            "Rafael Bachmann",
-            session.to_html());
+                                           stylesheets,
+                                           "Session",
+                                           "Rafael Bachmann",
+                                           session.to_html());
                         file.write_all(html.as_bytes()).unwrap();
                         format_file("session.html");
                         /* Save was successful */
@@ -574,15 +573,13 @@ r#"<!DOCTYPE html>
             Ok(mut file) => {
                 /* Convert the sheet to a JSON string. */
                 let serialized =
-                    serde_json::to_string(&self)
-                        .expect("Could not write serialized time sheet.");
+                    serde_json::to_string(&self).expect("Could not write serialized time sheet.");
                 file.write_all(serialized.as_bytes()).unwrap();
                 /* Save was successful */
                 true
             }
             Err(why) => {
-                println!("Could not open timesheet.json file: {}",
-                         why.description());
+                println!("Could not open timesheet.json file: {}", why.description());
                 false
             }
         }
@@ -606,8 +603,7 @@ r#"<!DOCTYPE html>
             Ok(mut file) => {
                 let mut serialized = String::new();
                 match file.read_to_string(&mut serialized) {
-                    Ok(..) => serde_json::from_str(&serialized)
-                        .unwrap_or(None),
+                    Ok(..) => serde_json::from_str(&serialized).unwrap_or(None),
                     Err(..) => {
                         println!("IO error while reading the timesheet file.");
                         process::exit(0);
@@ -628,8 +624,7 @@ r#"<!DOCTYPE html>
         if path.exists() {
             match fs::remove_file(&path) {
                 Ok(..) => {}
-                Err(why) => println!("Could not remove sessions file: {}",
-                                     why.description()),
+                Err(why) => println!("Could not remove sessions file: {}", why.description()),
             }
         }
         match name {
@@ -645,21 +640,25 @@ r#"<!DOCTYPE html>
 
     pub fn timesheet_status(&self) -> String {
         let mut status = String::new();
-        write!(&mut status, "Sheet running for {}\n",
-              sec_to_hms_string(get_seconds()
-                                - self.start)).unwrap();
+        write!(&mut status,
+               "Sheet running for {}\n",
+               sec_to_hms_string(get_seconds() - self.start))
+                .unwrap();
         match self.sessions.len() {
             0 => write!(&mut status, "No sessions yet.\n").unwrap(),
-            n => write!(&mut status, "{} session(s) so far.\nLast session:\n{}",
-                        n,
-                        self.sessions[n - 1].status()).unwrap(),
+            n => {
+                write!(&mut status,
+                       "{} session(s) so far.\nLast session:\n{}",
+                       n,
+                       self.sessions[n - 1].status())
+                        .unwrap()
+            }
         };
         status
     }
 
     pub fn last_session_status(&self) -> String {
-        let status = self.get_last_session()
-            .map(|session| session.status());
+        let status = self.get_last_session().map(|session| session.status());
         match status {
             None => "No session yet.".to_string(),
             Some(status) => status,
@@ -726,27 +725,24 @@ impl HasHTML for Event {
             EventType::Pause => {
                 match self.note {
                     Some(ref info) => {
-                        format!(
-r#"<div class="entry pause">{}: Started a pause
+                        format!(r#"<div class="entry pause">{}: Started a pause
     <p class="mininote">{}</p>
 </div>"#,
-            ts_to_date(self.time),
-            info.clone())
+                                ts_to_date(self.time),
+                                info.clone())
                     }
                     None => {
-                        format!(
-r#"<div class="entry pause">{}: Started a pause
+                        format!(r#"<div class="entry pause">{}: Started a pause
 </div>"#,
-            ts_to_date(self.time))
+                                ts_to_date(self.time))
                     }
                 }
             }
             EventType::Resume => {
-                format!(
-r#"<div class="entry resume">{}: Resumed work
+                format!(r#"<div class="entry resume">{}: Resumed work
 <hr>
 </div>"#,
-            ts_to_date(self.time))
+                        ts_to_date(self.time))
             }
             /* An EventType::Note note is a Some because it's
              * 'constructor' function takes a String
@@ -755,13 +751,12 @@ r#"<div class="entry resume">{}: Resumed work
             EventType::Note => {
                 match self.note {
                     Some(ref text) => {
-                        format!(
-r#"<div class="entry note">{}: Note: {
+                        format!(r#"<div class="entry note">{}: Note: {
 }
 <hr>
 </div>"#,
-            ts_to_date(self.time),
-            text)
+                                ts_to_date(self.time),
+                                text)
                     }
                     None => unreachable!(),
                 }
@@ -772,14 +767,15 @@ r#"<div class="entry note">{}: Note: {
              */
             EventType::Commit { ref hash } => {
                 match self.note {
-                    Some(ref text) => format!(
-r#"<div class="entry commit">{}: Commit id: {}
+                    Some(ref text) => {
+                        format!(r#"<div class="entry commit">{}: Commit id: {}
     <p class="mininote">message: {}</p>
   <hr>
 </div>"#,
-            ts_to_date(self.time),
-            hash,
-            text),
+                                ts_to_date(self.time),
+                                hash,
+                                text)
+                    }
                     None => unreachable!(),
                 }
             }
@@ -789,44 +785,40 @@ r#"<div class="entry commit">{}: Commit id: {}
 
 impl HasHTML for Session {
     fn to_html(&self) -> String {
-        let mut html = format!(
-r#"<section class="session">
+        let mut html = format!(r#"<section class="session">
     <h1 class="sessionheader">Session on {}</h1>"#,
                                ts_to_date(self.start));
 
         for event in &self.events {
-            write!(&mut html, "{}", event.to_html()
-                   ).unwrap();
+            write!(&mut html, "{}", event.to_html()).unwrap();
         }
 
         write!(&mut html,
-r#"<h2 class="sessionfooter">Ended on {}</h2>"#,
-           ts_to_date(self.end)
-        ).unwrap();
+               r#"<h2 class="sessionfooter">Ended on {}</h2>"#,
+               ts_to_date(self.end))
+                .unwrap();
 
         let mut branch_str = String::new();
         match self.branches.len() {
-            0 => {},
+            0 => {}
             n => {
-                write!(&mut branch_str,
-                       "Worked on {} branches: ", n).unwrap();
+                write!(&mut branch_str, "Worked on {} branches: ", n).unwrap();
                 for branch in &self.branches {
-                    write!(&mut branch_str, "{} ", branch)
-                        .unwrap();
+                    write!(&mut branch_str, "{} ", branch).unwrap();
                 }
             }
         };
 
         write!(&mut html,
-r#"<section class="summary">
+               r#"<section class="summary">
     <p>{}</p>
     <p>Worked for {}</p>
     <p>Paused for {}</p>
 </div></section>"#,
-            branch_str,
-            sec_to_hms_string(self.working_time()),
-            sec_to_hms_string(self.pause_time())
-        ).unwrap();
+               branch_str,
+               sec_to_hms_string(self.working_time()),
+               sec_to_hms_string(self.pause_time()))
+                .unwrap();
 
         write!(&mut html, "</section>").unwrap();
         html
@@ -837,22 +829,25 @@ impl HasHTML for Timesheet {
     fn to_html(&self) -> String {
         let mut sessions_html = String::new();
         for session in &self.sessions {
-            write!(&mut sessions_html, "{}<hr>", session.to_html()
-                   ).unwrap();
+            write!(&mut sessions_html, "{}<hr>", session.to_html()).unwrap();
         }
 
         let stylesheets = match self.show_commits {
-            true  => r#"<link rel="stylesheet" type="text/css" href="style.css">
-"#.to_string(),
-            false => 
-r#"
+            true => {
+                r#"<link rel="stylesheet" type="text/css" href="style.css">
+"#
+                        .to_string()
+            }
+            false => {
+                r#"
 <link rel="stylesheet" type="text/css" href="style.css">
 <link rel="stylesheet" type="text/css" href="no_commit.css">
-"#.to_string()
+"#
+                        .to_string()
+            }
         };
 
-        let mut html = format!(
-r#"<!DOCTYPE html>
+        let mut html = format!(r#"<!DOCTYPE html>
 <html>
     <head>
         {}
@@ -860,19 +855,19 @@ r#"<!DOCTYPE html>
     </head>
     <body>
     {}"#,
-            stylesheets,
-            "Timesheet",
-            "Rafael Bachmann",
-            sessions_html);
+                               stylesheets,
+                               "Timesheet",
+                               "Rafael Bachmann",
+                               sessions_html);
 
         write!(&mut html,
-r#"<section class="summary">
+               r#"<section class="summary">
     <p>Worked for {}</p>
     <p>Paused for {}</p>
 </div></section>"#,
-           sec_to_hms_string(self.working_time()),
-           sec_to_hms_string(self.pause_time())
-        ).unwrap();
+               sec_to_hms_string(self.working_time()),
+               sec_to_hms_string(self.pause_time()))
+                .unwrap();
         write!(&mut html, "</body>\n</html>").unwrap();
         html
     }
@@ -894,7 +889,9 @@ fn git_author() -> Option<String> {
             let output = String::from_utf8_lossy(&output.stdout);
             /* Remove trailing newline character */
             let mut output = output.to_string();
-            output.pop().expect("Empty name in git config? Not even a newline?!?");
+            output
+                .pop()
+                .expect("Empty name in git config? Not even a newline?!?");
             Some(output)
         } else {
             let output = String::from_utf8_lossy(&output.stderr);
@@ -934,8 +931,8 @@ fn format_file(filename: &str) {
            .arg("-i")
            .arg("-m")
            .arg(filename)
-           .output() {}
-    else {
+           .output() {
+    } else {
         println!("tidy-html not found!");
     }
 }
@@ -948,14 +945,14 @@ pub fn ts_to_date(timestamp: u64) -> String {
 }
 
 pub fn sec_to_hms_string(seconds: u64) -> String {
-    let hours   = seconds / 3600;
+    let hours = seconds / 3600;
     let minutes = (seconds - hours * 3600) / 60;
     let seconds = seconds - minutes * 60 - hours * 3600;
     match (hours, minutes, seconds) {
-        (0, 0, 1)       => format!("1 second"),
-        (0, 0, s)       => format!("{} seconds", s),
-        (0, 1, _)       => format!("1 minute"),
-        (0, m, _)       => format!("{} minutes", m),
+        (0, 0, 1) => format!("1 second"),
+        (0, 0, s) => format!("{} seconds", s),
+        (0, 1, _) => format!("1 minute"),
+        (0, m, _) => format!("{} minutes", m),
         /* Range matching: slightly dubious feature here */
         (1, 0...4, _)   => format!("1 hour"),
         (h, 0...4, _)   => format!("{} hours", h),
