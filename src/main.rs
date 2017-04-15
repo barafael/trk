@@ -258,11 +258,11 @@ fn main() {
                 ("repo_url", Some(arg)) => {
                     match arg.value_of("repo_url") {
                         Some(repo_url) => sheet.set_repo_url(repo_url.to_string()),
-                        Some(text) => println!("What do you mean by {}?", text),
-                        _ => unreachable!(),
+			None => println!("Could not parse argument of trk set repo_url."),
                     }
                 }
-                (text, Some(arg)) => println!("What do you mean by {}?", text),
+                (text, Some(arg)) => println!("What do you mean by {} {:?}?", text, arg),
+                _ => println!("Could not parse argument of trk set."),
             }
 
         }
@@ -286,7 +286,6 @@ fn parse_to_seconds(timestr: &str) -> Option<u64> {
     match duration(timestr.as_bytes()) {
         Done(_, out) => Some(out.num_seconds() as u64),
         _ => {
-            println!("Error while parsing!");
             None
         }
     }

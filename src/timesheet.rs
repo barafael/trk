@@ -296,10 +296,11 @@ pub struct Timesheet {
     end              : u64,
     user             : String,
     pub show_commits : bool,
+    repo             : String,
     sessions         : Vec<Session>,
 }
 
-impl Timesheet { // TODO: investigate if i can just write_files before the end of main()
+impl Timesheet { // TODO: check if i can just write_files before the end of main()
     /** Initializes the .trk/timesheet.json file which holds
      * the serialized timesheet
      * Returns Some(newTimesheet) if operation succeeded */
@@ -307,16 +308,16 @@ impl Timesheet { // TODO: investigate if i can just write_files before the end o
         /* Check if file already exists (no init permitted) */
         if Timesheet::is_init() {
             println!("Timesheet is already initialized!");
-            None
+            return None;
         }
 
         /* File does not exist, initialize */
-        let git_author_name = &git_author().unwrap_or("".to_string());
+        let git_author_name = git_author();
         let author_name = match author_name {
             Some(name) => name,
             None => {
-                match git_author() {
-                    Some(git_name) => git_name,
+                match git_author_name {
+                    Some(ref git_name) => git_name,
                     None => {
                             println!("Empty name not permitted.
 Please run with 'trk init <name>'");
@@ -331,6 +332,7 @@ Please run with 'trk init <name>'");
             end          : now + 1,
             user         : author_name.to_string(),
             show_commits : true,
+            repo         : String::new(),
             sessions     : Vec::<Session>::new(),
         };
         if sheet.write_files() {
@@ -643,12 +645,12 @@ r#"<!DOCTYPE html>
 
     pub fn timesheet_status(&self) -> String {
         let mut status = String::new();
-        write!(&mut status, "Sheet started on {}\n",
+        write!(&mut status, "Sheet running for {}\n",
               sec_to_hms_string(get_seconds()
                                 - self.start)).unwrap();
         match self.sessions.len() {
             0 => write!(&mut status, "No sessions yet.\n").unwrap(),
-            n => write!(&mut status, "{} sessions so far.\nLast session:\n{}",
+            n => write!(&mut status, "{} session(s) so far.\nLast session:\n{}",
                         n,
                         self.sessions[n - 1].status()).unwrap(),
         };
@@ -682,14 +684,18 @@ r#"<!DOCTYPE html>
         let mut path_str = "file://".to_string();
         path_str.push_str(path.to_str().unwrap());
         Url::parse(&path_str).unwrap().open();
-   }
+    }
 
-   pub fn toggle_show_git_info(&mut self, setting: bool) {
-       self.show_commits = setting;
-       self.write_files();
-   }
+    pub fn toggle_show_git_info(&mut self, setting: bool) {
+        self.show_commits = setting;
+        self.write_files();
+    }
 
-   pub fn pause_time(&self) -> u64 {
+    pub fn set_repo_url(&mut self, repo: String) {
+        self.repo = repo;
+    }
+
+    pub fn pause_time(&self) -> u64 {
         let mut pause_time = 0;
         for session in &self.sessions {
             pause_time += session.pause_time();
@@ -722,7 +728,7 @@ impl HasHTML for Event {
                     Some(ref info) => {
                         format!(
 r#"<div class="entry pause">{}: Started a pause
-    <p class="pausenote">{}</p>
+    <p class="mininote">{}</p>
 </div>"#,
             ts_to_date(self.time),
             info.clone())
@@ -768,7 +774,7 @@ r#"<div class="entry note">{}: Note: {
                 match self.note {
                     Some(ref text) => format!(
 r#"<div class="entry commit">{}: Commit id: {}
-  <br>    message: {}
+    <p class="mininote">message: {}</p>
   <hr>
 </div>"#,
             ts_to_date(self.time),
