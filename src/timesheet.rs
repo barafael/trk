@@ -468,7 +468,7 @@ Please run with 'trk init <name>'");
         }
     }
 
-    pub fn write_to_html(&self) -> bool {
+    pub fn write_to_html(&self, ago: Option<u64>) -> bool {
         /* TODO: avoid time-of-check-to-time-of-use race risk */
         /* TODO: make all commands run regardless of where trk is executed
          * (and not just in root which is assumed here */
@@ -482,7 +482,7 @@ Please run with 'trk init <name>'");
 
         match file {
             Ok(mut file) => {
-                file.write_all(self.to_html().as_bytes()).unwrap();
+                file.write_all(self.to_html(ago).as_bytes()).unwrap();
                 format_file("timesheet.html");
                 /* Save was successful */
                 true
@@ -589,7 +589,7 @@ Please run with 'trk init <name>'");
         /* TODO: avoid time-of-check-to-time-of-use race risk */
         /* TODO: make all commands run regardless of where trk is executed
          * (and not just in root which is assumed here */
-        self.write_to_json() && self.write_to_html() && self.write_last_session_html()
+        self.write_to_json() && self.write_to_html(None) && self.write_last_session_html()
     }
 
     /** Return a Some(Timesheet) struct if a timesheet.json file
@@ -675,7 +675,8 @@ Please run with 'trk init <name>'");
         Url::parse(&path_str).unwrap().open();
     }
 
-    pub fn report_sheet(&self) {
+    pub fn report_sheet(&self, ago: Option<u64>) {
+        self.write_to_html(ago);
         // We assume that we are in a valid directory.
         let mut p = env::current_dir().unwrap();
         p.push("timesheet.html");
@@ -708,6 +709,59 @@ Please run with 'trk init <name>'");
             work_time += session.working_time();
         }
         work_time
+    }
+
+    fn to_html(&self, ago: Option<u64>) -> String {
+        let timestamp = match ago {
+            Some(ago) => get_seconds() - ago,
+            None      => self.start,
+        };
+        println!("timestamp in to_html(): {}", timestamp);
+        let mut sessions_html = String::new();
+        for session in &self.sessions {
+            if session.start > timestamp {
+		write!(&mut sessions_html, "{}<hr>", session.to_html()).unwrap();
+            }
+        }
+
+        let stylesheets = match self.show_commits {
+            true => {
+                r#"<link rel="stylesheet" type="text/css" href="style.css">
+"#
+                        .to_string()
+            }
+            false => {
+                r#"
+<link rel="stylesheet" type="text/css" href="style.css">
+<link rel="stylesheet" type="text/css" href="no_commit.css">
+"#
+                        .to_string()
+            }
+        };
+
+        let mut html = format!(r#"<!DOCTYPE html>
+<html>
+    <head>
+        {}
+        <title>{} for {}</title>
+    </head>
+    <body>
+    {}"#,
+                               stylesheets,
+                               "Timesheet",
+                               "Rafael Bachmann",
+                               sessions_html);
+
+        write!(&mut html,
+               r#"<section class="summary">
+    <p>Worked for {}</p>
+    <p>Paused for {}</p>
+</div></section>"#,
+               sec_to_hms_string(self.working_time()),
+               sec_to_hms_string(self.pause_time()))
+                .unwrap();
+        write!(&mut html, "</body>\n</html>").unwrap();
+        html
     }
 }
 
@@ -821,54 +875,6 @@ impl HasHTML for Session {
                 .unwrap();
 
         write!(&mut html, "</section>").unwrap();
-        html
-    }
-}
-
-impl HasHTML for Timesheet {
-    fn to_html(&self) -> String {
-        let mut sessions_html = String::new();
-        for session in &self.sessions {
-            write!(&mut sessions_html, "{}<hr>", session.to_html()).unwrap();
-        }
-
-        let stylesheets = match self.show_commits {
-            true => {
-                r#"<link rel="stylesheet" type="text/css" href="style.css">
-"#
-                        .to_string()
-            }
-            false => {
-                r#"
-<link rel="stylesheet" type="text/css" href="style.css">
-<link rel="stylesheet" type="text/css" href="no_commit.css">
-"#
-                        .to_string()
-            }
-        };
-
-        let mut html = format!(r#"<!DOCTYPE html>
-<html>
-    <head>
-        {}
-        <title>{} for {}</title>
-    </head>
-    <body>
-    {}"#,
-                               stylesheets,
-                               "Timesheet",
-                               "Rafael Bachmann",
-                               sessions_html);
-
-        write!(&mut html,
-               r#"<section class="summary">
-    <p>Worked for {}</p>
-    <p>Paused for {}</p>
-</div></section>"#,
-               sec_to_hms_string(self.working_time()),
-               sec_to_hms_string(self.pause_time()))
-                .unwrap();
-        write!(&mut html, "</body>\n</html>").unwrap();
         html
     }
 }

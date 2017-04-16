@@ -1,6 +1,3 @@
-/* For rustfmt skipping */
-#![feature(custom_attribute)]
-
 /* Command Line Argument Parser */
 #[macro_use]
 extern crate clap;
@@ -113,14 +110,15 @@ fn main() {
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
                 (@arg sheet_or_session: +required "session or sheet")
-                )
+            )
             (@subcommand report =>
                 (about:
 "Generate html report for current session or entire sheet and save it to {timesheet|session}.html")
                 (version: "0.1")
                 (author: "mediumendian@gmail.com")
                 (@arg sheet_or_session: +required "session or sheet")
-                )
+                (@arg ago: "How long the record should go back")
+	    )
             (@subcommand clear =>
                 (about: "Temporary: clears all sessions and updates all timestamps")
                 (version: "0.1")
@@ -240,7 +238,12 @@ fn main() {
         ("report", Some(arg)) => {
             match arg.value_of("sheet_or_session") {
                 Some("session") => sheet.report_last_session(),
-                Some("sheet") => sheet.report_sheet(),
+                Some("sheet") => {
+                    let timestamp_opt = arg.value_of("ago");
+                    let timestamp = timestamp_opt.map(|s| s.parse::<u64>().unwrap());
+                    println!("timestamp: {:?}", timestamp);
+                    sheet.report_sheet(timestamp);
+                }
                 Some(text) => {
                     println!("What do you mean by {}? Should be either 'sheet' or 'session'.",
                              text)
@@ -276,7 +279,7 @@ fn main() {
 }
 
 /* For parsing time in HH:MM format. */
-named!(duration(&[u8]) -> Duration,
+named!(duration_hhmm(&[u8]) -> Duration,
     do_parse!(
         hour: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
         tag!(":") >>
@@ -288,8 +291,9 @@ named!(duration(&[u8]) -> Duration,
 );
 
 fn parse_to_seconds(timestr: &str) -> Option<u64> {
-    match duration(timestr.as_bytes()) {
+    match duration_hhmm(timestr.as_bytes()) {
         Done(_, out) => Some(out.num_seconds() as u64),
         _ => None,
     }
 }
+
