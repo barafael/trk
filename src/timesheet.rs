@@ -713,10 +713,9 @@ Please run with 'trk init <name>'");
 
     fn to_html(&self, ago: Option<u64>) -> String {
         let timestamp = match ago {
-            Some(ago) => get_seconds() - ago,
+            Some(ago) => ago,
             None      => self.start,
         };
-        println!("timestamp in to_html(): {}", timestamp);
         let mut sessions_html = String::new();
         for session in &self.sessions {
             if session.start > timestamp {

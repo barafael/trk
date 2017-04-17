@@ -239,9 +239,8 @@ fn main() {
             match arg.value_of("sheet_or_session") {
                 Some("session") => sheet.report_last_session(),
                 Some("sheet") => {
-                    let timestamp_opt = arg.value_of("ago");
-                    let timestamp = timestamp_opt.map(|s| s.parse::<u64>().unwrap());
-                    println!("timestamp: {:?}", timestamp);
+                    let timestamp: Option<u64> = parse_to_seconds(arg.value_of("ago").unwrap_or(""))
+			.map(|ago| timesheet::get_seconds() - ago);
                     sheet.report_sheet(timestamp);
                 }
                 Some(text) => {
@@ -296,4 +295,3 @@ fn parse_to_seconds(timestr: &str) -> Option<u64> {
         _ => None,
     }
 }
-
