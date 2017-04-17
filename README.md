@@ -89,13 +89,21 @@ Which can be styled by style.css:
 
 ### Dependencies
 
-Soft dependencies are html-tidy and git, but trk works without them too. When you run without git (or rather without a name set in .gitconfig) you have to provide one like 'trk init <name>'.
+Soft dependencies are html-tidy and git, but trk works without them too. (At the moment trk complains a lot if html-tidy is installled. html-tidy is not necessary for the program to work correctly). When you run without git (or rather without a name set in .gitconfig) you have to provide one like 'trk init <name>'.
 
 ### TODO:
 * TODO: run 'make sync_hook' on init? Make dependency?
-* TODO: how to test all this automatically?
-* TODO: add a 'set' command, for example to set git_repo_url (in order to make the commit messages links to the repo)
-* TODO: Find a way to query time sheets from certain time periods (one week, since=date, or maybe place pins...)
+[x] TODO: add a 'set' command, for example to set git_repo_url (in order to make the commit messages links to the repo)
+[x] TODO: flush to html every load a
+nd just open browser on report.
+[x] TODO: Format output - leave out commits and branches, for example
+[x] TODO: improve status output (was just debug output)
+[x] TODO: better reporting if file is not present xor corrupt
+[x] TODO: add past event adding for begin and end
+[x] TODO: Find a way to query time sheets up to a point in the past
+[x] TODO: Open a new session if a commit or branch is pushed when no session is running. 
+[x] TODO: Convert unix timestamps to date strings (locale?)
+* TODO: support different natural language durations (one week, since=date, or maybe place pins...)
 * TODO/nicetohave: Run this on a server instead of the local machine. What happens to git commits and the like?
-* The session struct is a list of sequential events with timestamps. A session struct is identified by it's starting time (and maybe git author?).
-* The Timesheet struct is deserialized on every run, worked on, and then serialized again. It has a tohtml impl.
+[x] The session struct is a list of sequential events with timestamps. A session struct is identified by it's starting time (and maybe git author?).
+[x] The Timesheet struct is deserialized on every run, worked on, and then serialized again. It has a tohtml impl.
