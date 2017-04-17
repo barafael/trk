@@ -55,8 +55,8 @@ struct Session {
 }
 
 impl Session {
-    fn new(timestamp_opt: Option<u64>) -> Session {
-        let timestamp = match timestamp_opt {
+    fn new(timestamp: Option<u64>) -> Session {
+        let timestamp = match timestamp {
             Some(timestamp) => timestamp,
             None => get_seconds(),
         };
@@ -121,8 +121,8 @@ impl Session {
     }
 
     fn push_event(&mut self,
-                  timestamp_opt : Option<u64>,
-                  note_opt      : Option<String>,
+                  timestamp : Option<u64>,
+                  note      : Option<String>,
                   type_of_event : EventType)
                   -> bool {
         /* Cannot push if session is already finalized. */
@@ -131,7 +131,7 @@ impl Session {
             return false;
         }
 
-        let timestamp = match timestamp_opt {
+        let timestamp = match timestamp {
             None => {
                 let now = get_seconds();
                 self.end = now;
@@ -162,7 +162,7 @@ impl Session {
                     self.events
                         .push(Event {
                                   timestamp : timestamp,
-                                  note      : note_opt,
+                                  note      : note,
                                   ty      : EventType::Pause,
                               });
                     true
@@ -176,7 +176,7 @@ impl Session {
                     self.events
                         .push(Event {
                                   timestamp : timestamp,
-                                  note      : note_opt,
+                                  note      : note,
                                   ty        : EventType::Resume,
                               });
                     true
@@ -193,15 +193,15 @@ impl Session {
                             // TODO: handle long strings (also in other types)
                             // TODO: there must be another way other than <br>
                             already.push_str("<br>");
-                            already.push_str(&note_opt.unwrap());
+                            already.push_str(&note.unwrap());
                         }
-                        None => pause.note = note_opt,
+                        None => pause.note = note,
                     }
                 } else {
                     self.events
                         .push(Event {
                                   timestamp : timestamp,
-                                  note      : note_opt,
+                                  note      : note,
                                   ty        : EventType::Note,
                               })
                 };
@@ -213,13 +213,13 @@ impl Session {
                     self.push_event(None, None, EventType::Resume);
                 }
                 /* Commit message must be provided */
-                if note_opt.is_none() {
+                if note.is_none() {
                     println!("No commit message found for commit {}.", hash);
                 }
                 self.events
                     .push(Event {
                               timestamp : get_seconds(),
-                              note      : note_opt,
+                              note      : note,
                               ty        : EventType::Commit { hash },
                           });
                 true
@@ -395,30 +395,30 @@ Please run with 'trk init <name>'");
         self.write_files();
     }
 
-    pub fn pause(&mut self, timestamp_opt: Option<u64>, note_opt: Option<String>) {
+    pub fn pause(&mut self, timestamp: Option<u64>, note: Option<String>) {
         match self.get_last_session_mut() {
             Some(session) => {
-                session.push_event(timestamp_opt, note_opt, EventType::Pause);
+                session.push_event(timestamp, note, EventType::Pause);
             }
             None => println!("No session to pause."),
         }
         self.write_files();
     }
 
-    pub fn resume(&mut self, timestamp_opt: Option<u64>) {
+    pub fn resume(&mut self, timestamp: Option<u64>) {
         match self.get_last_session_mut() {
             Some(session) => {
-                session.push_event(timestamp_opt, None, EventType::Resume);
+                session.push_event(timestamp, None, EventType::Resume);
             }
             None => println!("No session to pause."),
         }
         self.write_files();
     }
 
-    pub fn note(&mut self, timestamp_opt: Option<u64>, note_text: String) {
+    pub fn note(&mut self, timestamp: Option<u64>, note_text: String) {
         match self.get_last_session_mut() {
             Some(session) => {
-                session.push_event(timestamp_opt, Some(note_text), EventType::Note);
+                session.push_event(timestamp, Some(note_text), EventType::Note);
             }
             None => println!("No session to add note to."),
         }

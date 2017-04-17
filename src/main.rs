@@ -131,11 +131,11 @@ fn main() {
     /* let config = matches.value_of("config").unwrap_or("default.conf");
     println!("[UNUSED] Value for config: {}", config); */
 
-    let sheet_opt: Option<timesheet::Timesheet> = timesheet::Timesheet::load_from_file();
+    let sheet: Option<timesheet::Timesheet> = timesheet::Timesheet::load_from_file();
 
     /* Special case for init because t_sheet can and should be None before initialisation */
     if let Some(command) = arguments.subcommand_matches("init") {
-        match sheet_opt {
+        match sheet {
             Some(..) => println!("Already initialised."),
             None => {
                 match timesheet::Timesheet::init(command.value_of("name")) {
@@ -149,7 +149,7 @@ fn main() {
 
     /* Special case for clear because t_sheet can be None when clearing (corrupt file) */
     if let Some(command) = arguments.subcommand_matches("clear") {
-        match sheet_opt {
+        match sheet {
             Some(..) => {
                 println!("Clearing timesheet.");
                 timesheet::Timesheet::clear();
@@ -169,14 +169,14 @@ fn main() {
      */
     if arguments.subcommand_matches("commit").is_some() ||
        arguments.subcommand_matches("branch").is_some() {
-        match sheet_opt {
+        match sheet {
             Some(..) => {}
             None => process::exit(0),
         }
     }
 
     /* Unwrap the timesheet and continue only if timesheet file exists */
-    let mut sheet = match sheet_opt {
+    let mut sheet = match sheet {
         Some(file) => file,
         None => {
             println!("No file! You might have to init first.");
