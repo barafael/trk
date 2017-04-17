@@ -94,6 +94,21 @@ Which can be styled by style.css:
 Soft dependencies are html-tidy and git, but `trk` works without them too. (At the moment `trk` complains a lot if html-tidy is installled even though html-tidy is not necessary for the program to work correctly). When you run without git (or rather without a name set in .gitconfig) you have to provide one like `trk init <name>`.
 
 ### TODO:
+- [] Rename ev_type to ty
+- [] naming improvements: is\_valid\_ts, timestamp, time
+- [] remove trailing \_opt from options which are de-opted anyway. Just rebind the names
+- [] Simplify operations on session vec
+- [] Simplify option handling with `if let`, `map`, `map_or`
+- [] Multiple imports
+- [] Move `extern crate`s to root and reorder `extern crate` and `use`'s
+- [] Split up into timesheet.rs into session.rs, timesheet.rs, traits.rs, and util.rs
+- [] Move HTML templating to own lib or better use a crate like Maud
+- [] Use Result instead of bools (with error enums?)
+- [] Consider using `format!` instead of `write!` with `String::new()`
+- [] Improve timestamp logic:
+- [] Clarify when ts + 1 is used (preferably improve logic so it becomes unnecessary)
+- [] Dedup checking logic for valid timestamp
+- [] Check output of `get_seconds()` anyway
 * TODO: run 'make sync_hook' on init? Make dependency?
 * TODO: support different natural language durations (one week, since=date, or maybe place pins...)
 * TODO/nicetohave: Run this on a server instead of the local machine.
