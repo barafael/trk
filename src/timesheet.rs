@@ -42,7 +42,7 @@ enum EventType {
 struct Event {
     time    : u64,
     note    : Option<String>,
-    ev_type : EventType
+    ty      : EventType
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -77,7 +77,7 @@ impl Session {
         match self.events.len() {
             0 => false,
             n => {
-                match self.events[n - 1].ev_type {
+                match self.events[n - 1].ty {
                     EventType::Pause => true,
                     _ => false,
                 }
@@ -163,7 +163,7 @@ impl Session {
                         .push(Event {
                                   time    : timestamp,
                                   note    : note_opt,
-                                  ev_type : EventType::Pause,
+                                  ty      : EventType::Pause,
                               });
                     true
                 }
@@ -177,7 +177,7 @@ impl Session {
                         .push(Event {
                                   time    : timestamp,
                                   note    : note_opt,
-                                  ev_type : EventType::Resume,
+                                  ty      : EventType::Resume,
                               });
                     true
                 }
@@ -202,7 +202,7 @@ impl Session {
                         .push(Event {
                                   time    : timestamp,
                                   note    : note_opt,
-                                  ev_type : EventType::Note,
+                                  ty      : EventType::Note,
                               })
                 };
                 true
@@ -220,7 +220,7 @@ impl Session {
                     .push(Event {
                               time    : get_seconds(),
                               note    : note_opt,
-                              ev_type : EventType::Commit { hash },
+                              ty      : EventType::Commit { hash },
                           });
                 true
             }
@@ -231,7 +231,7 @@ impl Session {
         let mut pause_time = 0;
         let mut last_pause_ts = 0;
         for event in &self.events {
-            match event.ev_type {
+            match event.ty {
                 EventType::Pause => last_pause_ts = event.time,
                 EventType::Resume => pause_time += event.time - last_pause_ts,
                 _ => {}
@@ -270,7 +270,7 @@ impl Session {
                 n => {
                     write!(&mut status,
                            "    Last event: {:?}, {} ago.\n",
-                           &self.events[n - 1].ev_type,
+                           &self.events[n - 1].ty,
                            sec_to_hms_string(get_seconds() - self.events[n - 1].time))
                             .unwrap()
                 }
@@ -776,7 +776,7 @@ trait HasHTML {
 
 impl HasHTML for Event {
     fn to_html(&self) -> String {
-        match self.ev_type {
+        match self.ty {
             EventType::Pause => {
                 match self.note {
                     Some(ref info) => {

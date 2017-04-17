@@ -94,7 +94,7 @@ Which can be styled by style.css:
 Soft dependencies are html-tidy and git, but `trk` works without them too. (At the moment `trk` complains a lot if html-tidy is installled even though html-tidy is not necessary for the program to work correctly). When you run without git (or rather without a name set in .gitconfig) you have to provide one like `trk init <name>`.
 
 ### TODO:
-- [] Rename ev_type to ty
+- [x] Rename ev_type to ty
 - [] naming improvements: is\_valid\_ts, timestamp, time
 - [] remove trailing \_opt from options which are de-opted anyway. Just rebind the names
 - [] Simplify operations on session vec
