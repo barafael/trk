@@ -95,7 +95,7 @@ Soft dependencies are html-tidy and git, but `trk` works without them too. (At t
 
 ### TODO:
 - [x] Rename ev_type to ty
-- [] naming improvements: is\_valid\_ts, timestamp, time
+- [x] naming improvements: is\_valid\_ts, timestamp, time
 - [] remove trailing \_opt from options which are de-opted anyway. Just rebind the names
 - [] Simplify operations on session vec
 - [] Simplify option handling with `if let`, `map`, `map_or`

@@ -40,9 +40,9 @@ enum EventType {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Event {
-    time    : u64,
-    note    : Option<String>,
-    ty      : EventType
+    timestamp : u64,
+    note      : Option<String>,
+    ty        : EventType
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -88,7 +88,7 @@ impl Session {
     fn update_end(&mut self) {
         self.end = match self.events.len() {
             0 => self.end,
-            n => &self.events[n - 1].time + 1,
+            n => &self.events[n - 1].timestamp + 1,
         }
     }
 
@@ -96,14 +96,14 @@ impl Session {
         let timestamp = match timestamp {
             None => get_seconds(),
             Some(timestamp) => {
-                let valid_ts = match self.events.len() {
+                let is_valid_ts = match self.events.len() {
                     0 => timestamp > self.start,
                     n => {
                         let last_ev = &self.events[n - 1];
-                        timestamp > last_ev.time
+                        timestamp > last_ev.timestamp
                     }
                 };
-                if valid_ts {
+                if is_valid_ts {
                     timestamp
                 } else {
                     println!("That is not a valid timestamp!");
@@ -138,11 +138,11 @@ impl Session {
                 now
             }
             Some(timestamp) => {
-                let valid_ts = match self.events.len() {
+                let is_valid_ts = match self.events.len() {
                     0 => timestamp > self.start,
-                    n => timestamp > self.events[n - 1].time,
+                    n => timestamp > self.events[n - 1].timestamp,
                 };
-                if valid_ts {
+                if is_valid_ts {
                     self.end = timestamp + 1;
                     timestamp
                 } else {
@@ -161,8 +161,8 @@ impl Session {
                 } else {
                     self.events
                         .push(Event {
-                                  time    : timestamp,
-                                  note    : note_opt,
+                                  timestamp : timestamp,
+                                  note      : note_opt,
                                   ty      : EventType::Pause,
                               });
                     true
@@ -175,9 +175,9 @@ impl Session {
                 } else {
                     self.events
                         .push(Event {
-                                  time    : timestamp,
-                                  note    : note_opt,
-                                  ty      : EventType::Resume,
+                                  timestamp : timestamp,
+                                  note      : note_opt,
+                                  ty        : EventType::Resume,
                               });
                     true
                 }
@@ -200,9 +200,9 @@ impl Session {
                 } else {
                     self.events
                         .push(Event {
-                                  time    : timestamp,
-                                  note    : note_opt,
-                                  ty      : EventType::Note,
+                                  timestamp : timestamp,
+                                  note      : note_opt,
+                                  ty        : EventType::Note,
                               })
                 };
                 true
@@ -218,9 +218,9 @@ impl Session {
                 }
                 self.events
                     .push(Event {
-                              time    : get_seconds(),
-                              note    : note_opt,
-                              ty      : EventType::Commit { hash },
+                              timestamp : get_seconds(),
+                              note      : note_opt,
+                              ty        : EventType::Commit { hash },
                           });
                 true
             }
@@ -232,8 +232,8 @@ impl Session {
         let mut last_pause_ts = 0;
         for event in &self.events {
             match event.ty {
-                EventType::Pause => last_pause_ts = event.time,
-                EventType::Resume => pause_time += event.time - last_pause_ts,
+                EventType::Pause => last_pause_ts = event.timestamp,
+                EventType::Resume => pause_time += event.timestamp - last_pause_ts,
                 _ => {}
             }
         }
@@ -262,7 +262,7 @@ impl Session {
             write!(&mut status,
                    r#"    Paused since {}.
 "#,
-                   sec_to_hms_string(get_seconds() - self.events[self.events.len() - 1].time))
+                   sec_to_hms_string(get_seconds() - self.events[self.events.len() - 1].timestamp))
                     .unwrap();
         } else {
             match self.events.len() {
@@ -271,7 +271,7 @@ impl Session {
                     write!(&mut status,
                            "    Last event: {:?}, {} ago.\n",
                            &self.events[n - 1].ty,
-                           sec_to_hms_string(get_seconds() - self.events[n - 1].time))
+                           sec_to_hms_string(get_seconds() - self.events[n - 1].timestamp))
                             .unwrap()
                 }
             }
@@ -362,11 +362,11 @@ Please run with 'trk init <name>'");
         if possible {
             match timestamp {
                 Some(timestamp) => {
-                    let valid_ts = match self.get_last_session() {
+                    let is_valid_ts = match self.get_last_session() {
                         None => timestamp > self.start,
                         Some(last_session) => timestamp > last_session.end,
                     };
-                    if valid_ts {
+                    if is_valid_ts {
                         self.sessions.push(Session::new(Some(timestamp)));
                     } else {
                         println!("That timestamp is invalid.");
@@ -783,13 +783,13 @@ impl HasHTML for Event {
                         format!(r#"<div class="entry pause">{}: Started a pause
     <p class="mininote">{}</p>
 </div>"#,
-                                ts_to_date(self.time),
+                                ts_to_date(self.timestamp),
                                 info.clone())
                     }
                     None => {
                         format!(r#"<div class="entry pause">{}: Started a pause
 </div>"#,
-                                ts_to_date(self.time))
+                                ts_to_date(self.timestamp))
                     }
                 }
             }
@@ -797,7 +797,7 @@ impl HasHTML for Event {
                 format!(r#"<div class="entry resume">{}: Resumed work
 <hr>
 </div>"#,
-                        ts_to_date(self.time))
+                        ts_to_date(self.timestamp))
             }
             /* An EventType::Note note is a Some because it's
              * 'constructor' function takes a String
@@ -810,7 +810,7 @@ impl HasHTML for Event {
 }
 <hr>
 </div>"#,
-                                ts_to_date(self.time),
+                                ts_to_date(self.timestamp),
                                 text)
                     }
                     None => unreachable!(),
@@ -827,7 +827,7 @@ impl HasHTML for Event {
     <p class="mininote">message: {}</p>
   <hr>
 </div>"#,
-                                ts_to_date(self.time),
+                                ts_to_date(self.timestamp),
                                 hash,
                                 text)
                     }
