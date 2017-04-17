@@ -1,25 +1,15 @@
 extern crate serde_json;
-extern crate url;
 
 use std::io::prelude::*;
-
 use std::time::{SystemTime, UNIX_EPOCH};
-
-use std::process;
-
-use std::env;
-
-use self::url::Url;
-
-extern crate url_open;
-use self::url_open::UrlOpen;
-
-use chrono::{Local, TimeZone};
-
-use std::fs;
+use std::{process, env};
 use std::path::Path;
 use std::error::Error;
-use std::fs::OpenOptions;
+use std::fs::{self, OpenOptions};
+
+use url::Url;
+use url_open::UrlOpen;
+use chrono::{Local, TimeZone};
 
 /* For branch name dedup */
 use std::collections::HashSet;

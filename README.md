@@ -99,8 +99,8 @@ Soft dependencies are html-tidy and git, but `trk` works without them too. (At t
 - [x] remove trailing \_opt from options which are de-opted anyway. Just rebind the names
 - [] Simplify operations on session vec
 - [] Simplify option handling with `if let`, `map`, `map_or`
-- [] Multiple imports
-- [] Move `extern crate`s to root and reorder `extern crate` and `use`'s
+- [x] Multiple imports
+- [x] Move `extern crate`s to root and reorder `extern crate` and `use`'s
 - [] Split up into timesheet.rs into session.rs, timesheet.rs, traits.rs, and util.rs
 - [] Move HTML templating to own lib or better use a crate like Maud
 - [] Use Result instead of bools (with error enums?)

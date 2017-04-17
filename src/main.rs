@@ -11,15 +11,17 @@ extern crate serde_derive;
 extern crate nom;
 use nom::IResult::Done;
 
+extern crate url_open;
+extern crate serde_json;
+extern crate url;
+
 /* For time handling */
 extern crate chrono;
 use chrono::Duration;
 
-/* for process termination */
-use std::process;
-
 /* For from::utf8 */
-use std::str;
+/* for process termination */
+use std::{str, process};
 
 mod timesheet;
 
