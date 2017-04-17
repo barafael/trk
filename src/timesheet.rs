@@ -684,6 +684,8 @@ Please run with 'trk init <name>'");
         let mut path_str = "file://".to_string();
         path_str.push_str(path.to_str().unwrap());
         Url::parse(&path_str).unwrap().open();
+        /* clean up html again */
+        self.write_to_html(None);
     }
 
     pub fn toggle_show_git_info(&mut self, setting: bool) {
