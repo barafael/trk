@@ -255,16 +255,16 @@ impl Session {
                 }
             }
         }
-        match self.branches.len() {
-            0 => {}
+        let branch_str = match self.branches.len() {
+            0 => String::new(),
             n => {
-                let mut branch_str = String::new();
-                for branch in &self.branches {
-                    write!(&mut branch_str, "{} ", branch).unwrap();
-                }
-                write!(&mut status, "Worked on {} branches: {}", n, branch_str).unwrap();
+                self.branches.iter().fold(
+                    format!("Worked on {} branches: ", n),
+                    |res, s| res + s + " "
+                )
             }
-        }
+        };
+        status.push_str(&branch_str);
         status
     }
 }
