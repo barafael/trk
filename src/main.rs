@@ -3,26 +3,30 @@
 extern crate clap;
 use clap::AppSettings::SubcommandRequiredElseHelp;
 
+/* For serialization/deserialization of the timesheet */
 #[macro_use]
 extern crate serde_derive;
+extern crate serde_json;
 
-/* For parsing time */
+/* For parsing time strings */
 #[macro_use]
 extern crate nom;
-use nom::IResult::Done;
-
-extern crate url_open;
-extern crate serde_json;
-extern crate url;
 
 /* For time handling */
 extern crate chrono;
-use chrono::Duration;
 
-/* For from::utf8 */
-/* for process termination */
-use std::{str, process};
+/* To open link to report in browser */
+extern crate url_open;
+extern crate url;
 
+/* For process termination */
+use std::process;
+
+use util::*;
+
+use timesheet::timesheet::Timesheet;
+
+mod util;
 mod timesheet;
 
 fn main() {
@@ -133,14 +137,14 @@ fn main() {
     /* let config = matches.value_of("config").unwrap_or("default.conf");
     println!("[UNUSED] Value for config: {}", config); */
 
-    let sheet: Option<timesheet::Timesheet> = timesheet::Timesheet::load_from_file();
+    let sheet = Timesheet::load_from_file();
 
     /* Special case for init because t_sheet can and should be None before initialisation */
     if let Some(command) = arguments.subcommand_matches("init") {
         match sheet {
             Some(..) => println!("Already initialised."),
             None => {
-                match timesheet::Timesheet::init(command.value_of("name")) {
+                match Timesheet::init(command.value_of("name")) {
                     Some(..) => println!("Init successful."),
                     None => println!("Could not initialize."),
                 }
@@ -154,10 +158,10 @@ fn main() {
         match sheet {
             Some(..) => {
                 println!("Clearing timesheet.");
-                timesheet::Timesheet::clear();
+                Timesheet::clear();
             }
             None => {
-                match timesheet::Timesheet::init(command.value_of("name")) {
+                match Timesheet::init(command.value_of("name")) {
                     Some(..) => println!("Reinitialised timesheet."),
                     None => println!("Could not initialize."),
                 }
@@ -188,18 +192,18 @@ fn main() {
 
     match arguments.subcommand() {
         ("begin", Some(arg)) => {
-            let timestamp: Option<u64> = parse_to_seconds(arg.value_of("ago").unwrap_or(""))
-                .map(|ago| timesheet::get_seconds() - ago);
+            let timestamp: Option<u64> = parse_hhmm_to_seconds(arg.value_of("ago").unwrap_or(""))
+                .map(|ago| get_seconds() - ago);
             sheet.new_session(timestamp);
         }
         ("end", Some(arg)) => {
-            let timestamp: Option<u64> = parse_to_seconds(arg.value_of("ago").unwrap_or(""))
-                .map(|ago| timesheet::get_seconds() - ago);
+            let timestamp: Option<u64> = parse_hhmm_to_seconds(arg.value_of("ago").unwrap_or(""))
+                .map(|ago| get_seconds() - ago);
             sheet.end_session(timestamp);
         }
         ("pause", Some(arg)) => {
-            let timestamp: Option<u64> = parse_to_seconds(arg.value_of("ago").unwrap_or(""))
-                .map(|ago| timesheet::get_seconds() - ago);
+            let timestamp: Option<u64> = parse_hhmm_to_seconds(arg.value_of("ago").unwrap_or(""))
+                .map(|ago| get_seconds() - ago);
             let note_text = arg.value_of("note_text");
             match note_text {
                 Some(note_text) => sheet.pause(timestamp, Some(note_text.to_string())),
@@ -208,13 +212,13 @@ fn main() {
         }
 
         ("resume", Some(arg)) => {
-            let timestamp: Option<u64> = parse_to_seconds(arg.value_of("ago").unwrap_or(""))
-                .map(|ago| timesheet::get_seconds() - ago);
+            let timestamp: Option<u64> = parse_hhmm_to_seconds(arg.value_of("ago").unwrap_or(""))
+                .map(|ago| get_seconds() - ago);
             sheet.resume(timestamp);
         }
         ("note", Some(arg)) => {
-            let timestamp: Option<u64> = parse_to_seconds(arg.value_of("ago").unwrap_or(""))
-                .map(|ago| timesheet::get_seconds() - ago);
+            let timestamp: Option<u64> = parse_hhmm_to_seconds(arg.value_of("ago").unwrap_or(""))
+                .map(|ago| get_seconds() - ago);
             let note_text = arg.value_of("note_text").unwrap();
             sheet.note(timestamp, note_text.to_string());
         }
@@ -241,8 +245,8 @@ fn main() {
             match arg.value_of("sheet_or_session") {
                 Some("session") => sheet.report_last_session(),
                 Some("sheet") => {
-                    let timestamp: Option<u64> = parse_to_seconds(arg.value_of("ago").unwrap_or(""))
-			.map(|ago| timesheet::get_seconds() - ago);
+                    let timestamp: Option<u64> = parse_hhmm_to_seconds(arg.value_of("ago").unwrap_or(""))
+			.map(|ago| get_seconds() - ago);
                     sheet.report_sheet(timestamp);
                 }
                 Some(text) => {
@@ -276,24 +280,5 @@ fn main() {
             }
         }
         _ => unreachable!(),
-    }
-}
-
-/* For parsing time in HH:MM format. */
-named!(duration_hhmm(&[u8]) -> Duration,
-    do_parse!(
-        hour: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
-        tag!(":") >>
-        min: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
-        /*tag!(":") >>
-        sec: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>*/
-        (Duration::minutes(hour * 60 + min))
-    )
-);
-
-fn parse_to_seconds(timestr: &str) -> Option<u64> {
-    match duration_hhmm(timestr.as_bytes()) {
-        Done(_, out) => Some(out.num_seconds() as u64),
-        _ => None,
     }
 }

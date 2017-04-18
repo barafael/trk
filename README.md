@@ -97,14 +97,15 @@ Soft dependencies are html-tidy and git, but `trk` works without them too. (At t
 - [x] Rename ev_type to ty
 - [x] naming improvements: is\_valid\_ts, timestamp, time
 - [x] remove trailing \_opt from options which are de-opted anyway. Just rebind the names
+- [] Find out if `use util::*;` is bad
 - [] Simplify operations on session vec
 - [] Simplify option handling with `if let`, `map`, `map_or`
 - [x] Multiple imports
 - [x] Move `extern crate`s to root and reorder `extern crate` and `use`'s
-- [] Split up into timesheet.rs into session.rs, timesheet.rs, traits.rs, and util.rs
+- [x] Split up into timesheet.rs into session.rs, timesheet.rs, traits.rs, and util.rs
 - [] Move HTML templating to own lib or better use a crate like Maud
 - [] Use Result instead of bools (with error enums?)
-- [] Consider using `format!` instead of `write!` with `String::new()`
+- [] Use `format!` instead of `write!` with `String::new()`
 - [] Improve timestamp logic:
 - [] Clarify when ts + 1 is used (preferably improve logic so it becomes unnecessary)
 - [] Dedup checking logic for valid timestamp
