@@ -9,7 +9,7 @@ use std::process;
 
 use timesheet::traits::HasHTML;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(PartialEq, PartialOrd, Serialize, Deserialize, Debug)]
 pub enum EventType {
     Pause,
     Resume,
@@ -52,16 +52,9 @@ impl Session {
         self.running
     }
 
+    /* TODO: test this! Equality derivation for EventType */
     pub fn is_paused(&self) -> bool {
-        match self.events.len() {
-            0 => false,
-            n => {
-                match self.events[n - 1].ty {
-                    EventType::Pause => true,
-                    _ => false,
-                }
-            }
-        }
+        self.events.last().map_or(false, |ev| ev.ty == EventType::Pause)
     }
 
     pub fn update_end(&mut self) {
