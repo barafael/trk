@@ -230,25 +230,30 @@ Please run with 'trk init <name>'");
             .create(true)
             .open(&path);
 
-        match file {
-            Ok(mut file) => {
-                match self.get_last_session() {
-                    Some(session) => {
-                        let stylesheets = match self.show_commits {
-                            true => {
-                                r#"<link rel="stylesheet" type="text/css" href="style.css">
-"#
-                                        .to_string()
-                            }
-                            false => {
-                                r#"<link rel="stylesheet" type="text/css" href="style.css">
-<link rel="stylesheet" type="text/css" href="no_commit.css">
-"#
-                                        .to_string()
-                            }
-                        };
+        let mut file = match file {
+            Ok(file) => file,
+            Err(why) => {
+                println!("Could not write report to session.html! {}",
+                        why.description());
+                return false;
+            }
+        };
 
-                        let html = format!(r#"<!DOCTYPE html>
+        let session = match self.get_last_session() {
+            Some(session) => session,
+            /* TODO: write empty file anyway? */
+            None => return true,
+        };
+
+        let stylesheets = match self.show_commits {
+            true  => r#"<link rel="stylesheet" type="text/css" href="style.css">
+"#,
+            false => r#"<link rel="stylesheet" type="text/css" href="style.css">
+<link rel="stylesheet" type="text/css" href="no_commit.css">
+"#,
+        };
+
+        let html = format!(r#"<!DOCTYPE html>
 <html>
 <head>
   {}
@@ -258,25 +263,14 @@ Please run with 'trk init <name>'");
 {}
 </body>
 </html>"#,
-                                           stylesheets,
-                                           "Session",
-                                           "Rafael Bachmann",
-                                           session.to_html());
-                        file.write_all(html.as_bytes()).unwrap();
-                        format_file("session.html");
-                        /* Save was successful */
-                        true
-                    }
-                    /* TODO: write empty file anyway? */
-                    None => true,
-                }
-            }
-            Err(why) => {
-                println!("Could not write report to session.html! {}",
-                         why.description());
-                false
-            }
-        }
+                   stylesheets,
+                   "Session",
+                   "Rafael Bachmann",
+                   session.to_html());
+    file.write_all(html.as_bytes()).unwrap();
+    format_file("session.html");
+    /* Save was successful */
+    true
     }
 
     fn write_to_json(&self) -> bool {
