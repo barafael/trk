@@ -232,15 +232,11 @@ impl Session {
 
     pub fn status(&self) -> String {
         let mut status = String::new();
-        write!(&mut status,
-               r#"Session running since {}.
-"#,
+        write!(&mut status, "Session running since {}.\n",
                sec_to_hms_string(get_seconds() - self.start))
                 .unwrap();
         if self.is_paused() {
-            write!(&mut status,
-                   r#"    Paused since {}.
-"#,
+            write!(&mut status, "    Paused since {}.\n",
                    sec_to_hms_string(get_seconds() - self.events[self.events.len() - 1].timestamp))
                     .unwrap();
         } else {
