@@ -21,7 +21,7 @@ pub enum EventType {
 struct Event {
     timestamp : u64,
     note      : Option<String>,
-    ty        : EventType
+    ev_ty     : EventType
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -54,7 +54,7 @@ impl Session {
 
     /* TODO: test this! Equality derivation for EventType */
     pub fn is_paused(&self) -> bool {
-        self.events.last().map_or(false, |ev| ev.ty == EventType::Pause)
+        self.events.last().map_or(false, |ev| ev.ev_ty == EventType::Pause)
     }
 
     pub fn update_end(&mut self) {
@@ -135,7 +135,7 @@ impl Session {
                         .push(Event {
                                   timestamp : timestamp,
                                   note      : note,
-                                  ty      : EventType::Pause,
+                                  ev_ty   : EventType::Pause,
                               });
                     true
                 }
@@ -149,7 +149,7 @@ impl Session {
                         .push(Event {
                                   timestamp : timestamp,
                                   note      : note,
-                                  ty        : EventType::Resume,
+                                  ev_ty     : EventType::Resume,
                               });
                     true
                 }
@@ -174,7 +174,7 @@ impl Session {
                         .push(Event {
                                   timestamp : timestamp,
                                   note      : note,
-                                  ty        : EventType::Note,
+                                  ev_ty     : EventType::Note,
                               })
                 };
                 true
@@ -192,7 +192,7 @@ impl Session {
                     .push(Event {
                               timestamp : get_seconds(),
                               note      : note,
-                              ty        : EventType::Commit { hash },
+                              ev_ty     : EventType::Commit { hash },
                           });
                 true
             }
@@ -203,7 +203,7 @@ impl Session {
         let mut pause_time = 0;
         let mut last_pause_ts = 0;
         for event in &self.events {
-            match event.ty {
+            match event.ev_ty {
                 EventType::Pause => last_pause_ts = event.timestamp,
                 EventType::Resume => pause_time += event.timestamp - last_pause_ts,
                 _ => {}
@@ -238,7 +238,7 @@ impl Session {
                 n => {
                     write!(&mut status,
                            "    Last event: {:?}, {} ago.\n",
-                           &self.events[n - 1].ty,
+                           &self.events[n - 1].ev_ty,
                            sec_to_hms_string(get_seconds() - self.events[n - 1].timestamp))
                             .unwrap()
                 }
@@ -260,7 +260,7 @@ impl Session {
 
 impl HasHTML for Event {
     fn to_html(&self) -> String {
-        match self.ty {
+        match self.ev_ty {
             EventType::Pause => {
                 match self.note {
                     Some(ref info) => {
