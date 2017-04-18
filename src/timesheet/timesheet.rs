@@ -76,7 +76,7 @@ Please run with 'trk init <name>'");
     }
 
     pub fn new_session(&mut self, timestamp: Option<u64>) -> bool {
-        let possible = match self.get_last_session_mut() {
+        let possible = match self.sessions.last_mut() {
             None => true,
             Some(session) => {
                 if session.is_running() {
@@ -90,7 +90,7 @@ Please run with 'trk init <name>'");
         if possible {
             match timestamp {
                 Some(timestamp) => {
-                    let is_valid_ts = match self.get_last_session() {
+                    let is_valid_ts = match self.sessions.last() {
                         None => timestamp > self.start,
                         Some(last_session) => timestamp > last_session.end,
                     };
@@ -111,7 +111,7 @@ Please run with 'trk init <name>'");
     }
 
     pub fn end_session(&mut self, timestamp: Option<u64>) {
-        match self.get_last_session_mut() {
+        match self.sessions.last_mut() {
             Some(session) => {
                 // TODO: should it be possible to end a session multiple times?
                 // Each time sets the end date later...
@@ -124,7 +124,7 @@ Please run with 'trk init <name>'");
     }
 
     pub fn pause(&mut self, timestamp: Option<u64>, note: Option<String>) {
-        match self.get_last_session_mut() {
+        match self.sessions.last_mut() {
             Some(session) => {
                 session.push_event(timestamp, note, EventType::Pause);
             }
@@ -134,7 +134,7 @@ Please run with 'trk init <name>'");
     }
 
     pub fn resume(&mut self, timestamp: Option<u64>) {
-        match self.get_last_session_mut() {
+        match self.sessions.last_mut() {
             Some(session) => {
                 session.push_event(timestamp, None, EventType::Resume);
             }
@@ -144,7 +144,7 @@ Please run with 'trk init <name>'");
     }
 
     pub fn note(&mut self, timestamp: Option<u64>, note_text: String) {
-        match self.get_last_session_mut() {
+        match self.sessions.last_mut() {
             Some(session) => {
                 session.push_event(timestamp, Some(note_text), EventType::Note);
             }
@@ -154,7 +154,7 @@ Please run with 'trk init <name>'");
     }
 
     pub fn add_commit(&mut self, hash: String) {
-        let new_needed = match self.get_last_session() {
+        let new_needed = match self.sessions.last() {
             Some(session) => !session.is_running(),
             None => true,
         };
@@ -162,7 +162,7 @@ Please run with 'trk init <name>'");
             self.new_session(None);
             self.write_files();
         }
-        match self.get_last_session_mut() {
+        match self.sessions.last_mut() {
             Some(session) => {
                 let message = git_commit_message(&hash).unwrap_or(String::new());
                 session.push_event(None, Some(message), EventType::Commit { hash });
@@ -173,27 +173,13 @@ Please run with 'trk init <name>'");
     }
 
     pub fn add_branch(&mut self, name: String) {
-        match self.get_last_session_mut() {
+        match self.sessions.last_mut() {
             Some(session) => {
                 session.add_branch(name);
             }
             None => {}
         }
         self.write_files();
-    }
-
-    fn get_last_session(&self) -> Option<&Session> {
-        match self.sessions.len() {
-            0 => None,
-            n => Some(&self.sessions[n - 1]),
-        }
-    }
-
-    fn get_last_session_mut(&mut self) -> Option<&mut Session> {
-        match self.sessions.len() {
-            0 => None,
-            n => Some(&mut self.sessions[n - 1]),
-        }
     }
 
     pub fn write_to_html(&self, ago: Option<u64>) -> bool {
@@ -239,7 +225,7 @@ Please run with 'trk init <name>'");
             }
         };
 
-        let session = match self.get_last_session() {
+        let session = match self.sessions.last() {
             Some(session) => session,
             /* TODO: write empty file anyway? */
             None => return true,
@@ -380,7 +366,7 @@ Please run with 'trk init <name>'");
     }
 
     pub fn last_session_status(&self) -> String {
-        let status = self.get_last_session().map(|session| session.status());
+        let status = self.sessions.last().map(|session| session.status());
         match status {
             None => "No session yet.".to_string(),
             Some(status) => status,
