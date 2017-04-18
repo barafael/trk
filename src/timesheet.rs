@@ -1,5 +1,3 @@
-extern crate serde_json;
-
 use std::io::prelude::*;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{process, env};
@@ -10,6 +8,8 @@ use std::fs::{self, OpenOptions};
 use url::Url;
 use url_open::UrlOpen;
 use chrono::{Local, TimeZone};
+
+use serde_json::{from_str, to_string};
 
 /* For branch name dedup */
 use std::collections::HashSet;
@@ -563,7 +563,7 @@ Please run with 'trk init <name>'");
             Ok(mut file) => {
                 /* Convert the sheet to a JSON string. */
                 let serialized =
-                    serde_json::to_string(&self).expect("Could not write serialized time sheet.");
+                    to_string(&self).expect("Could not write serialized time sheet.");
                 file.write_all(serialized.as_bytes()).unwrap();
                 /* Save was successful */
                 true
@@ -593,7 +593,7 @@ Please run with 'trk init <name>'");
             Ok(mut file) => {
                 let mut serialized = String::new();
                 match file.read_to_string(&mut serialized) {
-                    Ok(..) => serde_json::from_str(&serialized).unwrap_or(None),
+                    Ok(..) => from_str(&serialized).unwrap_or(None),
                     Err(..) => {
                         println!("IO error while reading the timesheet file.");
                         process::exit(0);
