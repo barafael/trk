@@ -340,7 +340,7 @@ impl HasHTML for Session {
                                ts_to_date(self.start));
 
         for event in &self.events {
-            write!(&mut html, "{}", event.to_html()).unwrap();
+            html.push_str(&event.to_html());
         }
 
         write!(&mut html,
