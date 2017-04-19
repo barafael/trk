@@ -53,11 +53,6 @@ impl Session {
     }
 
     pub fn is_paused(&self) -> bool {
-        self.events.last().map_or(false, |ev| {
-            println!("{:?} is pause: {}", ev.ev_ty,
-            ev.ev_ty == EventType::Pause);
-            true
-        });
         self.events.last().map_or(false, |ev| ev.ev_ty == EventType::Pause)
     }
 
@@ -69,24 +64,19 @@ impl Session {
     }
 
     pub fn finalize(&mut self, timestamp: Option<u64>) {
-        let timestamp = match timestamp {
-            None => get_seconds(),
-            Some(timestamp) => {
-                let is_valid_ts = match self.events.len() {
-                    0 => timestamp > self.start,
-                    n => {
-                        let last_ev = &self.events[n - 1];
-                        timestamp > last_ev.timestamp
-                    }
-                };
-                if is_valid_ts {
-                    timestamp
-                } else {
-                    println!("That is not a valid timestamp!");
-                    process::exit(0);
-                }
+        let timestamp = timestamp.unwrap_or(get_seconds());
+        let is_valid_ts = match self.events.len() {
+            0 => timestamp > self.start,
+            n => {
+                let last_ev = &self.events[n - 1];
+                timestamp > last_ev.timestamp
             }
         };
+        if !is_valid_ts {
+            println!("That is not a valid timestamp!");
+            process::exit(0);
+        }
+
         if self.is_running() {
             if self.is_paused() {
                 self.push_event(Some(timestamp), None, EventType::Resume);
