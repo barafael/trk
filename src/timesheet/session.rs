@@ -258,6 +258,10 @@ impl Session {
             }
         };
         status.push_str(&branch_str);
+        status.push_str(&format!("    Total work time:  {}\n    \
+                                      Total pause time: {}\n",
+			sec_to_hms_string(self.working_time()),
+                        sec_to_hms_string(self.pause_time())));
         status
     }
 }

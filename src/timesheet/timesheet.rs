@@ -347,11 +347,8 @@ Please run with 'trk init <name>'");
     }
 
     pub fn timesheet_status(&self) -> String {
-        let mut status = String::new();
-        write!(&mut status,
-               "Sheet running for {}\n",
-               sec_to_hms_string(get_seconds() - self.start))
-                .unwrap();
+        let mut status = format!("Sheet running for {}\n",
+               sec_to_hms_string(get_seconds() - self.start));
         match self.sessions.len() {
             0 => write!(&mut status, "No sessions yet.\n").unwrap(),
             n => {

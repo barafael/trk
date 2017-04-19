@@ -103,7 +103,7 @@ Soft dependencies are html-tidy and git, but `trk` works without them too. (At t
 - [] Redesign timesheet to handle timestamps nicely and deduplicate all timestamp logic
 - [] Simplify option handling with `if let`, `map`, `map_or`
 - [x] Multiple imports
-- [] Add work/pause summary to status output
+- [x] Add work/pause summary to status output
 - [] Add settings/config struct
 - [x] Move `extern crate`s to root and reorder `extern crate` and `use`'s
 - [x] Split up into timesheet.rs into session.rs, timesheet.rs, traits.rs, and util.rs
