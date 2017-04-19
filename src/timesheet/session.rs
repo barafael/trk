@@ -213,6 +213,10 @@ impl Session {
                 _ => {}
             }
         }
+        if self.is_paused() {
+            pause_time +=   get_seconds()
+                          - self.events.last().unwrap().timestamp;
+        }
         pause_time
     }
 
@@ -260,7 +264,7 @@ impl Session {
         status.push_str(&branch_str);
         status.push_str(&format!("    Total work time:  {}\n    \
                                       Total pause time: {}\n",
-			sec_to_hms_string(self.work_time()),
+                        sec_to_hms_string(self.work_time()),
                         sec_to_hms_string(self.pause_time())));
         status
     }
