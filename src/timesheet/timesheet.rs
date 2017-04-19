@@ -403,19 +403,13 @@ Please run with 'trk init <name>'");
     }
 
     pub fn pause_time(&self) -> u64 {
-        let mut pause_time = 0;
-        for session in &self.sessions {
-            pause_time += session.pause_time();
-        }
-        pause_time
+        self.sessions.iter().fold(
+            0, |total, session| total + session.pause_time())
     }
 
     pub fn work_time(&self) -> u64 {
-        let mut work_time = 0;
-        for session in &self.sessions {
-            work_time += session.work_time();
-        }
-        work_time
+        self.sessions.iter().fold(
+            0, |total, session| total + session.work_time())
     }
 
     fn to_html(&self, ago: Option<u64>) -> String {
