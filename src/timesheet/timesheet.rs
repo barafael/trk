@@ -413,10 +413,7 @@ Please run with 'trk init <name>'");
     }
 
     fn to_html(&self, ago: Option<u64>) -> String {
-        let timestamp = match ago {
-            Some(ago) => ago,
-            None      => self.start,
-        };
+        let timestamp = ago.unwrap_or(self.start);
         let mut sessions_html = String::new();
         for session in &self.sessions {
             if session.start > timestamp {
@@ -424,19 +421,12 @@ Please run with 'trk init <name>'");
             }
         }
 
-        let stylesheets = match self.show_commits {
-            true => {
+        let stylesheets = if self.show_commits {
+                "<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\n".to_string()
+        } else {
                 r#"<link rel="stylesheet" type="text/css" href="style.css">
-"#
-                        .to_string()
-            }
-            false => {
-                r#"
-<link rel="stylesheet" type="text/css" href="style.css">
 <link rel="stylesheet" type="text/css" href="no_commit.css">
-"#
-                        .to_string()
-            }
+"#.to_string()
         };
 
         let mut html = format!(r#"<!DOCTYPE html>
@@ -447,10 +437,10 @@ Please run with 'trk init <name>'");
     </head>
     <body>
     {}"#,
-                               stylesheets,
-                               "Timesheet",
-                               "Rafael Bachmann",
-                               sessions_html);
+              stylesheets,
+              "Timesheet",
+              "Rafael Bachmann",
+              sessions_html);
 
         write!(&mut html,
                r#"<section class="summary">
@@ -459,7 +449,7 @@ Please run with 'trk init <name>'");
 </div></section>"#,
                sec_to_hms_string(self.work_time()),
                sec_to_hms_string(self.pause_time()))
-                .unwrap();
+               .unwrap();
         write!(&mut html, "</body>\n</html>").unwrap();
         html
     }
