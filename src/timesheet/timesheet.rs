@@ -76,17 +76,15 @@ Please run with 'trk init <name>'");
     }
 
     pub fn new_session(&mut self, timestamp: Option<u64>) -> bool {
-        let possible = match self.sessions.last_mut() {
-            None => true,
-            Some(session) => {
+        let possible = self.sessions.last_mut()
+            .map_or(true, |session| {
                 if session.is_running() {
                     println!("Last session is still running.");
                     false
                 } else {
                     true
                 }
-            }
-        };
+        });
         if possible {
             match timestamp {
                 Some(timestamp) => {
@@ -154,10 +152,8 @@ Please run with 'trk init <name>'");
     }
 
     pub fn add_commit(&mut self, hash: String) {
-        let new_needed = match self.sessions.last() {
-            Some(session) => !session.is_running(),
-            None => true,
-        };
+        let new_needed = self.sessions.last()
+            .map_or(true, |session| !session.is_running());
         if new_needed {
             self.new_session(None);
             self.write_files();
@@ -173,12 +169,7 @@ Please run with 'trk init <name>'");
     }
 
     pub fn add_branch(&mut self, name: String) {
-        match self.sessions.last_mut() {
-            Some(session) => {
-                session.add_branch(name);
-            }
-            None => {}
-        }
+        self.sessions.last_mut().map(|session| session.add_branch(name));
         self.write_files();
     }
 
@@ -231,12 +222,12 @@ Please run with 'trk init <name>'");
             None => return true,
         };
 
-        let stylesheets = match self.show_commits {
-            true  => r#"<link rel="stylesheet" type="text/css" href="style.css">
-"#,
-            false => r#"<link rel="stylesheet" type="text/css" href="style.css">
+        let stylesheets = if self.show_commits {
+            r#"<link rel="stylesheet" type="text/css" href="style.css">
+"#      } else {
+            r#"<link rel="stylesheet" type="text/css" href="style.css">
 <link rel="stylesheet" type="text/css" href="no_commit.css">
-"#,
+"#
         };
 
         let html = format!(r#"<!DOCTYPE html>
@@ -330,11 +321,11 @@ Please run with 'trk init <name>'");
 
         let path = Path::new("./.trk/timesheet.json");
         if path.exists() {
-            match fs::remove_file(&path) {
-                Ok(..) => {}
-                Err(why) => println!("Could not remove sessions file: {}", why.description()),
-            }
+            fs::remove_file(&path).unwrap_or_else(|why| {
+                println!("Could not remove sessions file: {}", why.description());
+            });
         }
+        /* TODO: simplicate this! */
         match name {
             Some(name) => {
                 /* Overwrite file */
@@ -364,12 +355,10 @@ Please run with 'trk init <name>'");
 
     pub fn last_session_status(&self) -> String {
         let status = self.sessions.last().map(|session| session.status());
-        match status {
-            None => "No session yet.".to_string(),
-            Some(status) => status,
-        }
+        status.unwrap_or("No session yet.".to_string())
     }
 
+    /* Fix this mess (2 next methods) */
     pub fn report_last_session(&self) {
         // We assume that we are in a valid directory.
         let mut p = env::current_dir().unwrap();
