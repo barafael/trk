@@ -113,10 +113,10 @@ Please run with 'trk init <name>'");
     pub fn end_session(&mut self, timestamp: Option<u64>) {
         match self.sessions.last_mut() {
             Some(session) => {
-                // TODO: should it be possible to end a session multiple times?
-                // Each time sets the end date later...
-                session.update_end(); // TODO This is always problematic - rethink.
+		// TODO This is always problematic - rethink.
+                session.update_end();
                 session.finalize(timestamp);
+                self.end = session.end + 1;
             }
             None => println!("No session to finalize."),
         }
