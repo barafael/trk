@@ -216,7 +216,7 @@ impl Session {
         pause_time
     }
 
-    pub fn working_time(&self) -> u64 {
+    pub fn work_time(&self) -> u64 {
         let pause_time = self.pause_time();
         self.end - self.start - pause_time
     }
@@ -260,7 +260,7 @@ impl Session {
         status.push_str(&branch_str);
         status.push_str(&format!("    Total work time:  {}\n    \
                                       Total pause time: {}\n",
-			sec_to_hms_string(self.working_time()),
+			sec_to_hms_string(self.work_time()),
                         sec_to_hms_string(self.pause_time())));
         status
     }
@@ -363,7 +363,7 @@ impl HasHTML for Session {
     <p>Paused for {}</p>
 </div></section>"#,
                branch_str,
-               sec_to_hms_string(self.working_time()),
+               sec_to_hms_string(self.work_time()),
                sec_to_hms_string(self.pause_time()))
                 .unwrap();
 

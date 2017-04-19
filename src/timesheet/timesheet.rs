@@ -410,10 +410,10 @@ Please run with 'trk init <name>'");
         pause_time
     }
 
-    pub fn working_time(&self) -> u64 {
+    pub fn work_time(&self) -> u64 {
         let mut work_time = 0;
         for session in &self.sessions {
-            work_time += session.working_time();
+            work_time += session.work_time();
         }
         work_time
     }
@@ -463,7 +463,7 @@ Please run with 'trk init <name>'");
     <p>Worked for {}</p>
     <p>Paused for {}</p>
 </div></section>"#,
-               sec_to_hms_string(self.working_time()),
+               sec_to_hms_string(self.work_time()),
                sec_to_hms_string(self.pause_time()))
                 .unwrap();
         write!(&mut html, "</body>\n</html>").unwrap();
