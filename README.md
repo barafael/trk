@@ -98,9 +98,13 @@ Soft dependencies are html-tidy and git, but `trk` works without them too. (At t
 - [x] naming improvements: is\_valid\_ts, timestamp, time
 - [x] remove trailing \_opt from options which are de-opted anyway. Just rebind the names
 - [] Find out if `use util::*;` is bad
-- [] Simplify operations on session vec
+- [] Check if clap code should be put in a yaml file
+- [x] Simplify operations on session vec
+- [] Redesign timesheet to handle timestamps nicely and deduplicate all timestamp logic
 - [] Simplify option handling with `if let`, `map`, `map_or`
 - [x] Multiple imports
+- [] Add work/pause summary to status output
+- [] Add settings/config struct
 - [x] Move `extern crate`s to root and reorder `extern crate` and `use`'s
 - [x] Split up into timesheet.rs into session.rs, timesheet.rs, traits.rs, and util.rs
 - [] Move HTML templating to own lib or better use a crate like Maud
@@ -108,7 +112,6 @@ Soft dependencies are html-tidy and git, but `trk` works without them too. (At t
 - [] Use `format!` instead of `write!` with `String::new()`
 - [] Improve timestamp logic:
 - [] Clarify when ts + 1 is used (preferably improve logic so it becomes unnecessary)
-- [] Dedup checking logic for valid timestamp
 - [] Check output of `get_seconds()` anyway
 * TODO: run 'make sync_hook' on init? Make dependency?
 * TODO: support different natural language durations (one week, since=date, or maybe place pins...)
