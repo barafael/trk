@@ -52,8 +52,12 @@ impl Session {
         self.running
     }
 
-    /* TODO: test this! Equality derivation for EventType */
     pub fn is_paused(&self) -> bool {
+        self.events.last().map_or(false, |ev| {
+            println!("{:?} is pause: {}", ev.ev_ty,
+            ev.ev_ty == EventType::Pause);
+            true
+        });
         self.events.last().map_or(false, |ev| ev.ev_ty == EventType::Pause)
     }
 
