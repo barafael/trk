@@ -212,7 +212,7 @@ impl Session {
 
     pub fn work_time(&self) -> u64 {
         let pause_time = self.pause_time();
-        self.end - self.start - pause_time
+        get_seconds() - self.start - pause_time
     }
 
     pub fn add_branch(&mut self, name: String) {
