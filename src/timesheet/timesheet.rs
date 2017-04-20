@@ -27,7 +27,8 @@ pub struct Timesheet {
 }
 
 impl Timesheet {
-    // TODO: check if i can just write_files before the end of main()
+    /* TODO: check if all goes right if write_files
+       is called only before the end of main() */
     /** Initializes the .trk/timesheet.json file which holds
      * the serialized timesheet
      * Returns Some(newTimesheet) if operation succeeded */
@@ -101,7 +102,6 @@ Please run with 'trk init <name>'");
                     self.sessions.push(Session::new(None));
                 }
             };
-            self.write_files();
         }
         possible
     }
@@ -116,7 +116,6 @@ Please run with 'trk init <name>'");
             }
             None => println!("No session to finalize."),
         }
-        self.write_files();
     }
 
     pub fn pause(&mut self, timestamp: Option<u64>, note: Option<String>) {
@@ -126,7 +125,6 @@ Please run with 'trk init <name>'");
             }
             None => println!("No session to pause."),
         }
-        self.write_files();
     }
 
     pub fn resume(&mut self, timestamp: Option<u64>) {
@@ -136,7 +134,6 @@ Please run with 'trk init <name>'");
             }
             None => println!("No session to pause."),
         }
-        self.write_files();
     }
 
     pub fn note(&mut self, timestamp: Option<u64>, note_text: String) {
@@ -146,7 +143,6 @@ Please run with 'trk init <name>'");
             }
             None => println!("No session to add note to."),
         }
-        self.write_files();
     }
 
     pub fn add_commit(&mut self, hash: String) {
@@ -154,7 +150,6 @@ Please run with 'trk init <name>'");
             .map_or(true, |session| !session.is_running());
         if new_needed {
             self.new_session(None);
-            self.write_files();
         }
         match self.sessions.last_mut() {
             Some(session) => {
@@ -163,15 +158,13 @@ Please run with 'trk init <name>'");
             }
             None => println!("No session to add commit to."),
         }
-        self.write_files();
     }
 
     pub fn add_branch(&mut self, name: String) {
         self.sessions.last_mut().map(|session| session.add_branch(name));
-        self.write_files();
     }
 
-    pub fn write_to_html(&self, ago: Option<u64>) -> bool {
+    fn write_to_html(&self, ago: Option<u64>) -> bool {
         /* TODO: avoid time-of-check-to-time-of-use race risk */
         /* TODO: make all commands run regardless of where trk is executed
          * (and not just in root which is assumed here */
@@ -197,7 +190,7 @@ Please run with 'trk init <name>'");
         }
     }
 
-    pub fn write_last_session_html(&self) -> bool {
+    fn write_last_session_html(&self) -> bool {
         let path = Path::new("./session.html");
         let file = OpenOptions::new()
             .write(true)
@@ -282,7 +275,7 @@ Please run with 'trk init <name>'");
         }
     }
 
-    fn write_files(&self) -> bool {
+    pub fn write_files(&self) -> bool {
         /* TODO: avoid time-of-check-to-time-of-use race risk */
         /* TODO: make all commands run regardless of where trk is executed
          * (and not just in root which is assumed here */
@@ -382,14 +375,12 @@ Please run with 'trk init <name>'");
 
     pub fn show_commits(&mut self, on_off: bool) {
         self.config.show_commits = on_off;
-        self.write_files();
     }
 
     pub fn set_repo_url(&mut self, repo: String) {
         let repo =
            if repo == "" { None } else { Some(repo) };
         self.config.repository = repo;
-        self.write_files();
     }
 
     pub fn pause_time(&self) -> u64 {

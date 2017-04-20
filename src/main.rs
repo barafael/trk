@@ -271,4 +271,5 @@ fn main() {
         }
         _ => unreachable!(),
     }
+    sheet.write_files();
 }
