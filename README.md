@@ -114,7 +114,6 @@ Soft dependencies are html-tidy and git, but `trk` works without them too. (At t
 - [] Use `format!` instead of `write!` with `String::new()`
 - [] Check output of `get_seconds()` anyway
 * - [] TODO: support different natural language durations (one week, since=date, or maybe place pins...)
-* TODO: run 'make sync_hook' on init? Make dependency? How to handle already present, modified files?
 * TODO/nicetohave: Run this on a server instead of the local machine.
 - [x] TODO: add a 'set' command, for example to set git_repo_url (in order to make the commit messages links to the repo)
 - [x] TODO: flush to html every load and just open browser on report.
