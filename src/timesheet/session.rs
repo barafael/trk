@@ -21,16 +21,16 @@ pub enum EventType {
 struct Event {
     timestamp : u64,
     note      : Option<String>,
-    ev_ty     : EventType
+    ev_ty     : EventType,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Session {
-    pub start    : u64,
-    pub end      : u64,
-    running  : bool,
-    branches : HashSet<String>,
-    events   : Vec<Event>,
+    pub start : u64,
+    pub end   : u64,
+    running   : bool,
+    branches  : HashSet<String>,
+    events    : Vec<Event>,
 }
 
 impl Session {
@@ -53,7 +53,9 @@ impl Session {
     }
 
     pub fn is_paused(&self) -> bool {
-        self.events.last().map_or(false, |ev| ev.ev_ty == EventType::Pause)
+        self.events
+            .last()
+            .map_or(false, |ev| ev.ev_ty == EventType::Pause)
     }
 
     pub fn update_end(&mut self) {
@@ -87,10 +89,10 @@ impl Session {
     }
 
     pub fn push_event(&mut self,
-                  timestamp : Option<u64>,
-                  note      : Option<String>,
-                  type_of_event : EventType)
-                  -> bool {
+                      timestamp     : Option<u64>,
+                      note          : Option<String>,
+                      type_of_event : EventType)
+                      -> bool {
         /* Cannot push if session is already finalized. */
         if !self.is_running() {
             println!("Already finalized, cannot push event.");
@@ -129,7 +131,7 @@ impl Session {
                         .push(Event {
                                   timestamp : timestamp,
                                   note      : note,
-                                  ev_ty   : EventType::Pause,
+                                  ev_ty     : EventType::Pause,
                               });
                     true
                 }
@@ -212,7 +214,11 @@ impl Session {
 
     pub fn work_time(&self) -> u64 {
         let pause_time = self.pause_time();
-        get_seconds() - self.start - pause_time
+        if self.is_running() {
+            get_seconds() - self.start - pause_time
+        } else {
+            self.end - self.start - pause_time
+        }
     }
 
     pub fn add_branch(&mut self, name: String) {
@@ -222,40 +228,36 @@ impl Session {
     }
 
     pub fn status(&self) -> String {
-        let mut status = String::new();
-        write!(&mut status, "Session running since {}.\n",
-               sec_to_hms_string(get_seconds() - self.start))
-                .unwrap();
+        let mut status = format!(
+               "Session running for {}.\n",
+               sec_to_hms_string(self.pause_time() + self.work_time()));
         if self.is_paused() {
-            write!(&mut status, "    Paused since {}.\n",
-                   sec_to_hms_string(get_seconds() - self.events[self.events.len() - 1].timestamp))
-                    .unwrap();
+            status.push_str(&format!(
+                   "    Paused since {}.\n",
+                   sec_to_hms_string(get_seconds() - self.events[self.events.len() - 1].timestamp)));
         } else {
             match self.events.len() {
-                0 => write!(&mut status, "    No events in this session yet!\n").unwrap(),
-                n => {
-                    write!(&mut status,
+                0 => status.push_str(&format!("    No events in this session yet!\n")),
+                n => status.push_str(&format!(
                            "    Last event: {:?}, {} ago.\n",
                            &self.events[n - 1].ev_ty,
-                           sec_to_hms_string(get_seconds() - self.events[n - 1].timestamp))
-                            .unwrap()
-                }
+                           sec_to_hms_string(get_seconds() - self.events[n - 1].timestamp)))
             }
         }
         let branch_str = match self.branches.len() {
             0 => String::new(),
             n => {
-                self.branches.iter().fold(
-                    format!("Worked on {} branches: ", n),
-                    |res, s| res + s + " "
-                )
+                self.branches
+                    .iter()
+                    .fold(format!("Worked on {} branches: ", n),
+                          |res, s| res + s + " ")
             }
         };
         status.push_str(&branch_str);
         status.push_str(&format!("    Total work time:  {}\n    \
                                       Total pause time: {}\n",
-                        sec_to_hms_string(self.work_time()),
-                        sec_to_hms_string(self.pause_time())));
+                                 sec_to_hms_string(self.work_time()),
+                                 sec_to_hms_string(self.pause_time())));
         status
     }
 }

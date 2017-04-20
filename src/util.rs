@@ -47,7 +47,7 @@ named!(duration_hhmm(&[u8]) -> Duration,
     do_parse!(
         hour: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
         tag!(":") >>
-        min: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
+        min:  map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>
         /*tag!(":") >>
         sec: map_res!(map_res!(nom::digit, str::from_utf8), |s: &str| s.parse::<i64>()) >>*/
         (Duration::minutes(hour * 60 + min))

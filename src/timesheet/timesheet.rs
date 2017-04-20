@@ -47,8 +47,8 @@ impl Timesheet {
                 match git_author_name {
                     Some(ref git_name) => git_name,
                     None => {
-                        println!("Empty name not permitted.
-Please run with 'trk init <name>'");
+                        println!("Empty name not permitted. \
+                                  Please run with 'trk init <name>'");
                         process::exit(0);
                     }
                 }
@@ -109,7 +109,7 @@ Please run with 'trk init <name>'");
     pub fn end_session(&mut self, timestamp: Option<u64>) {
         match self.sessions.last_mut() {
             Some(session) => {
-		// TODO This is always problematic - rethink.
+                // TODO This is always problematic - rethink.
                 session.update_end();
                 session.finalize(timestamp);
                 self.end = session.end + 1;
@@ -191,6 +191,10 @@ Please run with 'trk init <name>'");
     }
 
     fn write_last_session_html(&self) -> bool {
+        let session = match self.sessions.last() {
+            Some(session) => session,
+            None => return true,
+        };
         let path = Path::new("./session.html");
         let file = OpenOptions::new()
             .write(true)
@@ -205,12 +209,6 @@ Please run with 'trk init <name>'");
                         why.description());
                 return false;
             }
-        };
-
-        let session = match self.sessions.last() {
-            Some(session) => session,
-            /* TODO: write empty file anyway? */
-            None => return true,
         };
 
         let stylesheets = if self.config.show_commits {
@@ -231,10 +229,10 @@ Please run with 'trk init <name>'");
 {}
 </body>
 </html>"#,
-                   stylesheets,
-                   "Session",
-                   "Rafael Bachmann",
-                   session.to_html());
+               stylesheets,
+               "Session",
+               "Rafael Bachmann",
+               session.to_html());
     file.write_all(html.as_bytes()).unwrap();
     format_file("session.html");
     /* Save was successful */
@@ -316,16 +314,7 @@ Please run with 'trk init <name>'");
                 println!("Could not remove sessions file: {}", why.description());
             });
         }
-        /* TODO: simplicate this! */
-        match name {
-            Some(name) => {
-                /* Overwrite file */
-                Timesheet::init(Some(&name));
-            }
-            None => {
-                Timesheet::init(None);
-            }
-        }
+        Timesheet::init(name.as_ref().map(|s| s.as_str()));
     }
 
     pub fn timesheet_status(&self) -> String {
@@ -351,7 +340,7 @@ Please run with 'trk init <name>'");
 
     /* Fix this mess (2 next methods) */
     pub fn report_last_session(&self) {
-        // We assume that we are in a valid directory.
+        /* We assume that we are in a valid directory */
         let mut p = env::current_dir().unwrap();
         p.push("session.html");
         let path = p.as_path();
@@ -362,14 +351,14 @@ Please run with 'trk init <name>'");
 
     pub fn report_sheet(&self, ago: Option<u64>) {
         self.write_to_html(ago);
-        // We assume that we are in a valid directory.
+        /* We assume that we are in a valid directory */
         let mut p = env::current_dir().unwrap();
         p.push("timesheet.html");
         let path = p.as_path();
         let mut file_str = "file://".to_string();
         file_str.push_str(path.to_str().unwrap());
         Url::parse(&file_str).unwrap().open();
-        /* clean up html again */
+        /* Leave complete sheet html */
         self.write_to_html(None);
     }
 

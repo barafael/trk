@@ -181,7 +181,7 @@ fn main() {
     let mut sheet = match sheet {
         Some(file) => file,
         None => {
-            println!("No file! You might have to init first.");
+            println!("No timesheet file! You might have to init first.");
             return;
         }
     };
