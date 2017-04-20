@@ -89,18 +89,27 @@ Which can be styled by style.css:
 
 ![sheet.png](https://github.com/medium-endian/trk/blob/master/sheet.png)
 
-### Dependencies
+### Installation
 
-Soft dependencies are html-tidy and git, but `trk` works without them too. (At the moment `trk` complains a lot if html-tidy is installled even though html-tidy is not necessary for the program to work correctly). When you run without git (or rather without a name set in .gitconfig) you have to provide one like `trk init <name>`.
+Currently the best way to install this is to install rust nightly via rustup.rs, clone this repo and then run `cargo build --release` in it.
+
+You might want to add `/home/rafael/Code/trk/target/release` to your `$PATH` to have the `trk` executable available.
+For development, you might want to add `/home/rafael/Code/trk/target/debug` to your `$PATH` (in that case build with `cargo build`).
+You could also install properly to `~/bin/` or something.
+
+To automatically add abbreviated git commits or branch summaries to the history, you can copy the files `post-commit` (for commits) or `post-checkout` (for branches) to your projects `.git/hooks` directory. If those files already exist, just append the lines from the appropriate hook. All the hooks do is call `trk` with some meta info.
+
+### Soft Dependencies
+
+`trk` is useful together with `html-tidy` and `git`, but it also works without them. (At the moment `trk` complains a lot if html-tidy is installled even though html-tidy is not at all necessary for the program to work correctly). When you run without git (or rather without `user.name` set in `.gitconfig`) you have to provide one as in `trk init <name>`.
 
 ### TODO:
-- [x] Fix underflow in session.rs work_time()
 - [x] Rename ev_type to ty
-- [x] naming improvements: is\_valid\_ts, timestamp, time
-- [x] remove trailing \_opt from options which are de-opted anyway. Just rebind the names
-- [] Find out if `use util::*;` is bad
+- [x] Naming improvements: is\_valid\_ts, timestamp, time
+- [x] Remove trailing \_opt from options which are de-opted anyway. Just rebind the names
+- [] Find out if `use util::*;` and similar is bad
 - [x] Move `extern crate`s to root and reorder `extern crate` and `use`'s and `mod`s
-- [x] Check if clap code should be put in a yaml file (Not for now)
+- [x] Check if clap code should be put in a yaml file (not for now)
 - [x] Simplify operations on session vec (last(), last_mut())
 - [] Redesign timesheet to handle timestamps nicely and deduplicate all timestamp logic
 - [] Clarify when ts + 1 is used (preferably improve logic so it becomes unnecessary)
@@ -113,16 +122,17 @@ Soft dependencies are html-tidy and git, but `trk` works without them too. (At t
 - [] Use Result instead of bools (with error enums?)
 - [] Use `format!` instead of `write!` with `String::new()`
 - [] Check output of `get_seconds()` anyway
-* - [] TODO: support different natural language durations (one week, since=date, or maybe place pins...)
+- [x] Fix underflow in session.rs work_time()
+* - [] Support different natural language durations (one week, since=date, or maybe place pins...)
 * TODO/nicetohave: Run this on a server instead of the local machine.
-- [x] TODO: add a 'set' command, for example to set git_repo_url (in order to make the commit messages links to the repo)
-- [x] TODO: flush to html every load and just open browser on report.
-- [x] TODO: Format output - leave out commits and branches, for example
-- [x] TODO: improve status output (was just debug output)
-- [x] TODO: better reporting if file is not present xor corrupt
-- [x] TODO: add past event adding for begin and end
-- [x] TODO: Find a way to query time sheets up to a point in the past
-- [x] TODO: Open a new session if a commit or branch is pushed when no session is running. 
-- [x] TODO: Convert unix timestamps to date strings (locale?)
-- [x] The session struct is a list of sequential events with timestamps. A session struct is identified by it's starting time (and maybe git author?).
-- [x] The Timesheet struct is deserialized on every run, worked on, and then serialized again. It has a tohtml impl.
+- [x] Add a 'set' command, for example to set git_repo_url (in order to make the commit messages links to the repo)
+- [x] Flush to html every load and just open browser on report.
+- [x] Format output - leave out commits and branches, for example
+- [x] Improve status output (was just debug output)
+- [x] Better reporting if file is not present xor corrupt
+- [x] Add past event adding for begin and end
+- [x] Find a way to query time sheets up to a point in the past
+- [x] Open a new session if a commit or branch is pushed when no session is running. 
+- [x] Convert unix timestamps to date strings
+- [x] The session struct is a list of sequential events with timestamps. A session struct is identified by it's starting time
+- [x] The Timesheet struct is deserialized on every run, worked on, and then serialized again. It has a to_html() implementation.
