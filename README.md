@@ -94,27 +94,27 @@ Which can be styled by style.css:
 Soft dependencies are html-tidy and git, but `trk` works without them too. (At the moment `trk` complains a lot if html-tidy is installled even though html-tidy is not necessary for the program to work correctly). When you run without git (or rather without a name set in .gitconfig) you have to provide one like `trk init <name>`.
 
 ### TODO:
+- [] Fix underflow in session.rs work_time()
 - [x] Rename ev_type to ty
 - [x] naming improvements: is\_valid\_ts, timestamp, time
 - [x] remove trailing \_opt from options which are de-opted anyway. Just rebind the names
 - [] Find out if `use util::*;` is bad
-- [] Check if clap code should be put in a yaml file
-- [x] Simplify operations on session vec
+- [x] Move `extern crate`s to root and reorder `extern crate` and `use`'s and `mod`s
+- [x] Check if clap code should be put in a yaml file (Not for now)
+- [x] Simplify operations on session vec (last(), last_mut())
 - [] Redesign timesheet to handle timestamps nicely and deduplicate all timestamp logic
-- [] Simplify option handling with `if let`, `map`, `map_or`
+- [] Clarify when ts + 1 is used (preferably improve logic so it becomes unnecessary)
+- [] Simplify option handling with `if let`, `map`, `map_or` WIP
 - [x] Multiple imports
 - [x] Add work/pause summary to status output
-- [] Add settings/config struct
-- [x] Move `extern crate`s to root and reorder `extern crate` and `use`'s
+- [x] Add settings/config struct
 - [x] Split up into timesheet.rs into session.rs, timesheet.rs, traits.rs, and util.rs
 - [] Move HTML templating to own lib or better use a crate like Maud
 - [] Use Result instead of bools (with error enums?)
 - [] Use `format!` instead of `write!` with `String::new()`
-- [] Improve timestamp logic:
-- [] Clarify when ts + 1 is used (preferably improve logic so it becomes unnecessary)
 - [] Check output of `get_seconds()` anyway
-* TODO: run 'make sync_hook' on init? Make dependency?
-* TODO: support different natural language durations (one week, since=date, or maybe place pins...)
+* - [] TODO: support different natural language durations (one week, since=date, or maybe place pins...)
+* TODO: run 'make sync_hook' on init? Make dependency? How to handle already present, modified files?
 * TODO/nicetohave: Run this on a server instead of the local machine.
 - [x] TODO: add a 'set' command, for example to set git_repo_url (in order to make the commit messages links to the repo)
 - [x] TODO: flush to html every load and just open browser on report.

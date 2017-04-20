@@ -28,6 +28,7 @@ use timesheet::timesheet::Timesheet;
 
 mod util;
 mod timesheet;
+mod config;
 
 fn main() {
     /* Handle command line arguments with clap */
@@ -94,22 +95,17 @@ fn main() {
                 (author: "mediumendian@gmail.com")
                 (@arg name: +required "branch name")
             )
-            (@subcommand set =>
-                (about: "Set different options")
-                (version: "0.1")
-                (author: "mediumendian@gmail.com")
-                (@subcommand show_git_info =>
+            (@subcommand set_show_commits =>
                     (about: "Show information about git commits/branches in the report")
                     (version: "0.1")
                     (author: "mediumendian@gmail.com")
                     (@arg on_off: +required "on or off")
-                    )
-                 (@subcommand repo_url =>
+            )
+            (@subcommand set_repo_url =>
                     (about: "Set git repo url to use for turning commit hashes to links")
                     (version: "0.1")
                     (author: "mediumendian@gmail.com")
-                    (@arg on_off: +required "url")
-                    )
+                    (@arg url: +required "url to repository")
             )
             (@subcommand status =>
                 (about: "Prints the current WIP for session or sheet")
@@ -256,27 +252,21 @@ fn main() {
                 _ => unreachable!(),
             }
         }
-        ("set", Some(sub_arg)) => {
-            match sub_arg.subcommand() {
-                ("show_git_info", Some(arg)) => {
-                    match arg.value_of("on_off") {
-                        Some("on") => sheet.toggle_show_git_info(true),
-                        Some("off") => sheet.toggle_show_git_info(false),
-                        Some(text) => {
-                            println!("What do you mean by {}? Should be either 'on' or 'off'.",
-                                     text)
-                        }
-                        _ => unreachable!(),
-                    }
+        ("set_show_commits", Some(arg)) => {
+            match arg.value_of("on_off") {
+                Some("on") => sheet.show_commits(true),
+                Some("off") => sheet.show_commits(false),
+                Some(text) => {
+                    println!("What do you mean by {}? Should be either 'on' or 'off'.",
+                             text)
                 }
-                ("repo_url", Some(arg)) => {
-                    match arg.value_of("repo_url") {
-                        Some(repo_url) => sheet.set_repo_url(repo_url.to_string()),
-                        None => println!("Could not parse argument of trk set repo_url."),
-                    }
-                }
-                (text, Some(arg)) => println!("What do you mean by {} {:?}?", text, arg),
-                _ => println!("Could not parse argument of trk set."),
+                _ => unreachable!(),
+            }
+        }
+        ("set_repo_url", Some(arg)) => {
+            match arg.value_of("url") {
+                Some(repo_url) => sheet.set_repo_url(repo_url.to_string()),
+                None => println!("Could not parse argument of trk set repo_url."),
             }
         }
         _ => unreachable!(),

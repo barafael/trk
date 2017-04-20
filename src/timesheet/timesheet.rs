@@ -12,7 +12,7 @@ use url_open::UrlOpen;
 use serde_json::{from_str, to_string};
 
 use util::*;
-use util::{git_author, git_commit_message, format_file};
+use config::*;
 use timesheet::traits::HasHTML;
 
 use timesheet::session::Session;
@@ -22,9 +22,7 @@ use timesheet::session::EventType;
 pub struct Timesheet {
     start            : u64,
     end              : u64,
-    user             : String,
-    pub show_commits : bool,
-    repo             : String,
+    config           : Config,
     sessions         : Vec<Session>,
 }
 
@@ -55,13 +53,13 @@ Please run with 'trk init <name>'");
                 }
             }
         };
+        let mut config = Config::new();
+        config.user_name = author_name.to_string();
         let now = get_seconds();
         let sheet = Timesheet {
             start        : now,
             end          : now + 1,
-            user         : author_name.to_string(),
-            show_commits : true,
-            repo         : String::new(),
+            config       : config,
             sessions     : Vec::<Session>::new(),
         };
         if sheet.write_files() {
@@ -222,7 +220,7 @@ Please run with 'trk init <name>'");
             None => return true,
         };
 
-        let stylesheets = if self.show_commits {
+        let stylesheets = if self.config.show_commits {
             r#"<link rel="stylesheet" type="text/css" href="style.css">
 "#      } else {
             r#"<link rel="stylesheet" type="text/css" href="style.css">
@@ -317,7 +315,7 @@ Please run with 'trk init <name>'");
     pub fn clear() {
         /* Try to get user name */
         let sheet = Timesheet::load_from_file();
-        let name: Option<String> = sheet.map(|s| s.user.clone());
+        let name: Option<String> = sheet.map(|s| s.config.user_name.clone());
 
         let path = Path::new("./.trk/timesheet.json");
         if path.exists() {
@@ -382,13 +380,14 @@ Please run with 'trk init <name>'");
         self.write_to_html(None);
     }
 
-    pub fn toggle_show_git_info(&mut self, setting: bool) {
-        self.show_commits = setting;
+    pub fn show_commits(&mut self, on_off: bool) {
+        self.config.show_commits = on_off;
         self.write_files();
     }
 
     pub fn set_repo_url(&mut self, repo: String) {
-        self.repo = repo;
+        self.config.repository = repo;
+        self.write_files();
     }
 
     pub fn pause_time(&self) -> u64 {
@@ -410,7 +409,7 @@ Please run with 'trk init <name>'");
             }
         }
 
-        let stylesheets = if self.show_commits {
+        let stylesheets = if self.config.show_commits {
                 "<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\n".to_string()
         } else {
                 r#"<link rel="stylesheet" type="text/css" href="style.css">
