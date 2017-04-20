@@ -1,16 +1,16 @@
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
     pub show_commits : bool,
-    pub repository   : String,
-    pub user_name    : String,
+    pub repository   : Option<String>,
+    pub user_name    : Option<String>,
 }
 
 impl Config {
     pub fn new() -> Config {
         Config {
             show_commits : true,
-            repository   : String::new(),
-            user_name    : String::new(),
+            repository   : None,
+            user_name    : None,
         }
     }
 }

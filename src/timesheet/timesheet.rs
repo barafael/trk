@@ -54,7 +54,7 @@ Please run with 'trk init <name>'");
             }
         };
         let mut config = Config::new();
-        config.user_name = author_name.to_string();
+        config.user_name = Some(author_name.to_string());
         let now = get_seconds();
         let sheet = Timesheet {
             start        : now,
@@ -315,7 +315,8 @@ Please run with 'trk init <name>'");
     pub fn clear() {
         /* Try to get user name */
         let sheet = Timesheet::load_from_file();
-        let name: Option<String> = sheet.map(|s| s.config.user_name.clone());
+        /* In case there is a sheet, there must also be a name */
+        let name: Option<String> = sheet.map(|s| s.config.user_name.unwrap());
 
         let path = Path::new("./.trk/timesheet.json");
         if path.exists() {
@@ -386,6 +387,8 @@ Please run with 'trk init <name>'");
     }
 
     pub fn set_repo_url(&mut self, repo: String) {
+        let repo =
+           if repo == "" { None } else { Some(repo) };
         self.config.repository = repo;
         self.write_files();
     }
