@@ -65,7 +65,7 @@ Please run with 'trk init <name>'");
         if sheet.write_files() {
             Some(sheet)
         } else {
-            None // TODO: error message?
+            None
         }
     }
 
@@ -311,7 +311,6 @@ Please run with 'trk init <name>'");
         }
     }
 
-    /* TODO: Check why timestamps aren't overwritten */
     pub fn clear() {
         /* Try to get user name */
         let sheet = Timesheet::load_from_file();
@@ -363,9 +362,9 @@ Please run with 'trk init <name>'");
         let mut p = env::current_dir().unwrap();
         p.push("session.html");
         let path = p.as_path();
-        let mut path_str = "file://".to_string();
-        path_str.push_str(path.to_str().unwrap());
-        Url::parse(&path_str).unwrap().open();
+        let mut file_str = "file://".to_string();
+        file_str.push_str(path.to_str().unwrap());
+        Url::parse(&file_str).unwrap().open();
     }
 
     pub fn report_sheet(&self, ago: Option<u64>) {
@@ -374,9 +373,9 @@ Please run with 'trk init <name>'");
         let mut p = env::current_dir().unwrap();
         p.push("timesheet.html");
         let path = p.as_path();
-        let mut path_str = "file://".to_string();
-        path_str.push_str(path.to_str().unwrap());
-        Url::parse(&path_str).unwrap().open();
+        let mut file_str = "file://".to_string();
+        file_str.push_str(path.to_str().unwrap());
+        Url::parse(&file_str).unwrap().open();
         /* clean up html again */
         self.write_to_html(None);
     }
