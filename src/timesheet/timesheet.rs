@@ -338,26 +338,36 @@ impl Timesheet {
         status.unwrap_or("No session yet.".to_string())
     }
 
-    /* Fix this mess (2 next methods) */
+    fn open_local_html(&self, filename: String) {
+        let file_url = match env::current_dir() {
+            Ok(dir) => {
+                match dir.join(&filename).to_str() {
+                    Some(path) => format!("file://{}", path),
+                    None => {
+                        println!("Invalid filename: {}.", filename);
+                        process::exit(0)
+                    }
+                }
+            }
+            Err(why) => {
+                println!("Couldn't obtain current directory: {}", why.description());
+                process::exit(0)
+            }
+        };
+        match Url::parse(&file_url) {
+            Ok(url) => url.open(),
+            Err(why) => println!("Couldn't open file: {}", why.description()),
+        }
+    }
+
     pub fn report_last_session(&self) {
-        /* We assume that we are in a valid directory */
-        let mut p = env::current_dir().unwrap();
-        p.push("session.html");
-        let path = p.as_path();
-        let mut file_str = "file://".to_string();
-        file_str.push_str(path.to_str().unwrap());
-        Url::parse(&file_str).unwrap().open();
+        self.write_to_html(None);
+        self.open_local_html("session.html".to_string());
     }
 
     pub fn report_sheet(&self, ago: Option<u64>) {
         self.write_to_html(ago);
-        /* We assume that we are in a valid directory */
-        let mut p = env::current_dir().unwrap();
-        p.push("timesheet.html");
-        let path = p.as_path();
-        let mut file_str = "file://".to_string();
-        file_str.push_str(path.to_str().unwrap());
-        Url::parse(&file_str).unwrap().open();
+        self.open_local_html("timesheet.html".to_string());
         /* Leave complete sheet html */
         self.write_to_html(None);
     }
