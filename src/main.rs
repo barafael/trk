@@ -241,8 +241,9 @@ fn main() {
             match arg.value_of("sheet_or_session") {
                 Some("session") => sheet.report_last_session(),
                 Some("sheet") => {
-                    let timestamp: Option<u64> = parse_hhmm_to_seconds(arg.value_of("ago").unwrap_or(""))
-			.map(|ago| get_seconds() - ago);
+                    let timestamp: Option<u64> =
+                        parse_hhmm_to_seconds(arg.value_of("ago").unwrap_or(""))
+                        .map(|ago| get_seconds() - ago);
                     sheet.report_sheet(timestamp);
                 }
                 Some(text) => {

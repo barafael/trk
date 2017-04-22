@@ -75,14 +75,13 @@ impl Timesheet {
     }
 
     pub fn new_session(&mut self, timestamp: Option<u64>) -> bool {
-        let possible = self.sessions.last_mut()
+        let possible = self.sessions
+            .last_mut()
             .map_or(true, |session| {
                 if session.is_running() {
                     println!("Last session is still running.");
-                    false
-                } else {
-                    true
                 }
+                !session.is_running()
         });
         if possible {
             match timestamp {
@@ -146,7 +145,8 @@ impl Timesheet {
     }
 
     pub fn add_commit(&mut self, hash: String) {
-        let new_needed = self.sessions.last()
+        let new_needed = self.sessions
+            .last()
             .map_or(true, |session| !session.is_running());
         if new_needed {
             self.new_session(None);
@@ -161,7 +161,9 @@ impl Timesheet {
     }
 
     pub fn add_branch(&mut self, name: String) {
-        self.sessions.last_mut().map(|session| session.add_branch(name));
+        self.sessions
+            .last_mut()
+            .map(|session| session.add_branch(name));
     }
 
     fn write_to_html(&self, ago: Option<u64>) -> bool {
@@ -206,7 +208,7 @@ impl Timesheet {
             Ok(file) => file,
             Err(why) => {
                 println!("Could not write report to session.html! {}",
-                        why.description());
+                         why.description());
                 return false;
             }
         };
@@ -267,7 +269,8 @@ impl Timesheet {
                 true
             }
             Err(why) => {
-                println!("Could not open timesheet.json file: {}", why.description());
+                println!("Could not open timesheet.json file: {}",
+                         why.description());
                 false
             }
         }
@@ -319,7 +322,7 @@ impl Timesheet {
 
     pub fn timesheet_status(&self) -> String {
         let mut status = format!("Sheet running for {}\n",
-               sec_to_hms_string(get_seconds() - self.start));
+                sec_to_hms_string(get_seconds() - self.start));
         match self.sessions.len() {
             0 => write!(&mut status, "No sessions yet.\n").unwrap(),
             n => {
@@ -327,7 +330,7 @@ impl Timesheet {
                        "{} session(s) so far.\nLast session:\n{}",
                        n,
                        self.sessions[n - 1].status())
-                        .unwrap()
+                       .unwrap()
             }
         };
         status
@@ -378,7 +381,7 @@ impl Timesheet {
 
     pub fn set_repo_url(&mut self, repo: String) {
         let repo =
-           if repo == "" { None } else { Some(repo) };
+            if repo == "" { None } else { Some(repo) };
         self.config.repository = repo;
     }
 
@@ -397,14 +400,14 @@ impl Timesheet {
         let mut sessions_html = String::new();
         for session in &self.sessions {
             if session.start > timestamp {
-		write!(&mut sessions_html, "{}<hr>", session.to_html()).unwrap();
+                sessions_html.push_str(&format!("{}<hr>", session.to_html()));
             }
         }
 
         let stylesheets = if self.config.show_commits {
-                "<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\n".to_string()
+            "<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\n".to_string()
         } else {
-                r#"<link rel="stylesheet" type="text/css" href="style.css">
+            r#"<link rel="stylesheet" type="text/css" href="style.css">
 <link rel="stylesheet" type="text/css" href="no_commit.css">
 "#.to_string()
         };
