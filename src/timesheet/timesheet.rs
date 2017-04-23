@@ -12,7 +12,7 @@ use url_open::UrlOpen;
 use serde_json::{from_str, to_string};
 
 use util::*;
-use config::*;
+use config::Config;
 use timesheet::traits::HasHTML;
 
 use timesheet::session::Session;

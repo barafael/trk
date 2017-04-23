@@ -22,7 +22,7 @@ extern crate url;
 /* For process termination */
 use std::{process, env};
 
-use util::*;
+use util::{get_seconds, parse_hhmm_to_seconds};
 
 use timesheet::timesheet::Timesheet;
 

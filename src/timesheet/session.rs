@@ -3,7 +3,7 @@ use std::fmt::Write;
 /* For branch name dedup */
 use std::collections::HashSet;
 
-use util::*;
+use util::{get_seconds, sec_to_hms_string, ts_to_date};
 
 /* For process termination */
 use std::process;

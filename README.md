@@ -107,7 +107,7 @@ To automatically add abbreviated git commits or branch summaries to the history,
 - [x] Rename ev_type to ty
 - [x] Naming improvements: is\_valid\_ts, timestamp, time
 - [x] Remove trailing \_opt from options which are de-opted anyway. Just rebind the names
-- [] Find out if `use util::*;` and similar is bad
+- [x] Find out if `use util::*;` and similar is bad
 - [x] Move `extern crate`s to root and reorder `extern crate` and `use`'s and `mod`s
 - [x] Check if clap code should be put in a yaml file (not for now)
 - [x] Simplify operations on session vec (last(), last_mut())
