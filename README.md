@@ -89,7 +89,7 @@ Which can be styled by style.css:
 
 ![sheet.png](https://github.com/medium-endian/trk/blob/master/sheet.png)
 
-### Installation
+## Installation
 
 Currently the best way to install this is to install rust nightly via rustup.rs, clone this repo and then run `cargo build --release` in it.
 
@@ -99,11 +99,11 @@ You could also install properly to `~/bin/` or something.
 
 To automatically add abbreviated git commits or branch summaries to the history, you can copy the files `post-commit` (for commits) or `post-checkout` (for branches) to your projects `.git/hooks` directory. If those files already exist, just append the lines from the appropriate hook. All the hooks do is call `trk` with some meta info.
 
-### Soft Dependencies
+## Soft Dependencies
 
 `trk` is useful together with `html-tidy` and `git`, but it also works without them. (At the moment `trk` complains a lot if html-tidy is installled even though html-tidy is not at all necessary for the program to work correctly). When you run without git (or rather without `user.name` set in `.gitconfig`) you have to provide one as in `trk init <name>`.
 
-### TODO:
+## TODO:
 - [x] Rename ev_type to ty
 - [x] Naming improvements: is\_valid\_ts, timestamp, time
 - [x] Remove trailing \_opt from options which are de-opted anyway. Just rebind the names
@@ -120,11 +120,11 @@ To automatically add abbreviated git commits or branch summaries to the history,
 - [x] Split up into timesheet.rs into session.rs, timesheet.rs, traits.rs, and util.rs
 - [] Move HTML templating to own lib or better use a crate like Maud
 - [] Use Result instead of bools (with error enums?)
-- [] Use `format!` instead of `write!` with `String::new()`
+- [] Use `format!` instead of `write!` with `String::new()` WIP
 - [] Check output of `get_seconds()` anyway
 - [x] Fix underflow in session.rs work_time()
-* - [] Support different natural language durations (one week, since=date, or maybe place pins...)
-* TODO/nicetohave: Run this on a server instead of the local machine.
+- [x] Set the current directory to the next higher directory which contains a `.trk` directory
+- [] Support different natural language durations (one week, since=date, or maybe place pins...)
 - [x] Add a 'set' command, for example to set git_repo_url (in order to make the commit messages links to the repo)
 - [x] Flush to html every load and just open browser on report.
 - [x] Format output - leave out commits and branches, for example
@@ -136,3 +136,5 @@ To automatically add abbreviated git commits or branch summaries to the history,
 - [x] Convert unix timestamps to date strings
 - [x] The session struct is a list of sequential events with timestamps. A session struct is identified by it's starting time
 - [x] The Timesheet struct is deserialized on every run, worked on, and then serialized again. It has a to_html() implementation.
+- [] nicetohave: Run this on a server instead of the local machine.
+
