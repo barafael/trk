@@ -34,7 +34,7 @@ fn main() {
     /* Handle command line arguments with clap */
     let arguments = clap_app!(trk =>
         (setting: SubcommandRequiredElseHelp)
-        (version: "0.1")
+        (version: "0.9")
         (author: "Rafael B. <mediumendian@gmail.com>")
         (about: "Create timesheets from git history and meta info")
             /* (@arg CONFIG: -c --config +takes_value "[UNUSED] Sets a custom config file") */
