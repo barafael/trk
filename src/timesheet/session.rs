@@ -269,7 +269,7 @@ impl HasHTML for Event {
                 match self.note {
                     Some(ref info) => {
                         format!(r#"<div class="entry pause">{}: Started a pause
-    <p class="mininote">{}</p>
+    <p class="mininote wordWrap">{}</p>
 </div>"#,
                                 ts_to_date(self.timestamp),
                                 info.clone())
@@ -294,7 +294,7 @@ impl HasHTML for Event {
             EventType::Note => {
                 match self.note {
                     Some(ref text) => {
-                        format!(r#"<div class="entry note">{}: Note: {
+                        format!(r#"<div class="entry note wordWrap">{}: Note: {
 }
 <hr>
 </div>"#,
@@ -311,8 +311,8 @@ impl HasHTML for Event {
             EventType::Commit { ref hash } => {
                 match self.note {
                     Some(ref text) => {
-                        format!(r#"<div class="entry commit">{}: Commit id: {}
-    <p class="mininote">message: {}</p>
+                        format!(r#"<div class="entry commit wordWrap">{}: Commit id: {}
+    <p class="mininote wordWrap">message: {}</p>
   <hr>
 </div>"#,
                                 ts_to_date(self.timestamp),

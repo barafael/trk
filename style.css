@@ -58,3 +58,11 @@ section.summary {
   border-radius: 10px;
   margin: 20px;
 }
+
+.wordWrap {
+    white-space: no-wrap;
+}
+
+.forceWrap {
+    word-break: break-all;
+}
