@@ -20,7 +20,7 @@ extern crate url_open;
 extern crate url;
 
 /* For process termination */
-use std::process;
+use std::{process, env};
 
 use util::*;
 
@@ -120,7 +120,7 @@ fn main() {
                 (author: "mediumendian@gmail.com")
                 (@arg sheet_or_session: +required "session or sheet")
                 (@arg ago: "How long the record should go back")
-	    )
+            )
             (@subcommand clear =>
                 (about: "Temporary: clears all sessions and updates all timestamps")
                 (version: "0.1")
@@ -128,6 +128,24 @@ fn main() {
             )
        )
             .get_matches();
+
+    /* Set current dir to the next upper directory containing a .trk directory */
+    let mut p = env::current_dir().unwrap();
+    loop {
+        p.push(".trk");
+        if p.exists() {
+            p.pop();
+            env::set_current_dir(&p).is_ok();
+            break;
+        } else {
+            p.pop();
+            if !p.pop() {
+                println!("Fatal: not a .trk directory (or subdirectory of one).");
+                process::exit(0);
+            }
+        }
+    }
+
 
     /* Gets a value for config if supplied by user, or defaults to "default.conf" */
     /* let config = matches.value_of("config").unwrap_or("default.conf");

@@ -168,9 +168,6 @@ impl Timesheet {
 
     fn write_to_html(&self, ago: Option<u64>) -> bool {
         /* TODO: avoid time-of-check-to-time-of-use race risk */
-        /* TODO: make all commands run regardless of where trk is executed
-         * (and not just in root which is assumed here */
-
         let path = Path::new("./timesheet.html");
         let file = OpenOptions::new()
             .write(true)
@@ -278,8 +275,6 @@ impl Timesheet {
 
     pub fn write_files(&self) -> bool {
         /* TODO: avoid time-of-check-to-time-of-use race risk */
-        /* TODO: make all commands run regardless of where trk is executed
-         * (and not just in root which is assumed here */
         self.write_to_json() && self.write_to_html(None) && self.write_last_session_html()
     }
 
