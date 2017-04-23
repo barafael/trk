@@ -27,8 +27,6 @@ pub struct Timesheet {
 }
 
 impl Timesheet {
-    /* TODO: check if all goes right if write_files
-       is called only before the end of main() */
     /** Initializes the .trk/timesheet.json file which holds
      * the serialized timesheet
      * Returns Some(newTimesheet) if operation succeeded */
@@ -38,7 +36,6 @@ impl Timesheet {
             println!("Timesheet is already initialized!");
             return None;
         }
-
         /* File does not exist, initialize */
         let git_author_name = git_author();
         let author_name = match author_name {
@@ -108,7 +105,6 @@ impl Timesheet {
     pub fn end_session(&mut self, timestamp: Option<u64>) {
         match self.sessions.last_mut() {
             Some(session) => {
-                // TODO This is always problematic - rethink.
                 session.update_end();
                 session.finalize(timestamp);
                 self.end = session.end + 1;
@@ -167,7 +163,7 @@ impl Timesheet {
     }
 
     fn write_to_html(&self, ago: Option<u64>) -> bool {
-        /* TODO: avoid time-of-check-to-time-of-use race risk */
+        // TODO: avoid time-of-check-to-time-of-use race risk
         let path = Path::new("./timesheet.html");
         let file = OpenOptions::new()
             .write(true)
@@ -280,7 +276,6 @@ impl Timesheet {
 
     /** Return a Some(Timesheet) struct if a timesheet.json file
      * is present and valid in the .trk directory, and None otherwise.
-     * TODO: improve error handling
      * */
     pub fn load_from_file() -> Option<Timesheet> {
         let path = Path::new("./.trk/timesheet.json");

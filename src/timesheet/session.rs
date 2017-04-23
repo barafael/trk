@@ -5,6 +5,7 @@ use std::collections::HashSet;
 
 use util::*;
 
+/* For process termination */
 use std::process;
 
 use timesheet::traits::HasHTML;
@@ -58,6 +59,7 @@ impl Session {
             .map_or(false, |ev| ev.ev_ty == EventType::Pause)
     }
 
+    // TODO: improve the session finalize/end logic
     pub fn update_end(&mut self) {
         self.end = match self.events.len() {
             0 => self.end,
@@ -158,8 +160,6 @@ impl Session {
                     let pause = &mut self.events[len - 1];
                     match pause.note {
                         Some(ref mut already) => {
-                            // TODO: handle long strings (also in other types)
-                            // TODO: there must be another way other than <br>
                             already.push_str("<br>");
                             already.push_str(&note.unwrap());
                         }
