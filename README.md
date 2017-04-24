@@ -124,6 +124,8 @@ To automatically add abbreviated git commits or branch summaries to the history,
 - [] Use Result instead of bools (with error enums?)
 - [] Use `format!` instead of `write!` with `String::new()` WIP
 - [] Check output of `get_seconds()` anyway
+- [x] Include stylesheets and gitignore in binary
+- [] Include Commit hooks in binary
 - [x] Fix underflow in session.rs work_time()
 - [x] Set the current directory to the next higher directory which contains a `.trk` directory
 - [x] Set the current directory correctly even if started from within a .trk directory
