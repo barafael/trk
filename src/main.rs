@@ -192,7 +192,7 @@ fn main() {
     }
 
     /* Variable to hold git commit message */
-    let mut message = "No commit message. This is an error!";
+    let message;
     /* Unwrap the timesheet and continue only if timesheet file exists */
     let mut sheet = match sheet {
         Some(file) => file,
@@ -259,6 +259,7 @@ fn main() {
                 }
                 _ => unreachable!(),
             }
+            return;
         }
         ("report", Some(arg)) => {
             match arg.value_of("sheet_or_session") {
@@ -275,6 +276,7 @@ fn main() {
                 }
                 _ => unreachable!(),
             }
+            return;
         }
         ("set_show_commits", Some(arg)) => {
             match arg.value_of("on_off") {
@@ -286,12 +288,14 @@ fn main() {
                 }
                 _ => unreachable!(),
             }
+            return;
         }
         ("set_repo_url", Some(arg)) => {
             match arg.value_of("url") {
                 Some(repo_url) => sheet.set_repo_url(repo_url.to_string()),
                 None => println!("Could not parse argument of trk set repo_url."),
             }
+            return;
         }
         _ => unreachable!(),
     }
