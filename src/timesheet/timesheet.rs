@@ -279,23 +279,39 @@ impl Timesheet {
     /** Return a Some(Timesheet) struct if a timesheet.json file
      * is present and valid in the .trk directory, and None otherwise.
      * */
-    pub fn load_from_file() -> Option<Timesheet> {
-        let path = Path::new("./.trk/timesheet.json");
-        let file = OpenOptions::new().read(true).open(&path);
-        match file {
-            Ok(mut file) => {
-                let mut serialized = String::new();
-                match file.read_to_string(&mut serialized) {
-                    Ok(..) => from_str(&serialized).unwrap_or(None),
-                    Err(..) => {
-                        println!("IO error while reading the timesheet file.");
-                        process::exit(0);
-                    }
-                }
+pub fn load_from_file() -> Option<Timesheet> {
+    let mut path = env::current_dir().unwrap();
+    loop {
+        path.push(".trk");
+        if path.exists() {
+            env::set_current_dir(&path).is_ok();
+            break;
+        } else {
+            path.pop();
+            if !path.pop() {
+                return None;
             }
-            Err(..) => None,
         }
     }
+
+    path.push("timesheet.json");
+    let file = OpenOptions::new().read(true).open(&path);
+    path.pop();
+    env::set_current_dir(path).unwrap();
+    match file {
+        Ok(mut file) => {
+            let mut serialized = String::new();
+            match file.read_to_string(&mut serialized) {
+                Ok(..) => from_str(&serialized).unwrap_or(None),
+                Err(..) => {
+                    println!("IO error while reading the timesheet file.");
+                    process::exit(0);
+                }
+            }
+        }
+        Err(..) => None,
+    }
+}
 
     pub fn clear() {
         /* Try to get user name */
