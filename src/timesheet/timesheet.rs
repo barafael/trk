@@ -212,7 +212,7 @@ impl Timesheet {
             r#"<link rel="stylesheet" type="text/css" href=".trk/style.css">
 "#      } else {
             r#"<link rel="stylesheet" type="text/css" href=".trk/style.css">
-<link rel="stylesheet" type="text/css" href=".trk/no_commit.css">
+<link rel="stylesheet" type="text/css" href=".trk/no_git_info.css">
 "#
         };
 
@@ -325,11 +325,11 @@ pub fn load_from_file() -> Option<Timesheet> {
             let mut serialized = String::new();
             match file.read_to_string(&mut serialized) {
                 Ok(..) => {
-                    let style           : &'static str = include_str!("../../style.css");
-                    let no_commit_style : &'static str = include_str!("../../no_commit.css");
-                    let trk_gitignore   : &'static str = include_str!("trk_gitignore");
+                    let style             : &'static str = include_str!("../../style.css");
+                    let no_git_info_style : &'static str = include_str!("../../no_git_info.css");
+                    let trk_gitignore     : &'static str = include_str!("trk_gitignore");
                     Timesheet::write_stylesheets("style.css", style);
-                    Timesheet::write_stylesheets("no_commit.css", no_commit_style);
+                    Timesheet::write_stylesheets("no_git_info.css", no_git_info_style);
                     Timesheet::write_stylesheets(".gitignore", trk_gitignore);
                     from_str(&serialized).unwrap_or(None)
                 }
@@ -449,7 +449,7 @@ pub fn load_from_file() -> Option<Timesheet> {
             "<link rel=\"stylesheet\" type=\"text/css\" href=\".trk/style.css\">\n".to_string()
         } else {
             r#"<link rel="stylesheet" type="text/css" href=".trk/style.css">
-<link rel="stylesheet" type="text/css" href=".trk/no_commit.css">
+<link rel="stylesheet" type="text/css" href=".trk/no_git_info.css">
 "#.to_string()
         };
 

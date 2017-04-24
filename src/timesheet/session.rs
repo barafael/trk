@@ -311,7 +311,7 @@ impl HasHTML for Event {
             EventType::Commit { ref hash } => {
                 match self.note {
                     Some(ref text) => {
-                        format!(r#"<div class="entry commit wordWrap">{}: Commit id: {}
+                        format!(r#"<div class="entry commit git_info wordWrap">{}: Commit id: {}
     <p class="mininote wordWrap">message: {}</p>
   <hr>
 </div>"#,
@@ -354,7 +354,7 @@ impl HasHTML for Session {
 
         write!(&mut html,
                r#"<section class="summary">
-    <p>{}</p>
+    <p class="git_info">{}</p>
     <p>Worked for {}</p>
     <p>Paused for {}</p>
 </div></section>"#,
