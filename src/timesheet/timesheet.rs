@@ -283,7 +283,6 @@ impl Timesheet {
                 .open(&file_path);
             match file {
                 Ok(mut file) => {
-                    println!("writing {}", filename);
                     file.write_all(content.as_bytes()).unwrap();
                     /* Save was successful */
                     true
@@ -326,10 +325,12 @@ pub fn load_from_file() -> Option<Timesheet> {
             let mut serialized = String::new();
             match file.read_to_string(&mut serialized) {
                 Ok(..) => {
-                    let style:           &'static str = include_str!("../../style.css");
-                    let no_commit_style: &'static str = include_str!("../../no_commit.css");
+                    let style           : &'static str = include_str!("../../style.css");
+                    let no_commit_style : &'static str = include_str!("../../no_commit.css");
+                    let trk_gitignore   : &'static str = include_str!("trk_gitignore");
                     Timesheet::write_stylesheets("style.css", style);
                     Timesheet::write_stylesheets("no_commit.css", no_commit_style);
+                    Timesheet::write_stylesheets(".gitignore", trk_gitignore);
                     from_str(&serialized).unwrap_or(None)
                 }
                 Err(..) => {
