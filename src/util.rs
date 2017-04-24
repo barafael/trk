@@ -64,16 +64,16 @@ pub fn parse_hhmm_to_seconds(timestr: &str) -> Option<u64> {
 }
 
 pub fn set_to_trk_dir() -> bool {
-    let mut p = env::current_dir().unwrap();
+    let mut path = env::current_dir().unwrap();
     loop {
-        p.push(".trk");
-        if p.exists() {
-            p.pop();
-            env::set_current_dir(&p).is_ok();
+        path.push(".trk");
+        if path.exists() {
+            path.pop();
+            env::set_current_dir(&path).is_ok();
             return true;
         } else {
-            p.pop();
-            if !p.pop() {
+            path.pop();
+            if !path.pop() {
                 println!("Fatal: not a .trk directory (or subdirectory of one).");
                 return false;
             }
@@ -88,10 +88,10 @@ pub fn git_init_trk() -> bool {
         return false;
     }
 
-    let mut p = env::current_dir().unwrap();
-    p.push(".trk");
-    if p.exists() {
-        env::set_current_dir(&p).is_ok();
+    let mut path = env::current_dir().unwrap();
+    path.push(".trk");
+    if path.exists() {
+        env::set_current_dir(&path).is_ok();
     } else {
         println!("Couldn't access .trk sub directory to initialise trk internal git repo.");
         return false;
@@ -119,8 +119,8 @@ pub fn git_init_trk() -> bool {
     }
 
     /* Reset current_dir to previous value */
-    p.pop();
-    env::set_current_dir(&p).is_ok();
+    path.pop();
+    env::set_current_dir(&path).is_ok();
     true
 }
 
