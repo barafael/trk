@@ -209,10 +209,10 @@ impl Timesheet {
         };
 
         let stylesheets = if self.config.show_commits {
-            r#"<link rel="stylesheet" type="text/css" href="style.css">
+            r#"<link rel="stylesheet" type="text/css" href=".trk/style.css">
 "#      } else {
-            r#"<link rel="stylesheet" type="text/css" href="style.css">
-<link rel="stylesheet" type="text/css" href="no_commit.css">
+            r#"<link rel="stylesheet" type="text/css" href=".trk/style.css">
+<link rel="stylesheet" type="text/css" href=".trk/no_commit.css">
 "#
         };
 
@@ -271,6 +271,31 @@ impl Timesheet {
         }
     }
 
+    fn write_stylesheets(filename: &str, content: &'static str) -> bool {
+        // TODO: avoid time-of-check-to-time-of-use race risk
+        let mut file_path = env::current_dir().unwrap();
+        file_path.push(filename);
+        if !file_path.exists() {
+            let file = OpenOptions::new()
+                .write(true)
+                .truncate(true)
+                .create(true)
+                .open(&file_path);
+            match file {
+                Ok(mut file) => {
+                    println!("writing {}", filename);
+                    file.write_all(content.as_bytes()).unwrap();
+                    /* Save was successful */
+                    true
+                }
+                Err(why) => {
+                    println!("Could not report sheet! {}", why.description());
+                    false
+                }
+            }
+        } else { true }
+    }
+
     pub fn write_files(&self) -> bool {
         /* TODO: avoid time-of-check-to-time-of-use race risk */
         self.write_to_json() && self.write_to_html(None) && self.write_last_session_html()
@@ -296,13 +321,17 @@ pub fn load_from_file() -> Option<Timesheet> {
 
     path.push("timesheet.json");
     let file = OpenOptions::new().read(true).open(&path);
-    path.pop();
-    env::set_current_dir(path).unwrap();
-    match file {
+    let result = match file {
         Ok(mut file) => {
             let mut serialized = String::new();
             match file.read_to_string(&mut serialized) {
-                Ok(..) => from_str(&serialized).unwrap_or(None),
+                Ok(..) => {
+                    let style:           &'static str = include_str!("../../style.css");
+                    let no_commit_style: &'static str = include_str!("../../no_commit.css");
+                    Timesheet::write_stylesheets("style.css", style);
+                    Timesheet::write_stylesheets("no_commit.css", no_commit_style);
+                    from_str(&serialized).unwrap_or(None)
+                }
                 Err(..) => {
                     println!("IO error while reading the timesheet file.");
                     process::exit(0);
@@ -310,7 +339,10 @@ pub fn load_from_file() -> Option<Timesheet> {
             }
         }
         Err(..) => None,
-    }
+    };
+    path.pop();
+    env::set_current_dir(path).unwrap();
+    result
 }
 
     pub fn clear() {
@@ -413,10 +445,10 @@ pub fn load_from_file() -> Option<Timesheet> {
         }
 
         let stylesheets = if self.config.show_commits {
-            "<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\">\n".to_string()
+            "<link rel=\"stylesheet\" type=\"text/css\" href=\".trk/style.css\">\n".to_string()
         } else {
-            r#"<link rel="stylesheet" type="text/css" href="style.css">
-<link rel="stylesheet" type="text/css" href="no_commit.css">
+            r#"<link rel="stylesheet" type="text/css" href=".trk/style.css">
+<link rel="stylesheet" type="text/css" href=".trk/no_commit.css">
 "#.to_string()
         };
 
