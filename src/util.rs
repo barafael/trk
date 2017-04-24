@@ -8,6 +8,8 @@ use nom;
 /* For running git and html-tidy */
 use std::process::Command;
 
+use std::env;
+
 /* For from::utf8 */
 use std::str;
 
@@ -61,6 +63,101 @@ pub fn parse_hhmm_to_seconds(timestr: &str) -> Option<u64> {
     }
 }
 
+pub fn set_to_trk_dir() -> bool {
+    let mut p = env::current_dir().unwrap();
+    loop {
+        p.push(".trk");
+        if p.exists() {
+            p.pop();
+            env::set_current_dir(&p).is_ok();
+            return true;
+        } else {
+            p.pop();
+            if !p.pop() {
+                println!("Fatal: not a .trk directory (or subdirectory of one).");
+                return false;
+            }
+        }
+    }
+}
+
+pub fn git_init_trk() -> bool {
+    if !set_to_trk_dir() {
+        println!("Could not initialise trk internal git repo!\
+                 (couldn't find upper level .trk dir).");
+        return false;
+    }
+
+    let mut p = env::current_dir().unwrap();
+    p.push(".trk");
+    if p.exists() {
+        env::set_current_dir(&p).is_ok();
+    } else {
+        println!("Couldn't access .trk sub directory to initialise trk internal git repo.");
+        return false;
+    }
+    let output = Command::new("git")
+           .arg("init")
+           .output();
+    match output {
+        Ok(_) => {},
+        Err(_) => {
+            println!("Could not run git init!");
+            return false;
+        }
+    }
+    let output = Command::new("git")
+           .arg("add")
+           .arg("timesheet.json")
+           .output();
+    match output {
+        Ok(_) => {},
+        Err(_) => {
+            println!("Could not run git init!");
+            return false;
+        }
+    }
+
+    /* Reset current_dir to previous value */
+    p.pop();
+    env::set_current_dir(&p).is_ok();
+    true
+}
+
+pub fn git_commit_trk(message: &str) -> bool {
+    if !set_to_trk_dir() {
+        println!("Could not commit to trk internal git repo!\
+                 (couldn't find upper level .trk dir).");
+        return false;
+    }
+
+    let mut p = env::current_dir().unwrap();
+    p.push(".trk");
+    if p.exists() {
+        env::set_current_dir(&p).is_ok();
+    } else {
+        println!("Couldn't access .trk sub directory to initialise trk internal git repo.");
+        return false;
+    }
+    let output = Command::new("git")
+           .arg("commit")
+           .arg("timesheet.json")
+           .arg("-m")
+           .arg(message)
+           .output();
+    match output {
+        Ok(_) => {},
+        Err(_) => {
+            println!("Could not run git commit!");
+            return false;
+        }
+    }
+
+    /* Reset current_dir to previous value */
+    p.pop();
+    env::set_current_dir(&p).is_ok();
+    true
+}
 pub fn git_author() -> Option<String> {
     if let Ok(output) = Command::new("git")
            .arg("config")

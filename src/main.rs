@@ -20,9 +20,9 @@ extern crate url_open;
 extern crate url;
 
 /* For process termination */
-use std::{process, env};
+use std::process;
 
-use util::{get_seconds, parse_hhmm_to_seconds};
+use util::{get_seconds, parse_hhmm_to_seconds, set_to_trk_dir, git_commit_trk};
 
 use timesheet::timesheet::Timesheet;
 
@@ -142,7 +142,10 @@ fn main() {
             Some(..) => println!("Already initialised."),
             None => {
                 match Timesheet::init(command.value_of("name")) {
-                    Some(..) => println!("Init successful."),
+                    Some(..) => {
+                        println!("Init successful.");
+                        git_commit_trk("initialise trk");
+                    }
                     None => println!("Could not initialize."),
                 }
             }
@@ -151,20 +154,9 @@ fn main() {
     }
 
     /* Set current dir to the next upper directory containing a .trk directory */
-    let mut p = env::current_dir().unwrap();
-    loop {
-        p.push(".trk");
-        if p.exists() {
-            p.pop();
-            env::set_current_dir(&p).is_ok();
-            break;
-        } else {
-            p.pop();
-            if !p.pop() {
-                println!("Fatal: not a .trk directory (or subdirectory of one).");
-                process::exit(0);
-            }
-        }
+    if !set_to_trk_dir() {
+        println!("Fatal: not a .trk directory (or subdirectory of one).");
+        process::exit(0);
     }
 
    /* Special case for clear because t_sheet can be None when clearing (corrupt file) */
@@ -173,10 +165,14 @@ fn main() {
             Some(..) => {
                 println!("Clearing timesheet.");
                 Timesheet::clear();
+                git_commit_trk("Cleared timesheet");
             }
             None => {
                 match Timesheet::init(command.value_of("name")) {
-                    Some(..) => println!("Reinitialised timesheet."),
+                    Some(..) => {
+                        println!("Reinitialised timesheet.");
+                        git_commit_trk("Reinitialised timesheet.");
+                    }
                     None => println!("Could not initialize."),
                 }
             }
@@ -195,6 +191,8 @@ fn main() {
         }
     }
 
+    /* Variable to hold git commit message */
+    let mut message = "No commit message. This is an error!";
     /* Unwrap the timesheet and continue only if timesheet file exists */
     let mut sheet = match sheet {
         Some(file) => file,
@@ -209,11 +207,13 @@ fn main() {
             let timestamp: Option<u64> = parse_hhmm_to_seconds(arg.value_of("ago").unwrap_or(""))
                 .map(|ago| get_seconds() - ago);
             sheet.new_session(timestamp);
+            message = "begin new session";
         }
         ("end", Some(arg)) => {
             let timestamp: Option<u64> = parse_hhmm_to_seconds(arg.value_of("ago").unwrap_or(""))
                 .map(|ago| get_seconds() - ago);
             sheet.end_session(timestamp);
+            message = "end session";
         }
         ("pause", Some(arg)) => {
             let timestamp: Option<u64> = parse_hhmm_to_seconds(arg.value_of("ago").unwrap_or(""))
@@ -223,26 +223,31 @@ fn main() {
                 Some(note_text) => sheet.pause(timestamp, Some(note_text.to_string())),
                 None => sheet.pause(timestamp, None),
             }
+            message = "pause session";
         }
 
         ("resume", Some(arg)) => {
             let timestamp: Option<u64> = parse_hhmm_to_seconds(arg.value_of("ago").unwrap_or(""))
                 .map(|ago| get_seconds() - ago);
             sheet.resume(timestamp);
+            message = "resume session";
         }
         ("note", Some(arg)) => {
             let timestamp: Option<u64> = parse_hhmm_to_seconds(arg.value_of("ago").unwrap_or(""))
                 .map(|ago| get_seconds() - ago);
             let note_text = arg.value_of("note_text").unwrap();
             sheet.note(timestamp, note_text.to_string());
+            message = "add note to session";
         }
         ("commit", Some(arg)) => {
             let commit_hash = arg.value_of("hash").unwrap();
             sheet.add_commit(commit_hash.to_string());
+            message = "add commit to session";
         }
         ("branch", Some(arg)) => {
             let branch_name = arg.value_of("name").unwrap();
             sheet.add_branch(branch_name.to_string());
+            message = "add branch to branchlist";
         }
         ("status", Some(arg)) => {
             match arg.value_of("sheet_or_session") {
@@ -291,4 +296,5 @@ fn main() {
         _ => unreachable!(),
     }
     sheet.write_files();
+    git_commit_trk(message);
 }

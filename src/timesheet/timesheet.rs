@@ -60,11 +60,13 @@ impl Timesheet {
             config       : config,
             sessions     : Vec::<Session>::new(),
         };
-        if sheet.write_files() {
+        let sheet = if sheet.write_files() {
+            git_init_trk();
             Some(sheet)
         } else {
             None
-        }
+        };
+        sheet
     }
 
     fn is_init() -> bool {
