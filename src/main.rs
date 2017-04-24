@@ -288,14 +288,16 @@ fn main() {
                 }
                 _ => unreachable!(),
             }
-            return;
+            message = "set show_commits";
         }
         ("set_repo_url", Some(arg)) => {
             match arg.value_of("url") {
-                Some(repo_url) => sheet.set_repo_url(repo_url.to_string()),
-                None => println!("Could not parse argument of trk set repo_url."),
+                Some(repo_url) => {
+                    sheet.set_repo_url(repo_url.to_string());
+                    message = "set repo url";
+                }
+                _ => unreachable!(),
             }
-            return;
         }
         _ => unreachable!(),
     }
