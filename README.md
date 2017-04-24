@@ -97,6 +97,8 @@ You might want to add `/home/rafael/Code/trk/target/release` to your `$PATH` to 
 For development, you might want to add `/home/rafael/Code/trk/target/debug` to your `$PATH` (in that case build with `cargo build`).
 You could also install properly to `~/bin/` or something.
 
+If you use `trk` together with `git`, it is recommended that you place `/.trk/` in your .gitignore file. `trk` will place a `.git` directory in `.trk` just to track itself, also you probably don't want to directly check in the `trk` internal files.
+
 To automatically add abbreviated git commits or branch summaries to the history, you can copy the files `post-commit` (for commits) or `post-checkout` (for branches) to your projects `.git/hooks` directory. If those files already exist, just append the lines from the appropriate hook. All the hooks do is call `trk` with some meta info.
 
 ## Soft Dependencies
@@ -124,6 +126,7 @@ To automatically add abbreviated git commits or branch summaries to the history,
 - [] Check output of `get_seconds()` anyway
 - [x] Fix underflow in session.rs work_time()
 - [x] Set the current directory to the next higher directory which contains a `.trk` directory
+- [x] Set the current directory correctly even if started from within a .trk directory
 - [] Support different natural language durations (one week, since=date, or maybe place pins...)
 - [x] Add a 'set' command, for example to set git_repo_url (in order to make the commit messages links to the repo)
 - [x] Flush to html every load and just open browser on report.
