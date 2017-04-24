@@ -129,6 +129,27 @@ fn main() {
        )
             .get_matches();
 
+    let sheet = Timesheet::load_from_file();
+
+    /* Gets a value for config if supplied by user, or defaults to "default.conf" */
+    /* let config = matches.value_of("config").unwrap_or("default.conf");
+    println!("[UNUSED] Value for config: {}", config); */
+
+    /* Special case for init because t_sheet can and should be None before initialisation
+     * Also, check for .trk directory only after this */
+    if let Some(command) = arguments.subcommand_matches("init") {
+        match sheet {
+            Some(..) => println!("Already initialised."),
+            None => {
+                match Timesheet::init(command.value_of("name")) {
+                    Some(..) => println!("Init successful."),
+                    None => println!("Could not initialize."),
+                }
+            }
+        }
+        return;
+    }
+
     /* Set current dir to the next upper directory containing a .trk directory */
     let mut p = env::current_dir().unwrap();
     loop {
@@ -146,28 +167,7 @@ fn main() {
         }
     }
 
-
-    /* Gets a value for config if supplied by user, or defaults to "default.conf" */
-    /* let config = matches.value_of("config").unwrap_or("default.conf");
-    println!("[UNUSED] Value for config: {}", config); */
-
-    let sheet = Timesheet::load_from_file();
-
-    /* Special case for init because t_sheet can and should be None before initialisation */
-    if let Some(command) = arguments.subcommand_matches("init") {
-        match sheet {
-            Some(..) => println!("Already initialised."),
-            None => {
-                match Timesheet::init(command.value_of("name")) {
-                    Some(..) => println!("Init successful."),
-                    None => println!("Could not initialize."),
-                }
-            }
-        }
-        return;
-    }
-
-    /* Special case for clear because t_sheet can be None when clearing (corrupt file) */
+   /* Special case for clear because t_sheet can be None when clearing (corrupt file) */
     if let Some(command) = arguments.subcommand_matches("clear") {
         match sheet {
             Some(..) => {
