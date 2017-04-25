@@ -113,23 +113,23 @@ To automatically add abbreviated git commits or branch summaries to the history,
 - [x] Move `extern crate`s to root and reorder `extern crate` and `use`'s and `mod`s
 - [x] Check if clap code should be put in a yaml file (not for now)
 - [x] Simplify operations on session vec (last(), last_mut())
-- [] Redesign timesheet to handle timestamps nicely and deduplicate all timestamp logic
-- [] Clarify when ts + 1 is used (preferably improve logic so it becomes unnecessary)
-- [] Simplify option handling with `if let`, `map`, `map_or` WIP
+- [ ] Redesign timesheet to handle timestamps nicely and deduplicate all timestamp logic
+- [ ] Clarify when ts + 1 is used (preferably improve logic so it becomes unnecessary)
+- [ ] Simplify option handling with `if let`, `map`, `map_or` WIP
 - [x] Multiple imports
 - [x] Add work/pause summary to status output
 - [x] Add settings/config struct
 - [x] Split up into timesheet.rs into session.rs, timesheet.rs, traits.rs, and util.rs
-- [] Move HTML templating to own lib or better use a crate like Maud
-- [] Use Result instead of bools (with error enums?)
-- [] Use `format!` instead of `write!` with `String::new()` WIP
-- [] Check output of `get_seconds()` anyway
+- [ ] Move HTML templating to own lib or better use a crate like Maud
+- [ ] Use Result instead of bools (with error enums?)
+- [ ] Use `format!` instead of `write!` with `String::new()` WIP
+- [ ] Check output of `get_seconds()` anyway
 - [x] Include stylesheets and gitignore in binary
-- [] Include Commit hooks in binary
+- [ ] Include Commit hooks in binary
 - [x] Fix underflow in session.rs work_time()
 - [x] Set the current directory to the next higher directory which contains a `.trk` directory
 - [x] Set the current directory correctly even if started from within a .trk directory
-- [] Support different natural language durations (one week, since=date, or maybe place pins...)
+- [ ] Support different natural language durations (one week, since=date, or maybe place pins...)
 - [x] Add a 'set' command, for example to set git_repo_url (in order to make the commit messages links to the repo)
 - [x] Flush to html every load and just open browser on report.
 - [x] Format output - leave out commits and branches, for example
@@ -141,5 +141,5 @@ To automatically add abbreviated git commits or branch summaries to the history,
 - [x] Convert unix timestamps to date strings
 - [x] The session struct is a list of sequential events with timestamps. A session struct is identified by it's starting time
 - [x] The Timesheet struct is deserialized on every run, worked on, and then serialized again. It has a to_html() implementation.
-- [] nicetohave: Run this on a server instead of the local machine.
+- [ ] nicetohave: Run this on a server instead of the local machine.
 

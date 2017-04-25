@@ -16,3 +16,5 @@
 *.rs.bk
 
 Makefile
+
+/.idea/
