@@ -68,7 +68,7 @@ impl Session {
     }
 
     pub fn finalize(&mut self, timestamp: Option<u64>) {
-        let timestamp = timestamp.unwrap_or(get_seconds());
+        let timestamp = timestamp.unwrap_or_else(get_seconds);
         let is_valid_ts = match self.events.len() {
             0 => timestamp > self.start,
             n => {
@@ -237,7 +237,7 @@ impl Session {
                    sec_to_hms_string(get_seconds() - self.events[self.events.len() - 1].timestamp)));
         } else {
             match self.events.len() {
-                0 => status.push_str(&format!("    No events in this session yet!\n")),
+                0 => status.push_str(&String::from("    No events in this session yet!\n")),
                 n => status.push_str(&format!(
                            "    Last event: {:?}, {} ago.\n",
                            &self.events[n - 1].ev_ty,
