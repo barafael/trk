@@ -32,12 +32,12 @@ pub fn sec_to_hms_string(seconds: u64) -> String {
     let minutes = (seconds - hours * 3600) / 60;
     let seconds = seconds - minutes * 60 - hours * 3600;
     match (hours, minutes, seconds) {
-        (0, 0, 1) => format!("1 second"),
+        (0, 0, 1) => String::from("1 second"),
         (0, 0, s) => format!("{} seconds", s),
-        (0, 1, _) => format!("1 minute"),
+        (0, 1, _) => String::from("1 minute"),
         (0, m, _) => format!("{} minutes", m),
         /* Range matching: slightly dubious feature here */
-        (1, 0...4, _)   => format!("1 hour"),
+        (1, 0...4, _)   => String::from("1 hour"),
         (h, 0...4, _)   => format!("{} hours", h),
         (h, 56...59, _) => format!("{} hours", h + 1),
         (h, m, _)       => format!("{} hours and {} minutes", h, m),
