@@ -203,13 +203,13 @@ pub fn git_commit_message(hash: &str) -> Option<String> {
 }
 
 pub fn format_file(filename: &str) {
-    if let Ok(_) = Command::new("tidy")
+    if Command::new("tidy")
            .arg("--tidy-mark")
            .arg("no")
            .arg("-i")
            .arg("-m")
            .arg(filename)
-           .output() {
+           .output().is_ok() {
     } else {
         println!("tidy-html not found!");
     }
