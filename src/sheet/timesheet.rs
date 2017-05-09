@@ -150,7 +150,7 @@ impl Timesheet {
         }
         match self.sessions.last_mut() {
             Some(session) => {
-                let message = git_commit_message(&hash).unwrap_or(String::new());
+                let message = git_commit_message(&hash).unwrap_or_default();
                 session.push_event(None, Some(message), EventType::Commit { hash });
             }
             None => println!("No session to add commit to."),
@@ -378,7 +378,7 @@ pub fn load_from_file() -> Option<Timesheet> {
 
     pub fn last_session_status(&self) -> String {
         let status = self.sessions.last().map(|session| session.status());
-        status.unwrap_or("No session yet.".to_string())
+        status.unwrap_or_else(|| String::from("No session yet."))
     }
 
     fn open_local_html(&self, filename: String) {
