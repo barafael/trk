@@ -24,11 +24,11 @@ use std::process;
 
 use util::{get_seconds, parse_hhmm_to_seconds, set_to_trk_dir, git_commit_trk};
 
-use timesheet::timesheet::Timesheet;
-
 mod util;
-mod timesheet;
+mod sheet;
 mod config;
+
+use sheet::timesheet::Timesheet;
 
 fn main() {
     /* Handle command line arguments with clap */

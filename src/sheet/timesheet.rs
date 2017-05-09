@@ -13,10 +13,10 @@ use serde_json::{from_str, to_string};
 
 use util::*;
 use config::Config;
-use timesheet::traits::HasHTML;
+use sheet::traits::HasHTML;
 
-use timesheet::session::Session;
-use timesheet::session::EventType;
+use sheet::session::Session;
+use sheet::session::EventType;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Timesheet {
