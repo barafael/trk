@@ -136,7 +136,7 @@ pub fn git_commit_trk(message: &str) -> bool {
     if p.exists() {
         env::set_current_dir(&p).is_ok();
     } else {
-        println!("Couldn't access .trk sub directory to initialise trk internal git repo.");
+        println!("Couldn't access .trk sub directory to commit to trk internal git repo.");
         return false;
     }
     let output = Command::new("git")
@@ -158,6 +158,39 @@ pub fn git_commit_trk(message: &str) -> bool {
     env::set_current_dir(&p).is_ok();
     true
 }
+
+pub fn git_push() -> bool {
+    if !set_to_trk_dir() {
+        println!("Could not push to git repo!\
+                 (couldn't find upper level .trk dir).");
+        return false;
+    }
+
+    let mut p = env::current_dir().unwrap();
+    p.push(".trk");
+    if p.exists() {
+        env::set_current_dir(&p).is_ok();
+    } else {
+        println!("Couldn't access .trk sub directory to push to upstream .trk git repo.");
+        return false;
+    }
+    let output = Command::new("git")
+           .arg("push")
+           .output();
+    match output {
+        Ok(_) => {},
+        Err(_) => {
+            println!("Could not run git commit!");
+            return false;
+        }
+    }
+
+    /* Reset current_dir to previous value */
+    p.pop();
+    env::set_current_dir(&p).is_ok();
+    true
+}
+
 pub fn git_author() -> Option<String> {
     if let Ok(output) = Command::new("git")
            .arg("config")

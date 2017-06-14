@@ -22,7 +22,7 @@ extern crate url;
 /* For process termination */
 use std::process;
 
-use util::{get_seconds, parse_hhmm_to_seconds, set_to_trk_dir, git_commit_trk};
+use util::{get_seconds, parse_hhmm_to_seconds, set_to_trk_dir, git_commit_trk, git_push};
 
 mod util;
 mod sheet;
@@ -303,4 +303,6 @@ fn main() {
     }
     sheet.write_files();
     git_commit_trk(message);
+    git_push();
+
 }
