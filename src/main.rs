@@ -22,7 +22,7 @@ extern crate url;
 /* For process termination */
 use std::process;
 
-use util::{get_seconds, parse_hhmm_to_seconds, set_to_trk_dir, git_commit_trk, git_push};
+use util::{get_seconds, parse_hhmm_to_seconds, set_to_trk_dir, git_commit_trk, git_push, git_pull};
 
 mod util;
 mod sheet;
@@ -191,6 +191,8 @@ fn main() {
         }
     }
 
+    /* Pull new changes first */
+    git_pull();
     /* Variable to hold git commit message */
     let message;
     /* Unwrap the timesheet and continue only if timesheet file exists */

@@ -159,6 +159,37 @@ pub fn git_commit_trk(message: &str) -> bool {
     true
 }
 
+pub fn git_pull() -> bool {
+    if !set_to_trk_dir() {
+        println!("Could not pull from git repo!\
+                 (couldn't find upper level .trk dir).");
+        return false;
+    }
+
+    let mut p = env::current_dir().unwrap();
+    p.push(".trk");
+    if p.exists() {
+        env::set_current_dir(&p).is_ok();
+    } else {
+        println!("Couldn't access .trk sub directory to pull from upstream .trk git repo.");
+        return false;
+    }
+    let output = Command::new("git")
+           .arg("pull")
+           .output();
+    match output {
+        Ok(_) => {},
+        Err(_) => {
+            println!("Could not run git pull!");
+            return false;
+        }
+    }
+
+    /* Reset current_dir to previous value */
+    p.pop();
+    env::set_current_dir(&p).is_ok();
+    true
+}
 pub fn git_push() -> bool {
     if !set_to_trk_dir() {
         println!("Could not push to git repo!\
@@ -180,7 +211,7 @@ pub fn git_push() -> bool {
     match output {
         Ok(_) => {},
         Err(_) => {
-            println!("Could not run git commit!");
+            println!("Could not run git push!");
             return false;
         }
     }
