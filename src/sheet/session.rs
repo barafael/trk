@@ -131,8 +131,8 @@ impl Session {
                 } else {
                     self.events
                         .push(Event {
-                                  timestamp : timestamp,
-                                  note      : note,
+                                  timestamp,
+                                  note,
                                   ev_ty     : EventType::Pause,
                               });
                     true
@@ -145,8 +145,8 @@ impl Session {
                 } else {
                     self.events
                         .push(Event {
-                                  timestamp : timestamp,
-                                  note      : note,
+                                  timestamp,
+                                  note,
                                   ev_ty     : EventType::Resume,
                               });
                     true
@@ -168,8 +168,8 @@ impl Session {
                 } else {
                     self.events
                         .push(Event {
-                                  timestamp : timestamp,
-                                  note      : note,
+                                  timestamp,
+                                  note,
                                   ev_ty     : EventType::Note,
                               })
                 };
@@ -187,7 +187,7 @@ impl Session {
                 self.events
                     .push(Event {
                               timestamp : get_seconds(),
-                              note      : note,
+                              note,
                               ev_ty     : EventType::Commit { hash },
                           });
                 true

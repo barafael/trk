@@ -57,7 +57,7 @@ impl Timesheet {
         let sheet = Timesheet {
             start        : now,
             end          : now + 1,
-            config       : config,
+            config,
             sessions     : Vec::<Session>::new(),
         };
         if sheet.write_files() {
