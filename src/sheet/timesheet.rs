@@ -158,9 +158,9 @@ impl Timesheet {
     }
 
     pub fn add_branch(&mut self, name: String) {
-        self.sessions
-            .last_mut()
-            .map(|session| session.add_branch(name));
+        if let Some(session) = self.sessions.last_mut() {
+            session.add_branch(name)
+        }
     }
 
     fn write_to_html(&self, ago: Option<u64>) -> bool {
@@ -364,7 +364,7 @@ pub fn load_from_file() -> Option<Timesheet> {
         let mut status = format!("Sheet running for {}\n",
                 sec_to_hms_string(get_seconds() - self.start));
         match self.sessions.len() {
-            0 => write!(&mut status, "No sessions yet.\n").unwrap(),
+            0 => writeln!(&mut status, "No sessions yet.").unwrap(),
             n => {
                 write!(&mut status,
                        "{} session(s) so far.\nLast session:\n{}",
@@ -381,7 +381,7 @@ pub fn load_from_file() -> Option<Timesheet> {
         status.unwrap_or_else(|| String::from("No session yet."))
     }
 
-    fn open_local_html(&self, filename: String) {
+    fn open_local_html(&self, filename: &str) {
         let file_url = match env::current_dir() {
             Ok(dir) => {
                 match dir.join(&filename).to_str() {
@@ -405,12 +405,12 @@ pub fn load_from_file() -> Option<Timesheet> {
 
     pub fn report_last_session(&self) {
         self.write_to_html(None);
-        self.open_local_html("session.html".to_string());
+        self.open_local_html("session.html");
     }
 
     pub fn report_sheet(&self, ago: Option<u64>) {
         self.write_to_html(ago);
-        self.open_local_html("timesheet.html".to_string());
+        self.open_local_html("timesheet.html");
         /* Leave complete sheet html */
         self.write_to_html(None);
     }
