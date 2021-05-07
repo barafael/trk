@@ -1,9 +1,9 @@
-use std::time::{SystemTime, UNIX_EPOCH};
-use chrono::{Local, TimeZone};
 use chrono::Duration;
+use chrono::{Local, TimeZone};
+use std::time::{SystemTime, UNIX_EPOCH};
 
-use nom::IResult::Done;
 use nom;
+use nom::IResult::Done;
 
 /* For running git and html-tidy */
 use std::process::Command;
@@ -37,10 +37,10 @@ pub fn sec_to_hms_string(seconds: u64) -> String {
         (0, 1, _) => String::from("1 minute"),
         (0, m, _) => format!("{} minutes", m),
         /* Range matching: slightly dubious feature here */
-        (1, 0...4, _)   => String::from("1 hour"),
-        (h, 0...4, _)   => format!("{} hours", h),
-        (h, 56...59, _) => format!("{} hours", h + 1),
-        (h, m, _)       => format!("{} hours and {} minutes", h, m),
+        (1, 0..=4, _) => String::from("1 hour"),
+        (h, 0..=4, _) => format!("{} hours", h),
+        (h, 56..=59, _) => format!("{} hours", h + 1),
+        (h, m, _) => format!("{} hours and {} minutes", h, m),
     }
 }
 
@@ -69,7 +69,7 @@ pub fn set_to_trk_dir() -> bool {
         path.push(".trk");
         if path.exists() {
             path.pop();
-            env::set_current_dir(&path).is_ok();
+            env::set_current_dir(&path).unwrap();
             return true;
         } else {
             path.pop();
@@ -83,35 +83,35 @@ pub fn set_to_trk_dir() -> bool {
 
 pub fn git_init_trk() -> bool {
     if !set_to_trk_dir() {
-        println!("Could not initialise trk internal git repo!\
-                 (couldn't find upper level .trk dir).");
+        println!(
+            "Could not initialise trk internal git repo!\
+                 (couldn't find upper level .trk dir)."
+        );
         return false;
     }
 
     let mut path = env::current_dir().unwrap();
     path.push(".trk");
     if path.exists() {
-        env::set_current_dir(&path).is_ok();
+        env::set_current_dir(&path).unwrap();
     } else {
         println!("Couldn't access .trk sub directory to initialise trk internal git repo.");
         return false;
     }
-    let output = Command::new("git")
-           .arg("init")
-           .output();
+    let output = Command::new("git").arg("init").output();
     match output {
-        Ok(_) => {},
+        Ok(_) => {}
         Err(_) => {
             println!("Could not run git init!");
             return false;
         }
     }
     let output = Command::new("git")
-           .arg("add")
-           .arg("timesheet.json")
-           .output();
+        .arg("add")
+        .arg("timesheet.json")
+        .output();
     match output {
-        Ok(_) => {},
+        Ok(_) => {}
         Err(_) => {
             println!("Could not run git init!");
             return false;
@@ -120,33 +120,35 @@ pub fn git_init_trk() -> bool {
 
     /* Reset current_dir to previous value */
     path.pop();
-    env::set_current_dir(&path).is_ok();
+    env::set_current_dir(&path).unwrap();
     true
 }
 
 pub fn git_commit_trk(message: &str) -> bool {
     if !set_to_trk_dir() {
-        println!("Could not commit to trk internal git repo!\
-                 (couldn't find upper level .trk dir).");
+        println!(
+            "Could not commit to trk internal git repo!\
+                 (couldn't find upper level .trk dir)."
+        );
         return false;
     }
 
     let mut p = env::current_dir().unwrap();
     p.push(".trk");
     if p.exists() {
-        env::set_current_dir(&p).is_ok();
+        env::set_current_dir(&p).unwrap();
     } else {
         println!("Couldn't access .trk sub directory to commit to trk internal git repo.");
         return false;
     }
     let output = Command::new("git")
-           .arg("commit")
-           .arg("timesheet.json")
-           .arg("-m")
-           .arg(message)
-           .output();
+        .arg("commit")
+        .arg("timesheet.json")
+        .arg("-m")
+        .arg(message)
+        .output();
     match output {
-        Ok(_) => {},
+        Ok(_) => {}
         Err(_) => {
             println!("Could not run git commit!");
             return false;
@@ -155,30 +157,30 @@ pub fn git_commit_trk(message: &str) -> bool {
 
     /* Reset current_dir to previous value */
     p.pop();
-    env::set_current_dir(&p).is_ok();
+    env::set_current_dir(&p).unwrap();
     true
 }
 
 pub fn git_pull() -> bool {
     if !set_to_trk_dir() {
-        println!("Could not pull from git repo!\
-                 (couldn't find upper level .trk dir).");
+        println!(
+            "Could not pull from git repo!\
+                 (couldn't find upper level .trk dir)."
+        );
         return false;
     }
 
     let mut p = env::current_dir().unwrap();
     p.push(".trk");
     if p.exists() {
-        env::set_current_dir(&p).is_ok();
+        env::set_current_dir(&p).unwrap();
     } else {
         println!("Couldn't access .trk sub directory to pull from upstream .trk git repo.");
         return false;
     }
-    let output = Command::new("git")
-           .arg("pull")
-           .output();
+    let output = Command::new("git").arg("pull").output();
     match output {
-        Ok(_) => {},
+        Ok(_) => {}
         Err(_) => {
             println!("Could not run git pull!");
             return false;
@@ -187,29 +189,29 @@ pub fn git_pull() -> bool {
 
     /* Reset current_dir to previous value */
     p.pop();
-    env::set_current_dir(&p).is_ok();
+    env::set_current_dir(&p).unwrap();
     true
 }
 pub fn git_push() -> bool {
     if !set_to_trk_dir() {
-        println!("Could not push to git repo!\
-                 (couldn't find upper level .trk dir).");
+        println!(
+            "Could not push to git repo!\
+                 (couldn't find upper level .trk dir)."
+        );
         return false;
     }
 
     let mut p = env::current_dir().unwrap();
     p.push(".trk");
     if p.exists() {
-        env::set_current_dir(&p).is_ok();
+        env::set_current_dir(&p).unwrap();
     } else {
         println!("Couldn't access .trk sub directory to push to upstream .trk git repo.");
         return false;
     }
-    let output = Command::new("git")
-           .arg("push")
-           .output();
+    let output = Command::new("git").arg("push").output();
     match output {
-        Ok(_) => {},
+        Ok(_) => {}
         Err(_) => {
             println!("Could not run git push!");
             return false;
@@ -218,15 +220,12 @@ pub fn git_push() -> bool {
 
     /* Reset current_dir to previous value */
     p.pop();
-    env::set_current_dir(&p).is_ok();
+    env::set_current_dir(&p).unwrap();
     true
 }
 
 pub fn git_author() -> Option<String> {
-    if let Ok(output) = Command::new("git")
-           .arg("config")
-           .arg("user.name")
-           .output() {
+    if let Ok(output) = Command::new("git").arg("config").arg("user.name").output() {
         if output.status.success() {
             let output = String::from_utf8_lossy(&output.stdout);
             /* Remove trailing newline character */
@@ -247,12 +246,13 @@ pub fn git_author() -> Option<String> {
 
 pub fn git_commit_message(hash: &str) -> Option<String> {
     if let Ok(output) = Command::new("git")
-           .arg("log")
-           .arg("--format=%B")
-           .arg("-n")
-           .arg("1")
-           .arg(hash)
-           .output() {
+        .arg("log")
+        .arg("--format=%B")
+        .arg("-n")
+        .arg("1")
+        .arg(hash)
+        .output()
+    {
         if output.status.success() {
             let output = String::from_utf8_lossy(&output.stdout);
             Some(output.to_string())
@@ -268,12 +268,14 @@ pub fn git_commit_message(hash: &str) -> Option<String> {
 
 pub fn format_file(filename: &str) {
     if Command::new("tidy")
-           .arg("--tidy-mark")
-           .arg("no")
-           .arg("-i")
-           .arg("-m")
-           .arg(filename)
-           .output().is_ok() {
+        .arg("--tidy-mark")
+        .arg("no")
+        .arg("-i")
+        .arg("-m")
+        .arg(filename)
+        .output()
+        .is_ok()
+    {
     } else {
         println!("tidy-html not found!");
     }

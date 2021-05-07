@@ -1,8 +1,7 @@
-use std::io::prelude::*;
-use std::{process, env};
-use std::path::Path;
-use std::error::Error;
 use std::fs::{self, OpenOptions};
+use std::io::prelude::*;
+use std::path::Path;
+use std::{env, process};
 /* Alias to avoid naming conflict for write_all!() */
 use std::fmt::Write as std_write;
 
@@ -11,19 +10,19 @@ use url_open::UrlOpen;
 
 use serde_json::{from_str, to_string};
 
-use util::*;
 use config::Config;
 use sheet::traits::HasHTML;
+use util::*;
 
-use sheet::session::Session;
 use sheet::session::EventType;
+use sheet::session::Session;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Timesheet {
-    start            : u64,
-    end              : u64,
-    config           : Config,
-    sessions         : Vec<Session>,
+    start: u64,
+    end: u64,
+    config: Config,
+    sessions: Vec<Session>,
 }
 
 impl Timesheet {
@@ -40,25 +39,25 @@ impl Timesheet {
         let git_author_name = git_author();
         let author_name = match author_name {
             Some(name) => name,
-            None => {
-                match git_author_name {
-                    Some(ref git_name) => git_name,
-                    None => {
-                        println!("Empty name not permitted. \
-                                  Please run with 'trk init <name>'");
-                        process::exit(0);
-                    }
+            None => match git_author_name {
+                Some(ref git_name) => git_name,
+                None => {
+                    println!(
+                        "Empty name not permitted. \
+                                  Please run with 'trk init <name>'"
+                    );
+                    process::exit(0);
                 }
-            }
+            },
         };
         let mut config = Config::new();
         config.user_name = Some(author_name.to_string());
         let now = get_seconds();
         let sheet = Timesheet {
-            start        : now,
-            end          : now + 1,
+            start: now,
+            end: now + 1,
             config,
-            sessions     : Vec::<Session>::new(),
+            sessions: Vec::<Session>::new(),
         };
         if sheet.write_files() {
             git_init_trk();
@@ -73,13 +72,11 @@ impl Timesheet {
     }
 
     pub fn new_session(&mut self, timestamp: Option<u64>) -> bool {
-        let possible = self.sessions
-            .last_mut()
-            .map_or(true, |session| {
-                if session.is_running() {
-                    println!("Last session is still running.");
-                }
-                !session.is_running()
+        let possible = self.sessions.last_mut().map_or(true, |session| {
+            if session.is_running() {
+                println!("Last session is still running.");
+            }
+            !session.is_running()
         });
         if possible {
             match timestamp {
@@ -142,7 +139,8 @@ impl Timesheet {
     }
 
     pub fn add_commit(&mut self, hash: String) {
-        let new_needed = self.sessions
+        let new_needed = self
+            .sessions
             .last()
             .map_or(true, |session| !session.is_running());
         if new_needed {
@@ -179,8 +177,8 @@ impl Timesheet {
                 /* Save was successful */
                 true
             }
-            Err(why) => {
-                println!("Could not report sheet! {}", why.description());
+            Err(e) => {
+                println!("Could not report sheet! {}", e);
                 false
             }
         }
@@ -200,22 +198,23 @@ impl Timesheet {
 
         let mut file = match file {
             Ok(file) => file,
-            Err(why) => {
-                println!("Could not write report to session.html! {}",
-                         why.description());
+            Err(e) => {
+                eprintln!("Could not write report to session.html! {}", e);
                 return false;
             }
         };
 
         let stylesheets = if self.config.show_commits {
             r#"<link rel="stylesheet" type="text/css" href=".trk/style.css">
-"#      } else {
+"#
+        } else {
             r#"<link rel="stylesheet" type="text/css" href=".trk/style.css">
 <link rel="stylesheet" type="text/css" href=".trk/no_git_info.css">
 "#
         };
 
-        let html = format!(r#"<!DOCTYPE html>
+        let html = format!(
+            r#"<!DOCTYPE html>
 <html>
 <head>
   {}
@@ -225,14 +224,15 @@ impl Timesheet {
 {}
 </body>
 </html>"#,
-               stylesheets,
-               "Session",
-               "Rafael Bachmann",
-               session.to_html());
-    file.write_all(html.as_bytes()).unwrap();
-    format_file("session.html");
-    /* Save was successful */
-    true
+            stylesheets,
+            "Session",
+            "Rafael Bachmann",
+            session.to_html()
+        );
+        file.write_all(html.as_bytes()).unwrap();
+        format_file("session.html");
+        /* Save was successful */
+        true
     }
 
     fn write_to_json(&self) -> bool {
@@ -256,15 +256,13 @@ impl Timesheet {
         match file {
             Ok(mut file) => {
                 /* Convert the sheet to a JSON string. */
-                let serialized =
-                    to_string(&self).expect("Could not write serialized time sheet.");
+                let serialized = to_string(&self).expect("Could not write serialized time sheet.");
                 file.write_all(serialized.as_bytes()).unwrap();
                 /* Save was successful */
                 true
             }
-            Err(why) => {
-                println!("Could not open timesheet.json file: {}",
-                         why.description());
+            Err(e) => {
+                eprintln!("Could not open timesheet.json file: {}", e);
                 false
             }
         }
@@ -286,12 +284,14 @@ impl Timesheet {
                     /* Save was successful */
                     true
                 }
-                Err(why) => {
-                    println!("Could not report sheet! {}", why.description());
+                Err(e) => {
+                    println!("Could not report sheet! {}", e);
                     false
                 }
             }
-        } else { true }
+        } else {
+            true
+        }
     }
 
     pub fn write_files(&self) -> bool {
@@ -302,48 +302,48 @@ impl Timesheet {
     /** Return a Some(Timesheet) struct if a timesheet.json file
      * is present and valid in the .trk directory, and None otherwise.
      * */
-pub fn load_from_file() -> Option<Timesheet> {
-    let mut path = env::current_dir().unwrap();
-    loop {
-        path.push(".trk");
-        if path.exists() {
-            env::set_current_dir(&path).is_ok();
-            break;
-        } else {
-            path.pop();
-            if !path.pop() {
-                return None;
+    pub fn load_from_file() -> Option<Timesheet> {
+        let mut path = env::current_dir().unwrap();
+        loop {
+            path.push(".trk");
+            if path.exists() {
+                env::set_current_dir(&path).unwrap();
+                break;
+            } else {
+                path.pop();
+                if !path.pop() {
+                    return None;
+                }
             }
         }
-    }
 
-    path.push("timesheet.json");
-    let file = OpenOptions::new().read(true).open(&path);
-    let result = match file {
-        Ok(mut file) => {
-            let mut serialized = String::new();
-            match file.read_to_string(&mut serialized) {
-                Ok(..) => {
-                    let style             : &'static str = include_str!("../../style.css");
-                    let no_git_info_style : &'static str = include_str!("../../no_git_info.css");
-                    let trk_gitignore     : &'static str = include_str!("trk_gitignore");
-                    Timesheet::write_stylesheets("style.css", style);
-                    Timesheet::write_stylesheets("no_git_info.css", no_git_info_style);
-                    Timesheet::write_stylesheets(".gitignore", trk_gitignore);
-                    from_str(&serialized).unwrap_or(None)
-                }
-                Err(..) => {
-                    println!("IO error while reading the timesheet file.");
-                    process::exit(0);
+        path.push("timesheet.json");
+        let file = OpenOptions::new().read(true).open(&path);
+        let result = match file {
+            Ok(mut file) => {
+                let mut serialized = String::new();
+                match file.read_to_string(&mut serialized) {
+                    Ok(..) => {
+                        let style: &'static str = include_str!("../../style.css");
+                        let no_git_info_style: &'static str = include_str!("../../no_git_info.css");
+                        let trk_gitignore: &'static str = include_str!("trk_gitignore");
+                        Timesheet::write_stylesheets("style.css", style);
+                        Timesheet::write_stylesheets("no_git_info.css", no_git_info_style);
+                        Timesheet::write_stylesheets(".gitignore", trk_gitignore);
+                        from_str(&serialized).unwrap_or(None)
+                    }
+                    Err(..) => {
+                        println!("IO error while reading the timesheet file.");
+                        process::exit(0);
+                    }
                 }
             }
-        }
-        Err(..) => None,
-    };
-    path.pop();
-    env::set_current_dir(path).unwrap();
-    result
-}
+            Err(..) => None,
+        };
+        path.pop();
+        env::set_current_dir(path).unwrap();
+        result
+    }
 
     pub fn clear() {
         /* Try to get user name */
@@ -353,25 +353,27 @@ pub fn load_from_file() -> Option<Timesheet> {
 
         let path = Path::new("./.trk/timesheet.json");
         if path.exists() {
-            fs::remove_file(&path).unwrap_or_else(|why| {
-                println!("Could not remove sessions file: {}", why.description());
+            fs::remove_file(&path).unwrap_or_else(|e| {
+                println!("Could not remove sessions file: {}", e);
             });
         }
-        Timesheet::init(name.as_ref().map(|s| s.as_str()));
+        Timesheet::init(name.as_deref());
     }
 
     pub fn timesheet_status(&self) -> String {
-        let mut status = format!("Sheet running for {}\n",
-                sec_to_hms_string(get_seconds() - self.start));
+        let mut status = format!(
+            "Sheet running for {}\n",
+            sec_to_hms_string(get_seconds() - self.start)
+        );
         match self.sessions.len() {
             0 => writeln!(&mut status, "No sessions yet.").unwrap(),
-            n => {
-                write!(&mut status,
-                       "{} session(s) so far.\nLast session:\n{}",
-                       n,
-                       self.sessions[n - 1].status())
-                       .unwrap()
-            }
+            n => write!(
+                &mut status,
+                "{} session(s) so far.\nLast session:\n{}",
+                n,
+                self.sessions[n - 1].status()
+            )
+            .unwrap(),
         };
         status
     }
@@ -383,23 +385,21 @@ pub fn load_from_file() -> Option<Timesheet> {
 
     fn open_local_html(&self, filename: &str) {
         let file_url = match env::current_dir() {
-            Ok(dir) => {
-                match dir.join(&filename).to_str() {
-                    Some(path) => format!("file://{}", path),
-                    None => {
-                        println!("Invalid filename: {}.", filename);
-                        process::exit(0)
-                    }
+            Ok(dir) => match dir.join(&filename).to_str() {
+                Some(path) => format!("file://{}", path),
+                None => {
+                    println!("Invalid filename: {}.", filename);
+                    process::exit(0)
                 }
-            }
-            Err(why) => {
-                println!("Couldn't obtain current directory: {}", why.description());
+            },
+            Err(e) => {
+                println!("Couldn't obtain current directory: {}", e);
                 process::exit(0)
             }
         };
         match Url::parse(&file_url) {
             Ok(url) => url.open(),
-            Err(why) => println!("Couldn't open file: {}", why.description()),
+            Err(e) => println!("Couldn't open file: {}", e),
         }
     }
 
@@ -420,19 +420,20 @@ pub fn load_from_file() -> Option<Timesheet> {
     }
 
     pub fn set_repo_url(&mut self, repo: String) {
-        let repo =
-            if repo == "" { None } else { Some(repo) };
+        let repo = if repo.is_empty() { None } else { Some(repo) };
         self.config.repository = repo;
     }
 
     pub fn pause_time(&self) -> u64 {
-        self.sessions.iter().fold(
-            0, |total, session| total + session.pause_time())
+        self.sessions
+            .iter()
+            .fold(0, |total, session| total + session.pause_time())
     }
 
     pub fn work_time(&self) -> u64 {
-        self.sessions.iter().fold(
-            0, |total, session| total + session.work_time())
+        self.sessions
+            .iter()
+            .fold(0, |total, session| total + session.work_time())
     }
 
     fn to_html(&self, ago: Option<u64>) -> String {
@@ -449,10 +450,12 @@ pub fn load_from_file() -> Option<Timesheet> {
         } else {
             r#"<link rel="stylesheet" type="text/css" href=".trk/style.css">
 <link rel="stylesheet" type="text/css" href=".trk/no_git_info.css">
-"#.to_string()
+"#
+            .to_string()
         };
 
-        let mut html = format!(r#"<!DOCTYPE html>
+        let mut html = format!(
+            r#"<!DOCTYPE html>
 <html>
     <head>
         {}
@@ -460,19 +463,19 @@ pub fn load_from_file() -> Option<Timesheet> {
     </head>
     <body>
     {}"#,
-              stylesheets,
-              "Timesheet",
-              "Rafael Bachmann",
-              sessions_html);
+            stylesheets, "Timesheet", "Rafael Bachmann", sessions_html
+        );
 
-        write!(&mut html,
-               r#"<section class="summary">
+        write!(
+            &mut html,
+            r#"<section class="summary">
     <p>Worked for {}</p>
     <p>Paused for {}</p>
 </div></section>"#,
-               sec_to_hms_string(self.work_time()),
-               sec_to_hms_string(self.pause_time()))
-               .unwrap();
+            sec_to_hms_string(self.work_time()),
+            sec_to_hms_string(self.pause_time())
+        )
+        .unwrap();
         write!(&mut html, "</body>\n</html>").unwrap();
         html
     }

@@ -20,18 +20,18 @@ pub enum EventType {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Event {
-    timestamp : u64,
-    note      : Option<String>,
-    ev_ty     : EventType,
+    timestamp: u64,
+    note: Option<String>,
+    ev_ty: EventType,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Session {
-    pub start : u64,
-    pub end   : u64,
-    running   : bool,
-    branches  : HashSet<String>,
-    events    : Vec<Event>,
+    pub start: u64,
+    pub end: u64,
+    running: bool,
+    branches: HashSet<String>,
+    events: Vec<Event>,
 }
 
 impl Session {
@@ -41,11 +41,11 @@ impl Session {
             None => get_seconds(),
         };
         Session {
-            start    : timestamp,
-            end      : timestamp + 1,
-            running  : true,
-            branches : HashSet::<String>::new(),
-            events   : Vec::<Event>::new(),
+            start: timestamp,
+            end: timestamp + 1,
+            running: true,
+            branches: HashSet::<String>::new(),
+            events: Vec::<Event>::new(),
         }
     }
 
@@ -90,11 +90,12 @@ impl Session {
         }
     }
 
-    pub fn push_event(&mut self,
-                      timestamp     : Option<u64>,
-                      note          : Option<String>,
-                      type_of_event : EventType)
-                      -> bool {
+    pub fn push_event(
+        &mut self,
+        timestamp: Option<u64>,
+        note: Option<String>,
+        type_of_event: EventType,
+    ) -> bool {
         /* Cannot push if session is already finalized. */
         if !self.is_running() {
             println!("Already finalized, cannot push event.");
@@ -129,12 +130,11 @@ impl Session {
                     println!("Already paused.");
                     false
                 } else {
-                    self.events
-                        .push(Event {
-                                  timestamp,
-                                  note,
-                                  ev_ty     : EventType::Pause,
-                              });
+                    self.events.push(Event {
+                        timestamp,
+                        note,
+                        ev_ty: EventType::Pause,
+                    });
                     true
                 }
             }
@@ -143,12 +143,11 @@ impl Session {
                     println!("Currently not paused.");
                     false
                 } else {
-                    self.events
-                        .push(Event {
-                                  timestamp,
-                                  note,
-                                  ev_ty     : EventType::Resume,
-                              });
+                    self.events.push(Event {
+                        timestamp,
+                        note,
+                        ev_ty: EventType::Resume,
+                    });
                     true
                 }
             }
@@ -166,12 +165,11 @@ impl Session {
                         None => pause.note = note,
                     }
                 } else {
-                    self.events
-                        .push(Event {
-                                  timestamp,
-                                  note,
-                                  ev_ty     : EventType::Note,
-                              })
+                    self.events.push(Event {
+                        timestamp,
+                        note,
+                        ev_ty: EventType::Note,
+                    })
                 };
                 true
             }
@@ -184,12 +182,11 @@ impl Session {
                 if note.is_none() {
                     println!("No commit message found for commit {}.", hash);
                 }
-                self.events
-                    .push(Event {
-                              timestamp : get_seconds(),
-                              note,
-                              ev_ty     : EventType::Commit { hash },
-                          });
+                self.events.push(Event {
+                    timestamp: get_seconds(),
+                    note,
+                    ev_ty: EventType::Commit { hash },
+                });
                 true
             }
         }
@@ -206,8 +203,7 @@ impl Session {
             }
         }
         if self.is_paused() {
-            pause_time +=   get_seconds()
-                          - self.events.last().unwrap().timestamp;
+            pause_time += get_seconds() - self.events.last().unwrap().timestamp;
         }
         pause_time
     }
@@ -229,35 +225,40 @@ impl Session {
 
     pub fn status(&self) -> String {
         let mut status = format!(
-               "Session running for {}.\n",
-               sec_to_hms_string(self.pause_time() + self.work_time()));
+            "Session running for {}.\n",
+            sec_to_hms_string(self.pause_time() + self.work_time())
+        );
         if self.is_paused() {
             status.push_str(&format!(
-                   "    Paused since {}.\n",
-                   sec_to_hms_string(get_seconds() - self.events[self.events.len() - 1].timestamp)));
+                "    Paused since {}.\n",
+                sec_to_hms_string(get_seconds() - self.events[self.events.len() - 1].timestamp)
+            ));
         } else {
             match self.events.len() {
                 0 => status.push_str(&String::from("    No events in this session yet!\n")),
                 n => status.push_str(&format!(
-                           "    Last event: {:?}, {} ago.\n",
-                           &self.events[n - 1].ev_ty,
-                           sec_to_hms_string(get_seconds() - self.events[n - 1].timestamp)))
+                    "    Last event: {:?}, {} ago.\n",
+                    &self.events[n - 1].ev_ty,
+                    sec_to_hms_string(get_seconds() - self.events[n - 1].timestamp)
+                )),
             }
         }
         let branch_str = match self.branches.len() {
             0 => String::new(),
-            n => {
-                self.branches
-                    .iter()
-                    .fold(format!("Worked on {} branches: ", n),
-                          |res, s| res + s + " ")
-            }
+            n => self
+                .branches
+                .iter()
+                .fold(format!("Worked on {} branches: ", n), |res, s| {
+                    res + s + " "
+                }),
         };
         status.push_str(&branch_str);
-        status.push_str(&format!("    Total work time:  {}\n    \
+        status.push_str(&format!(
+            "    Total work time:  {}\n    \
                                       Total pause time: {}\n",
-                                 sec_to_hms_string(self.work_time()),
-                                 sec_to_hms_string(self.pause_time())));
+            sec_to_hms_string(self.work_time()),
+            sec_to_hms_string(self.pause_time())
+        ));
         status
     }
 }
@@ -265,81 +266,89 @@ impl Session {
 impl HasHTML for Event {
     fn to_html(&self) -> String {
         match self.ev_ty {
-            EventType::Pause => {
-                match self.note {
-                    Some(ref info) => {
-                        format!(r#"<div class="entry pause">{}: Started a pause
+            EventType::Pause => match self.note {
+                Some(ref info) => {
+                    format!(
+                        r#"<div class="entry pause">{}: Started a pause
     <p class="mininote wordWrap">{}</p>
 </div>"#,
-                                ts_to_date(self.timestamp),
-                                info.clone())
-                    }
-                    None => {
-                        format!(r#"<div class="entry pause">{}: Started a pause
-</div>"#,
-                                ts_to_date(self.timestamp))
-                    }
+                        ts_to_date(self.timestamp),
+                        info.clone()
+                    )
                 }
-            }
+                None => {
+                    format!(
+                        r#"<div class="entry pause">{}: Started a pause
+</div>"#,
+                        ts_to_date(self.timestamp)
+                    )
+                }
+            },
             EventType::Resume => {
-                format!(r#"<div class="entry resume">{}: Resumed work
+                format!(
+                    r#"<div class="entry resume">{}: Resumed work
 <hr>
 </div>"#,
-                        ts_to_date(self.timestamp))
+                    ts_to_date(self.timestamp)
+                )
             }
             /* An EventType::Note note is a Some because it's
              * 'constructor' function takes a String
              * (and not Option<String>)
              */
-            EventType::Note => {
-                match self.note {
-                    Some(ref text) => {
-                        format!(r#"<div class="entry note wordWrap">{}: Note: {
+            EventType::Note => match self.note {
+                Some(ref text) => {
+                    format!(
+                        r#"<div class="entry note wordWrap">{}: Note: {
 }
 <hr>
 </div>"#,
-                                ts_to_date(self.timestamp),
-                                text)
-                    }
-                    None => unreachable!(),
+                        ts_to_date(self.timestamp),
+                        text
+                    )
                 }
-            }
+                None => unreachable!(),
+            },
             /* It is safe to unwrap an EventType::Commit note because if
              * a commit has no message something went really wrong
              * (like parsing the output of `git log` in git_commit_message()
              */
-            EventType::Commit { ref hash } => {
-                match self.note {
-                    Some(ref text) => {
-                        format!(r#"<div class="entry commit git_info wordWrap">{}: Commit id: {}
+            EventType::Commit { ref hash } => match self.note {
+                Some(ref text) => {
+                    format!(
+                        r#"<div class="entry commit git_info wordWrap">{}: Commit id: {}
     <p class="mininote wordWrap">message: {}</p>
   <hr>
 </div>"#,
-                                ts_to_date(self.timestamp),
-                                hash,
-                                text)
-                    }
-                    None => unreachable!(),
+                        ts_to_date(self.timestamp),
+                        hash,
+                        text
+                    )
                 }
-            }
+                None => unreachable!(),
+            },
         }
     }
 }
 
 impl HasHTML for Session {
     fn to_html(&self) -> String {
-        let mut html = format!(r#"<section class="session">
+        let mut html = format!(
+            r#"<section class="session">
     <h1 class="sessionheader">Session on {}</h1>"#,
-                               ts_to_date(self.start));
+            ts_to_date(self.start)
+        );
 
         for event in &self.events {
             html.push_str(&event.to_html());
         }
 
-        write!(&mut html,
-               r#"<h2 class="sessionfooter">Ended on {}</h2>"#,
-               ts_to_date(self.end))
-                .unwrap();
+        write!(
+            &mut html,
+            r#"<h2 class="sessionfooter">Ended on {}</h2>"#,
+            ts_to_date(self.end)
+        )
+        .unwrap();
 
         let mut branch_str = String::new();
         match self.branches.len() {
@@ -352,16 +361,18 @@ impl HasHTML for Session {
             }
         };
 
-        write!(&mut html,
-               r#"<section class="summary">
+        write!(
+            &mut html,
+            r#"<section class="summary">
     <p class="git_info">{}</p>
     <p>Worked for {}</p>
     <p>Paused for {}</p>
 </div></section>"#,
-               branch_str,
-               sec_to_hms_string(self.work_time()),
-               sec_to_hms_string(self.pause_time()))
-                .unwrap();
+            branch_str,
+            sec_to_hms_string(self.work_time()),
+            sec_to_hms_string(self.pause_time())
+        )
+        .unwrap();
 
         write!(&mut html, "</section>").unwrap();
         html

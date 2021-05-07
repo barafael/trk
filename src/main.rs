@@ -16,17 +16,19 @@ extern crate nom;
 extern crate chrono;
 
 /* To open link to report in browser */
-extern crate url_open;
 extern crate url;
+extern crate url_open;
 
 /* For process termination */
 use std::process;
 
-use util::{get_seconds, parse_hhmm_to_seconds, set_to_trk_dir, git_commit_trk, git_push, git_pull};
+use util::{
+    get_seconds, git_commit_trk, git_pull, git_push, parse_hhmm_to_seconds, set_to_trk_dir,
+};
 
-mod util;
-mod sheet;
 mod config;
+mod sheet;
+mod util;
 
 use sheet::timesheet::Timesheet;
 
@@ -140,15 +142,13 @@ fn main() {
     if let Some(command) = arguments.subcommand_matches("init") {
         match sheet {
             Some(..) => println!("Already initialised."),
-            None => {
-                match Timesheet::init(command.value_of("name")) {
-                    Some(..) => {
-                        println!("Init successful.");
-                        git_commit_trk("initialise trk");
-                    }
-                    None => println!("Could not initialize."),
+            None => match Timesheet::init(command.value_of("name")) {
+                Some(..) => {
+                    println!("Init successful.");
+                    git_commit_trk("initialise trk");
                 }
-            }
+                None => println!("Could not initialize."),
+            },
         }
         return;
     }
@@ -159,7 +159,7 @@ fn main() {
         process::exit(0);
     }
 
-   /* Special case for clear because t_sheet can be None when clearing (corrupt file) */
+    /* Special case for clear because t_sheet can be None when clearing (corrupt file) */
     if let Some(command) = arguments.subcommand_matches("clear") {
         match sheet {
             Some(..) => {
@@ -167,15 +167,13 @@ fn main() {
                 Timesheet::clear();
                 git_commit_trk("Cleared timesheet");
             }
-            None => {
-                match Timesheet::init(command.value_of("name")) {
-                    Some(..) => {
-                        println!("Reinitialised timesheet.");
-                        git_commit_trk("Reinitialised timesheet.");
-                    }
-                    None => println!("Could not initialize."),
+            None => match Timesheet::init(command.value_of("name")) {
+                Some(..) => {
+                    println!("Reinitialised timesheet.");
+                    git_commit_trk("Reinitialised timesheet.");
                 }
-            }
+                None => println!("Could not initialize."),
+            },
         }
         return;
     }
@@ -183,8 +181,9 @@ fn main() {
     /* Ignore commit or branch on uninitialised trk,
      * which occur when post-commit/post-checkout hooks run
      */
-    if arguments.subcommand_matches("commit").is_some() ||
-       arguments.subcommand_matches("branch").is_some() {
+    if arguments.subcommand_matches("commit").is_some()
+        || arguments.subcommand_matches("branch").is_some()
+    {
         match sheet {
             Some(..) => {}
             None => process::exit(0),
@@ -256,8 +255,10 @@ fn main() {
                 Some("session") => println!("{}", sheet.last_session_status()),
                 Some("sheet") => println!("{}", sheet.timesheet_status()),
                 Some(text) => {
-                    println!("What do you mean by {}? Should be either 'sheet' or 'session'.",
-                             text)
+                    println!(
+                        "What do you mean by {}? Should be either 'sheet' or 'session'.",
+                        text
+                    )
                 }
                 _ => unreachable!(),
             }
@@ -269,12 +270,14 @@ fn main() {
                 Some("sheet") => {
                     let timestamp: Option<u64> =
                         parse_hhmm_to_seconds(arg.value_of("ago").unwrap_or(""))
-                        .map(|ago| get_seconds() - ago);
+                            .map(|ago| get_seconds() - ago);
                     sheet.report_sheet(timestamp);
                 }
                 Some(text) => {
-                    println!("What do you mean by {}? Should be either 'sheet' or 'session'.",
-                             text)
+                    println!(
+                        "What do you mean by {}? Should be either 'sheet' or 'session'.",
+                        text
+                    )
                 }
                 _ => unreachable!(),
             }
@@ -285,26 +288,25 @@ fn main() {
                 Some("on") => sheet.show_commits(true),
                 Some("off") => sheet.show_commits(false),
                 Some(text) => {
-                    println!("What do you mean by {}? Should be either 'on' or 'off'.",
-                             text)
+                    println!(
+                        "What do you mean by {}? Should be either 'on' or 'off'.",
+                        text
+                    )
                 }
                 _ => unreachable!(),
             }
             message = "set show_commits";
         }
-        ("set_repo_url", Some(arg)) => {
-            match arg.value_of("url") {
-                Some(repo_url) => {
-                    sheet.set_repo_url(repo_url.to_string());
-                    message = "set repo url";
-                }
-                _ => unreachable!(),
+        ("set_repo_url", Some(arg)) => match arg.value_of("url") {
+            Some(repo_url) => {
+                sheet.set_repo_url(repo_url.to_string());
+                message = "set repo url";
             }
-        }
+            _ => unreachable!(),
+        },
         _ => unreachable!(),
     }
     sheet.write_files();
     git_commit_trk(message);
     git_push();
-
 }
