@@ -2,8 +2,6 @@ use chrono::Duration;
 use chrono::{Local, TimeZone};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use nom::IResult::Done;
-
 /* For running git and html-tidy */
 use std::process::Command;
 
@@ -57,7 +55,7 @@ named!(duration_hhmm(&[u8]) -> Duration,
 
 pub fn parse_hhmm_to_seconds(timestr: &str) -> Option<u64> {
     match duration_hhmm(timestr.as_bytes()) {
-        Done(_, out) => Some(out.num_seconds() as u64),
+        Ok((_, out)) => Some(out.num_seconds() as u64),
         _ => None,
     }
 }
