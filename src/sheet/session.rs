@@ -3,12 +3,12 @@ use std::fmt::Write;
 /* For branch name dedup */
 use std::collections::HashSet;
 
-use util::{get_seconds, sec_to_hms_string, ts_to_date};
+use crate::util::{get_seconds, sec_to_hms_string, ts_to_date};
 
 /* For process termination */
 use std::process;
 
-use sheet::traits::HasHTML;
+use crate::sheet::traits::HasHTML;
 
 #[derive(PartialEq, PartialOrd, Serialize, Deserialize, Debug)]
 pub enum EventType {

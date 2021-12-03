@@ -3,6 +3,8 @@ name = "trk"
 version = "0.1.0"
 authors = ["rafael"]
 
+edition = "2021"
+
 [dependencies]
 time = "0.1.36"
 clap = "2.21.2"

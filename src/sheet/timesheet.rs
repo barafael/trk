@@ -10,12 +10,12 @@ use url_open::UrlOpen;
 
 use serde_json::{from_str, to_string};
 
-use config::Config;
-use sheet::traits::HasHTML;
-use util::*;
+use crate::config::Config;
+use crate::sheet::traits::HasHTML;
+use crate::util::*;
 
-use sheet::session::EventType;
-use sheet::session::Session;
+use crate::sheet::session::EventType;
+use crate::sheet::session::Session;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Timesheet {

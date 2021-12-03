@@ -22,7 +22,7 @@ extern crate url_open;
 /* For process termination */
 use std::process;
 
-use util::{
+use crate::util::{
     get_seconds, git_commit_trk, git_pull, git_push, parse_hhmm_to_seconds, set_to_trk_dir,
 };
 
@@ -30,7 +30,7 @@ mod config;
 mod sheet;
 mod util;
 
-use sheet::timesheet::Timesheet;
+use crate::sheet::timesheet::Timesheet;
 
 fn main() {
     /* Handle command line arguments with clap */

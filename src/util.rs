@@ -2,7 +2,6 @@ use chrono::Duration;
 use chrono::{Local, TimeZone};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use nom;
 use nom::IResult::Done;
 
 /* For running git and html-tidy */
