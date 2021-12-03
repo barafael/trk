@@ -6,13 +6,13 @@ authors = ["rafael"]
 edition = "2021"
 
 [dependencies]
-time = "0.1.36"
+time = "0.3.5"
 clap = "2.21.2"
-serde = "0.9.11"
-serde_derive = "0.9.11"
-serde_json = "0.9.9"
-chrono = { version = "0.3", features = ["serde", "rustc-serialize"] }
-nom = "2.2.1"
+serde = "1.0.130"
+serde_derive = "1.0.130"
+serde_json = "1.0.72"
+chrono = { version = "0.4.19", features = ["serde", "rustc-serialize"] }
+nom = "3.2.1"
 url = "*"
 
 [dependencies.url_open]
