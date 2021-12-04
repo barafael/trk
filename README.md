@@ -115,7 +115,7 @@ To automatically add abbreviated git commits or branch summaries to the history,
 - [x] Simplify operations on session vec (last(), last_mut())
 - [ ] Redesign timesheet to handle timestamps nicely and deduplicate all timestamp logic
 - [ ] Clarify when ts + 1 is used (preferably improve logic so it becomes unnecessary)
-- [ ] Simplify option handling with `if let`, `map`, `map_or` WIP
+- [x] Simplify option handling with `if let`, `map`, `map_or`
 - [x] Multiple imports
 - [x] Add work/pause summary to status output
 - [x] Add settings/config struct

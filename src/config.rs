@@ -1,3 +1,5 @@
+use serde_derive::{Deserialize, Serialize};
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
     pub show_commits: bool,

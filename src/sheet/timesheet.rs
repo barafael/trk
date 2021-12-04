@@ -5,6 +5,7 @@ use std::{env, process};
 /* Alias to avoid naming conflict for write_all!() */
 use std::fmt::Write as std_write;
 
+use serde_derive::{Serialize, Deserialize};
 use url::Url;
 use url_open::UrlOpen;
 

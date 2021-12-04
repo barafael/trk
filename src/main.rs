@@ -1,36 +1,14 @@
-/* Command Line Argument Parser */
-#[macro_use]
-extern crate clap;
-use clap::AppSettings::SubcommandRequiredElseHelp;
-
-/* For serialization/deserialization of the timesheet */
-#[macro_use]
-extern crate serde_derive;
-extern crate serde_json;
-
-/* For parsing time strings */
-#[macro_use]
-extern crate nom;
-
-/* For time handling */
-extern crate chrono;
-
-/* To open link to report in browser */
-extern crate url;
-extern crate url_open;
-
-/* For process termination */
-use std::process;
-
+use crate::sheet::timesheet::Timesheet;
 use crate::util::{
     get_seconds, git_commit_trk, git_pull, git_push, parse_hhmm_to_seconds, set_to_trk_dir,
 };
+use clap::clap_app;
+use clap::AppSettings::SubcommandRequiredElseHelp;
+use std::process;
 
 mod config;
 mod sheet;
 mod util;
-
-use crate::sheet::timesheet::Timesheet;
 
 fn main() {
     /* Handle command line arguments with clap */
