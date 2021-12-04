@@ -12,10 +12,12 @@ use serde_json::{from_str, to_string};
 
 use crate::config::Config;
 use crate::sheet::traits::HasHTML;
-use crate::util::*;
 
 use crate::sheet::session::EventType;
 use crate::sheet::session::Session;
+use crate::util::{
+    format_file, get_seconds, git_author, git_commit_message, git_init_trk, sec_to_hms_string,
+};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Timesheet {
@@ -29,9 +31,9 @@ impl Timesheet {
     /** Initializes the .trk/timesheet.json file which holds
      * the serialized timesheet
      * Returns Some(newTimesheet) if operation succeeded */
-    pub fn init(author_name: Option<&str>) -> Option<Timesheet> {
+    pub fn init(author_name: Option<&str>) -> Option<Self> {
         /* Check if file already exists (no init permitted) */
-        if Timesheet::is_init() {
+        if Self::is_init() {
             println!("Timesheet is already initialized!");
             return None;
         }
@@ -39,21 +41,19 @@ impl Timesheet {
         let git_author_name = git_author();
         let author_name = match author_name {
             Some(name) => name,
-            None => match git_author_name {
-                Some(ref git_name) => git_name,
-                None => {
-                    println!(
-                        "Empty name not permitted. \
-                                  Please run with 'trk init <name>'"
-                    );
+            None => {
+                if let Some(ref git_name) = git_author_name {
+                    git_name
+                } else {
+                    println!("Empty name not permitted.\n\tPlease run with 'trk init <name>'");
                     process::exit(0);
                 }
-            },
+            }
         };
         let mut config = Config::new();
         config.user_name = Some(author_name.to_string());
         let now = get_seconds();
-        let sheet = Timesheet {
+        let sheet = Self {
             start: now,
             end: now + 1,
             config,
@@ -68,7 +68,7 @@ impl Timesheet {
     }
 
     fn is_init() -> bool {
-        Path::new("./.trk/timesheet.json").exists() && Timesheet::load_from_file().is_some()
+        Path::new("./.trk/timesheet.json").exists() && Self::load_from_file().is_some()
     }
 
     pub fn new_session(&mut self, timestamp: Option<u64>) -> bool {
@@ -157,7 +157,7 @@ impl Timesheet {
 
     pub fn add_branch(&mut self, name: String) {
         if let Some(session) = self.sessions.last_mut() {
-            session.add_branch(name)
+            session.add_branch(name);
         }
     }
 
@@ -237,12 +237,9 @@ impl Timesheet {
 
     fn write_to_json(&self) -> bool {
         if !Path::new("./.trk").exists() {
-            match fs::create_dir("./.trk") {
-                Ok(_) => {}
-                _ => {
-                    println!("Could not create .trk directory.");
-                    process::exit(0);
-                }
+            if let Err(e) = fs::create_dir("./.trk") {
+                println!("Could not create .trk directory. Error: {}", e);
+                process::exit(0);
             }
         }
 
@@ -272,7 +269,9 @@ impl Timesheet {
         // TODO: avoid time-of-check-to-time-of-use race risk
         let mut file_path = env::current_dir().unwrap();
         file_path.push(filename);
-        if !file_path.exists() {
+        if file_path.exists() {
+            true
+        } else {
             let file = OpenOptions::new()
                 .write(true)
                 .truncate(true)
@@ -289,8 +288,6 @@ impl Timesheet {
                     false
                 }
             }
-        } else {
-            true
         }
     }
 
@@ -302,18 +299,17 @@ impl Timesheet {
     /** Return a Some(Timesheet) struct if a timesheet.json file
      * is present and valid in the .trk directory, and None otherwise.
      * */
-    pub fn load_from_file() -> Option<Timesheet> {
+    pub fn load_from_file() -> Option<Self> {
         let mut path = env::current_dir().unwrap();
         loop {
             path.push(".trk");
             if path.exists() {
                 env::set_current_dir(&path).unwrap();
                 break;
-            } else {
-                path.pop();
-                if !path.pop() {
-                    return None;
-                }
+            }
+            path.pop();
+            if !path.pop() {
+                return None;
             }
         }
 
@@ -322,20 +318,17 @@ impl Timesheet {
         let result = match file {
             Ok(mut file) => {
                 let mut serialized = String::new();
-                match file.read_to_string(&mut serialized) {
-                    Ok(..) => {
-                        let style: &'static str = include_str!("../../style.css");
-                        let no_git_info_style: &'static str = include_str!("../../no_git_info.css");
-                        let trk_gitignore: &'static str = include_str!("trk_gitignore");
-                        Timesheet::write_stylesheets("style.css", style);
-                        Timesheet::write_stylesheets("no_git_info.css", no_git_info_style);
-                        Timesheet::write_stylesheets(".gitignore", trk_gitignore);
-                        from_str(&serialized).unwrap_or(None)
-                    }
-                    Err(..) => {
-                        println!("IO error while reading the timesheet file.");
-                        process::exit(0);
-                    }
+                if let Ok(..) = file.read_to_string(&mut serialized) {
+                    let style: &'static str = include_str!("../../style.css");
+                    let no_git_info_style: &'static str = include_str!("../../no_git_info.css");
+                    let trk_gitignore: &'static str = include_str!("trk_gitignore");
+                    Self::write_stylesheets("style.css", style);
+                    Self::write_stylesheets("no_git_info.css", no_git_info_style);
+                    Self::write_stylesheets(".gitignore", trk_gitignore);
+                    from_str(&serialized).unwrap_or(None)
+                } else {
+                    println!("IO error while reading the timesheet file.");
+                    process::exit(0);
                 }
             }
             Err(..) => None,
@@ -347,7 +340,7 @@ impl Timesheet {
 
     pub fn clear() {
         /* Try to get user name */
-        let sheet = Timesheet::load_from_file();
+        let sheet = Self::load_from_file();
         /* In case there is a sheet, there must also be a name */
         let name: Option<String> = sheet.map(|s| s.config.user_name.unwrap());
 
@@ -357,7 +350,7 @@ impl Timesheet {
                 println!("Could not remove sessions file: {}", e);
             });
         }
-        Timesheet::init(name.as_deref());
+        Self::init(name.as_deref());
     }
 
     pub fn timesheet_status(&self) -> String {
@@ -379,19 +372,20 @@ impl Timesheet {
     }
 
     pub fn last_session_status(&self) -> String {
-        let status = self.sessions.last().map(|session| session.status());
+        let status = self.sessions.last().map(Session::status);
         status.unwrap_or_else(|| String::from("No session yet."))
     }
 
-    fn open_local_html(&self, filename: &str) {
+    fn open_local_html(filename: &str) {
         let file_url = match env::current_dir() {
-            Ok(dir) => match dir.join(&filename).to_str() {
-                Some(path) => format!("file://{}", path),
-                None => {
+            Ok(dir) => {
+                if let Some(path) = dir.join(&filename).to_str() {
+                    format!("file://{}", path)
+                } else {
                     println!("Invalid filename: {}.", filename);
                     process::exit(0)
                 }
-            },
+            }
             Err(e) => {
                 println!("Couldn't obtain current directory: {}", e);
                 process::exit(0)
@@ -405,12 +399,12 @@ impl Timesheet {
 
     pub fn report_last_session(&self) {
         self.write_to_html(None);
-        self.open_local_html("session.html");
+        Self::open_local_html("session.html");
     }
 
     pub fn report_sheet(&self, ago: Option<u64>) {
         self.write_to_html(ago);
-        self.open_local_html("timesheet.html");
+        Self::open_local_html("timesheet.html");
         /* Leave complete sheet html */
         self.write_to_html(None);
     }

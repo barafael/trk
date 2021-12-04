@@ -6,8 +6,8 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new() -> Config {
-        Config {
+    pub const fn new() -> Self {
+        Self {
             show_commits: true,
             repository: None,
             user_name: None,

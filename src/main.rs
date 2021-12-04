@@ -195,12 +195,11 @@ fn main() {
     /* Variable to hold git commit message */
     let message;
     /* Unwrap the timesheet and continue only if timesheet file exists */
-    let mut sheet = match sheet {
-        Some(file) => file,
-        None => {
-            println!("No timesheet file! You might have to init first.");
-            return;
-        }
+    let mut sheet = if let Some(file) = sheet {
+        file
+    } else {
+        println!("No timesheet file! You might have to init first.");
+        return;
     };
 
     match arguments.subcommand() {
@@ -258,7 +257,7 @@ fn main() {
                     println!(
                         "What do you mean by {}? Should be either 'sheet' or 'session'.",
                         text
-                    )
+                    );
                 }
                 _ => unreachable!(),
             }
@@ -277,7 +276,7 @@ fn main() {
                     println!(
                         "What do you mean by {}? Should be either 'sheet' or 'session'.",
                         text
-                    )
+                    );
                 }
                 _ => unreachable!(),
             }
@@ -291,7 +290,7 @@ fn main() {
                     println!(
                         "What do you mean by {}? Should be either 'on' or 'off'.",
                         text
-                    )
+                    );
                 }
                 _ => unreachable!(),
             }

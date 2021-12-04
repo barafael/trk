@@ -64,16 +64,13 @@ pub fn set_to_trk_dir() -> bool {
     let mut path = env::current_dir().unwrap();
     loop {
         path.push(".trk");
+        path.pop();
         if path.exists() {
-            path.pop();
             env::set_current_dir(&path).unwrap();
             return true;
-        } else {
-            path.pop();
-            if !path.pop() {
-                println!("Fatal: not a .trk directory (or subdirectory of one).");
-                return false;
-            }
+        } else if !path.pop() {
+            println!("Fatal: not a .trk directory (or subdirectory of one).");
+            return false;
         }
     }
 }
@@ -96,23 +93,17 @@ pub fn git_init_trk() -> bool {
         return false;
     }
     let output = Command::new("git").arg("init").output();
-    match output {
-        Ok(_) => {}
-        Err(_) => {
-            println!("Could not run git init!");
-            return false;
-        }
+    if let Err(e) = output {
+        println!("Could not run git init! Error {}", e);
+        return false;
     }
     let output = Command::new("git")
         .arg("add")
         .arg("timesheet.json")
         .output();
-    match output {
-        Ok(_) => {}
-        Err(_) => {
-            println!("Could not run git init!");
-            return false;
-        }
+    if let Err(e) = output {
+        println!("Could not run git init! Error: {}", e);
+        return false;
     }
 
     /* Reset current_dir to previous value */
@@ -144,12 +135,9 @@ pub fn git_commit_trk(message: &str) -> bool {
         .arg("-m")
         .arg(message)
         .output();
-    match output {
-        Ok(_) => {}
-        Err(_) => {
-            println!("Could not run git commit!");
-            return false;
-        }
+    if let Err(e) = output {
+        println!("Could not run git commit! Error {}", e);
+        return false;
     }
 
     /* Reset current_dir to previous value */
@@ -176,12 +164,9 @@ pub fn git_pull() -> bool {
         return false;
     }
     let output = Command::new("git").arg("pull").output();
-    match output {
-        Ok(_) => {}
-        Err(_) => {
-            println!("Could not run git pull!");
-            return false;
-        }
+    if let Err(e) = output {
+        println!("Could not run git pull! Error {}", e);
+        return false;
     }
 
     /* Reset current_dir to previous value */
@@ -207,12 +192,9 @@ pub fn git_push() -> bool {
         return false;
     }
     let output = Command::new("git").arg("push").output();
-    match output {
-        Ok(_) => {}
-        Err(_) => {
-            println!("Could not run git push!");
-            return false;
-        }
+    if let Err(e) = output {
+        println!("Could not run git push! Error {}", e);
+        return false;
     }
 
     /* Reset current_dir to previous value */

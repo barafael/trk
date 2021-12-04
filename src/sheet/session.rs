@@ -35,12 +35,12 @@ pub struct Session {
 }
 
 impl Session {
-    pub fn new(timestamp: Option<u64>) -> Session {
+    pub fn new(timestamp: Option<u64>) -> Self {
         let timestamp = match timestamp {
             Some(timestamp) => timestamp,
             None => get_seconds(),
         };
-        Session {
+        Self {
             start: timestamp,
             end: timestamp + 1,
             running: true,
@@ -49,7 +49,7 @@ impl Session {
         }
     }
 
-    pub fn is_running(&self) -> bool {
+    pub const fn is_running(&self) -> bool {
         self.running
     }
 
@@ -139,16 +139,16 @@ impl Session {
                 }
             }
             EventType::Resume => {
-                if !self.is_paused() {
-                    println!("Currently not paused.");
-                    false
-                } else {
+                if self.is_paused() {
                     self.events.push(Event {
                         timestamp,
                         note,
                         ev_ty: EventType::Resume,
                     });
                     true
+                } else {
+                    println!("Currently not paused.");
+                    false
                 }
             }
             EventType::Note => {
@@ -169,7 +169,7 @@ impl Session {
                         timestamp,
                         note,
                         ev_ty: EventType::Note,
-                    })
+                    });
                 };
                 true
             }
