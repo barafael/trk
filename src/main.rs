@@ -181,19 +181,19 @@ fn main() {
     };
 
     match arguments.subcommand() {
-        ("begin", Some(arg)) => {
+        Some(("begin", arg)) => {
             let timestamp: Option<u64> = parse_hhmm_to_seconds(arg.value_of("ago").unwrap_or(""))
                 .map(|ago| get_seconds() - ago);
             sheet.new_session(timestamp);
             message = "begin new session";
         }
-        ("end", Some(arg)) => {
+        Some(("end", arg)) => {
             let timestamp: Option<u64> = parse_hhmm_to_seconds(arg.value_of("ago").unwrap_or(""))
                 .map(|ago| get_seconds() - ago);
             sheet.end_session(timestamp);
             message = "end session";
         }
-        ("pause", Some(arg)) => {
+        Some(("pause", arg)) => {
             let timestamp: Option<u64> = parse_hhmm_to_seconds(arg.value_of("ago").unwrap_or(""))
                 .map(|ago| get_seconds() - ago);
             let note_text = arg.value_of("note_text");
@@ -203,31 +203,30 @@ fn main() {
             }
             message = "pause session";
         }
-
-        ("resume", Some(arg)) => {
+        Some(("resume", arg)) => {
             let timestamp: Option<u64> = parse_hhmm_to_seconds(arg.value_of("ago").unwrap_or(""))
                 .map(|ago| get_seconds() - ago);
             sheet.resume(timestamp);
             message = "resume session";
         }
-        ("note", Some(arg)) => {
+        Some(("note", arg)) => {
             let timestamp: Option<u64> = parse_hhmm_to_seconds(arg.value_of("ago").unwrap_or(""))
                 .map(|ago| get_seconds() - ago);
             let note_text = arg.value_of("note_text").unwrap();
             sheet.note(timestamp, note_text.to_string());
             message = "add note to session";
         }
-        ("commit", Some(arg)) => {
+        Some(("commit", arg)) => {
             let commit_hash = arg.value_of("hash").unwrap();
             sheet.add_commit(commit_hash.to_string());
             message = "add commit to session";
         }
-        ("branch", Some(arg)) => {
+        Some(("branch", arg)) => {
             let branch_name = arg.value_of("name").unwrap();
             sheet.add_branch(branch_name.to_string());
             message = "add branch to branchlist";
         }
-        ("status", Some(arg)) => {
+        Some(("status", arg)) => {
             match arg.value_of("sheet_or_session") {
                 Some("session") => println!("{}", sheet.last_session_status()),
                 Some("sheet") => println!("{}", sheet.timesheet_status()),
@@ -241,7 +240,7 @@ fn main() {
             }
             return;
         }
-        ("report", Some(arg)) => {
+        Some(("report", arg)) => {
             match arg.value_of("sheet_or_session") {
                 Some("session") => sheet.report_last_session(),
                 Some("sheet") => {
@@ -260,7 +259,7 @@ fn main() {
             }
             return;
         }
-        ("set_show_commits", Some(arg)) => {
+        Some(("set_show_commits", arg)) => {
             match arg.value_of("on_off") {
                 Some("on") => sheet.show_commits(true),
                 Some("off") => sheet.show_commits(false),
@@ -274,7 +273,7 @@ fn main() {
             }
             message = "set show_commits";
         }
-        ("set_repo_url", Some(arg)) => match arg.value_of("url") {
+        Some(("set_repo_url", arg)) => match arg.value_of("url") {
             Some(repo_url) => {
                 sheet.set_repo_url(repo_url.to_string());
                 message = "set repo url";
