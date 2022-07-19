@@ -12,7 +12,7 @@ use std::process;
 
 use crate::sheet::traits::HasHTML;
 
-#[derive(PartialEq, PartialOrd, Serialize, Deserialize, Debug)]
+#[derive(PartialEq, Eq, PartialOrd, Serialize, Deserialize, Debug)]
 pub enum EventType {
     Pause,
     Resume,

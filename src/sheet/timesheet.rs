@@ -433,20 +433,20 @@ impl Timesheet {
 
     fn to_html(&self, ago: Option<u64>) -> String {
         let timestamp = ago.unwrap_or(self.start);
-        let mut sessions_html = String::new();
-        for session in &self.sessions {
-            if session.start > timestamp {
-                sessions_html.push_str(&format!("{}<hr>", session.to_html()));
-            }
-        }
-
+        let sessions_html = self
+            .sessions
+            .iter()
+            .filter(|s| s.start > timestamp)
+            .map(Session::to_html)
+            .map(|s| format!("{s}<hr>"))
+            .collect::<String>();
+        const STYLE: &str = r#"<link rel="stylesheet" type="text/css" href=".trk/style.css">"#;
+        const NO_GIT: &str =
+            r#"<link rel="stylesheet" type="text/css" href=".trk/no_git_info.css">"#;
         let stylesheets = if self.config.show_commits {
-            "<link rel=\"stylesheet\" type=\"text/css\" href=\".trk/style.css\">\n".to_string()
+            format!("{STYLE}\n")
         } else {
-            r#"<link rel="stylesheet" type="text/css" href=".trk/style.css">
-<link rel="stylesheet" type="text/css" href=".trk/no_git_info.css">
-"#
-            .to_string()
+            format!("{STYLE}\n{NO_GIT}\n")
         };
 
         let mut html = format!(
