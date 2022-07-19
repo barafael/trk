@@ -6,12 +6,11 @@ authors = ["rafael"]
 edition = "2021"
 
 [dependencies]
-time = "0.3.5"
+time = "0.3.11"
 clap = "2.21.2"
-serde = "1.0.130"
-serde_derive = "1.0.130"
-serde_json = "1.0.72"
-chrono = { version = "0.4.19", features = ["serde", "rustc-serialize"] }
+serde = { version = "1.0.139", features = ["derive"] }
+serde_json = "1.0.82"
+chrono = { version = "0.4.19", features = ["serde"] }
 nom = "4.2.3"
-url = "*"
+url = "2.2.2"
 url_open = "0.0.1"

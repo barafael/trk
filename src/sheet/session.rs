@@ -3,7 +3,7 @@ use std::fmt::Write;
 /* For branch name dedup */
 use std::collections::HashSet;
 
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 
 use crate::util::{get_seconds, sec_to_hms_string, ts_to_date};
 
