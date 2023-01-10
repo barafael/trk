@@ -20,7 +20,8 @@ pub fn get_seconds() -> u64 {
 
 pub fn ts_to_date(timestamp: u64) -> String {
     Local
-        .timestamp(timestamp as i64, 0)
+        .timestamp_opt(timestamp as i64, 0)
+        .unwrap()
         .format("%Y-%m-%d, %H:%M")
         .to_string()
 }
