@@ -32,7 +32,7 @@ impl Timesheet {
     /** Initializes the .trk/timesheet.json file which holds
      * the serialized timesheet
      * Returns Some(newTimesheet) if operation succeeded */
-    pub fn init(author_name: Option<&str>) -> Option<Self> {
+    pub fn init(author_name: Option<String>) -> Option<Self> {
         /* Check if file already exists (no init permitted) */
         if Self::is_init() {
             println!("Timesheet is already initialized!");
@@ -43,7 +43,7 @@ impl Timesheet {
         let author_name = match author_name {
             Some(name) => name,
             None => {
-                if let Some(ref git_name) = git_author_name {
+                if let Some(git_name) = git_author_name {
                     git_name
                 } else {
                     println!("Empty name not permitted.\n\tPlease run with 'trk init <name>'");
@@ -52,7 +52,7 @@ impl Timesheet {
             }
         };
         let mut config = Config::new();
-        config.user_name = Some(author_name.to_string());
+        config.user_name = Some(author_name);
         let now = get_seconds();
         let sheet = Self {
             start: now,
@@ -169,7 +169,7 @@ impl Timesheet {
             .write(true)
             .truncate(true)
             .create(true)
-            .open(&path);
+            .open(path);
 
         match file {
             Ok(mut file) => {
@@ -195,7 +195,7 @@ impl Timesheet {
             .write(true)
             .truncate(true)
             .create(true)
-            .open(&path);
+            .open(path);
 
         let mut file = match file {
             Ok(file) => file,
@@ -249,7 +249,7 @@ impl Timesheet {
             .write(true)
             .truncate(true)
             .create(true)
-            .open(&path);
+            .open(path);
 
         match file {
             Ok(mut file) => {
@@ -347,11 +347,11 @@ impl Timesheet {
 
         let path = Path::new("./.trk/timesheet.json");
         if path.exists() {
-            fs::remove_file(&path).unwrap_or_else(|e| {
+            fs::remove_file(path).unwrap_or_else(|e| {
                 println!("Could not remove sessions file: {}", e);
             });
         }
-        Self::init(name.as_deref());
+        Self::init(name);
     }
 
     pub fn timesheet_status(&self) -> String {
@@ -380,7 +380,7 @@ impl Timesheet {
     fn open_local_html(filename: &str) {
         let file_url = match env::current_dir() {
             Ok(dir) => {
-                if let Some(path) = dir.join(&filename).to_str() {
+                if let Some(path) = dir.join(filename).to_str() {
                     format!("file://{}", path)
                 } else {
                     println!("Invalid filename: {}.", filename);

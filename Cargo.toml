@@ -6,8 +6,7 @@ authors = ["rafael"]
 edition = "2021"
 
 [dependencies]
-time = "0.3.17"
-clap = "3.2.23"
+clap = { version = "4.0.32", features = ["derive"] }
 serde = { version = "1.0.152", features = ["derive"] }
 serde_json = "1.0.91"
 chrono = { version = "0.4.23", features = ["serde"] }
