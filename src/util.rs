@@ -32,14 +32,14 @@ pub fn sec_to_hms_string(seconds: u64) -> String {
     let seconds = seconds - minutes * 60 - hours * 3600;
     match (hours, minutes, seconds) {
         (0, 0, 1) => String::from("1 second"),
-        (0, 0, s) => format!("{} seconds", s),
+        (0, 0, s) => format!("{s} seconds"),
         (0, 1, _) => String::from("1 minute"),
-        (0, m, _) => format!("{} minutes", m),
+        (0, m, _) => format!("{m} minutes"),
         /* Range matching: slightly dubious feature here */
         (1, 0..=4, _) => String::from("1 hour"),
-        (h, 0..=4, _) => format!("{} hours", h),
+        (h, 0..=4, _) => format!("{h} hours"),
         (h, 56..=59, _) => format!("{} hours", h + 1),
-        (h, m, _) => format!("{} hours and {} minutes", h, m),
+        (h, m, _) => format!("{h} hours and {m} minutes"),
     }
 }
 
@@ -96,7 +96,7 @@ pub fn git_init_trk() -> bool {
     }
     let output = Command::new("git").arg("init").output();
     if let Err(e) = output {
-        println!("Could not run git init! Error {}", e);
+        println!("Could not run git init! Error {e}");
         return false;
     }
     let output = Command::new("git")
@@ -104,7 +104,7 @@ pub fn git_init_trk() -> bool {
         .arg("timesheet.json")
         .output();
     if let Err(e) = output {
-        println!("Could not run git init! Error: {}", e);
+        println!("Could not run git init! Error: {e}");
         return false;
     }
 
@@ -138,7 +138,7 @@ pub fn git_commit_trk(message: &str) -> bool {
         .arg(message)
         .output();
     if let Err(e) = output {
-        println!("Could not run git commit! Error {}", e);
+        println!("Could not run git commit! Error {e}");
         return false;
     }
 
@@ -167,7 +167,7 @@ pub fn git_pull() -> bool {
     }
     let output = Command::new("git").arg("pull").output();
     if let Err(e) = output {
-        println!("Could not run git pull! Error {}", e);
+        println!("Could not run git pull! Error {e}");
         return false;
     }
 
@@ -195,7 +195,7 @@ pub fn git_push() -> bool {
     }
     let output = Command::new("git").arg("push").output();
     if let Err(e) = output {
-        println!("Could not run git push! Error {}", e);
+        println!("Could not run git push! Error {e}");
         return false;
     }
 
@@ -217,7 +217,7 @@ pub fn git_author() -> Option<String> {
             Some(output)
         } else {
             let output = String::from_utf8_lossy(&output.stderr);
-            println!("git config user.name failed. {}", output);
+            println!("git config user.name failed. {output}");
             None
         }
     } else {
@@ -239,7 +239,7 @@ pub fn git_commit_message(hash: &str) -> Option<String> {
             Some(output.to_string())
         } else {
             let output = String::from_utf8_lossy(&output.stderr);
-            println!("git log --format=%B -n 1 <hash> failed. {}", output);
+            println!("git log --format=%B -n 1 <hash> failed. {output}");
             None
         }
     } else {

@@ -202,8 +202,7 @@ fn main() {
                 "sheet" => println!("{}", sheet.timesheet_status()),
                 text => {
                     println!(
-                        "What do you mean by {}? Should be either 'sheet' or 'session'.",
-                        text
+                        "What do you mean by {text}? Should be either 'sheet' or 'session'."
                     );
                 }
             }
@@ -219,8 +218,7 @@ fn main() {
                 }
                 text => {
                     println!(
-                        "What do you mean by {}? Should be either 'sheet' or 'session'.",
-                        text
+                        "What do you mean by {text}? Should be either 'sheet' or 'session'."
                     );
                 }
             }

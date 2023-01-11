@@ -182,7 +182,7 @@ impl Session {
                 }
                 /* Commit message must be provided */
                 if note.is_none() {
-                    println!("No commit message found for commit {}.", hash);
+                    println!("No commit message found for commit {hash}.");
                 }
                 self.events.push(Event {
                     timestamp: get_seconds(),
@@ -250,7 +250,7 @@ impl Session {
             n => self
                 .branches
                 .iter()
-                .fold(format!("Worked on {} branches: ", n), |res, s| {
+                .fold(format!("Worked on {n} branches: "), |res, s| {
                     res + s + " "
                 }),
         };
@@ -356,9 +356,9 @@ impl HasHTML for Session {
         match self.branches.len() {
             0 => {}
             n => {
-                write!(&mut branch_str, "Worked on {} branches: ", n).unwrap();
+                write!(&mut branch_str, "Worked on {n} branches: ").unwrap();
                 for branch in &self.branches {
-                    write!(&mut branch_str, "{} ", branch).unwrap();
+                    write!(&mut branch_str, "{branch} ").unwrap();
                 }
             }
         };

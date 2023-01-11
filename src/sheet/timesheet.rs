@@ -179,7 +179,7 @@ impl Timesheet {
                 true
             }
             Err(e) => {
-                println!("Could not report sheet! {}", e);
+                println!("Could not report sheet! {e}");
                 false
             }
         }
@@ -200,7 +200,7 @@ impl Timesheet {
         let mut file = match file {
             Ok(file) => file,
             Err(e) => {
-                eprintln!("Could not write report to session.html! {}", e);
+                eprintln!("Could not write report to session.html! {e}");
                 return false;
             }
         };
@@ -239,7 +239,7 @@ impl Timesheet {
     fn write_to_json(&self) -> bool {
         if !Path::new("./.trk").exists() {
             if let Err(e) = fs::create_dir("./.trk") {
-                println!("Could not create .trk directory. Error: {}", e);
+                println!("Could not create .trk directory. Error: {e}");
                 process::exit(0);
             }
         }
@@ -260,7 +260,7 @@ impl Timesheet {
                 true
             }
             Err(e) => {
-                eprintln!("Could not open timesheet.json file: {}", e);
+                eprintln!("Could not open timesheet.json file: {e}");
                 false
             }
         }
@@ -285,7 +285,7 @@ impl Timesheet {
                     true
                 }
                 Err(e) => {
-                    println!("Could not report sheet! {}", e);
+                    println!("Could not report sheet! {e}");
                     false
                 }
             }
@@ -348,7 +348,7 @@ impl Timesheet {
         let path = Path::new("./.trk/timesheet.json");
         if path.exists() {
             fs::remove_file(path).unwrap_or_else(|e| {
-                println!("Could not remove sessions file: {}", e);
+                println!("Could not remove sessions file: {e}");
             });
         }
         Self::init(name);
@@ -381,20 +381,20 @@ impl Timesheet {
         let file_url = match env::current_dir() {
             Ok(dir) => {
                 if let Some(path) = dir.join(filename).to_str() {
-                    format!("file://{}", path)
+                    format!("file://{path}")
                 } else {
-                    println!("Invalid filename: {}.", filename);
+                    println!("Invalid filename: {filename}.");
                     process::exit(0)
                 }
             }
             Err(e) => {
-                println!("Couldn't obtain current directory: {}", e);
+                println!("Couldn't obtain current directory: {e}");
                 process::exit(0)
             }
         };
         match Url::parse(&file_url) {
             Ok(url) => url.open(),
-            Err(e) => println!("Couldn't open file: {}", e),
+            Err(e) => println!("Couldn't open file: {e}"),
         }
     }
 
